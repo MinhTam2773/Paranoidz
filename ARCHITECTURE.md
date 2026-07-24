@@ -109,6 +109,7 @@ Order numbers: `PZ-YYYY-NNNN` from a Postgres sequence (concurrency-safe, 4+ dig
 - Eligibility at placement: count of user's orders NOT IN (`cancelled`, `delivery_failed`) < 5.
 - Cancelled/refused orders release their slot (`voucher_uses.released_at`).
 - 10% auto-applied. If customer enters a promo code too, apply the BETTER of the two — no stacking (Shopee-style).
+- Promo codes are redeemable ONCE per customer (enforced by a partial unique index on `voucher_uses`); a released slot frees the code again. `auto_first5` is exempt — it applies to all 5 qualifying orders.
 - Discount cap: PENDING client decision.
 
 ### Loyalty program
@@ -134,7 +135,7 @@ Order numbers: `PZ-YYYY-NNNN` from a Postgres sequence (concurrency-safe, 4+ dig
 | ----- | ---------- | ----- |
 | products | id, name, slug, description, category_id, care_instructions, is_active | |
 | product_variants | product_id, color, size, price, original_price, stock, sku | Stock lives HERE |
-| product_images | product_id, variant_id (nullable), storage_path, sort_order, is_primary | Supabase Storage |
+| product_images | product_id, color (nullable), storage_path, sort_order, is_primary | Supabase Storage. Images belong to a COLORWAY, not a variant — `color` matches `product_variants.color`; NULL = general image |
 | categories | id, name, slug, sort_order | |
 | profiles | id (FK auth.users), full_name, phone UNIQUE, delivered_count, refusal_count, is_blacklisted | |
 | addresses | user_id, name, phone, address, ward, district, city, is_default, label | |
@@ -144,7 +145,7 @@ Order numbers: `PZ-YYYY-NNNN` from a Postgres sequence (concurrency-safe, 4+ dig
 | review_replies | review_id, user_id, content, is_brand_reply | Brand flag server-enforced |
 | wishlists | user_id, product_id, added_at | |
 | vouchers | code, type (auto_first5 / promo), discount_pct, cap_amount, max_uses, used_count, is_active, expires_at | |
-| voucher_uses | voucher_id, user_id, order_id, released_at (nullable) | Slot released on cancel/refusal |
+| voucher_uses | voucher_id, user_id, order_id, voucher_type, released_at (nullable) | Slot released on cancel/refusal. `voucher_type` is denormalised from `vouchers.type` so the one-promo-per-user partial unique index can exist |
 | bundles | name, discount_amount, is_active | |
 | bundle_items | bundle_id, product_id | |
 | collections | name, slug, sort_order, is_active | |
