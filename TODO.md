@@ -12,6 +12,7 @@ Session log and work queue. Read this first (CLAUDE.md §7), update it last (§5
 - [x] Scaffold pnpm monorepo — `apps/storefront`, `apps/admin`
 - [x] Write `ARCHITECTURE.md`, `DESIGN.md`, `DASHBOARD_DESIGN.md`, `CLAUDE.md`
 - [x] **Initial database schema** — `supabase/migrations/20260722000001_init.sql`, applied to the linked project (`f3f5a4e`). 19 tables, RLS on every table, `place_order()`, `transition_order_status()`, FTS index, seed voucher.
+- [x] **Dev seed** — `supabase/seeds/dev.sql`, pushed to the linked project (2026-09-25): 4 categories, 10 products, 46 variants (7 sold out, 10 low stock, 11 on sale), 25 image rows, 3 email/password test customers with phone + default address. Kept separate from `seed.sql` so launch cleanup = drop it from `config.toml` `sql_paths` and delete the rows.
 
 ---
 
@@ -89,4 +90,8 @@ Surfaced during the schema review, deliberately not fixed:
 - **Reviews can't show author names.** `profiles` is own-row-only under RLS, so joining `full_name` onto a public review returns nothing. Decide when building reviews: snapshot an `author_name` column, or expose a narrow view.
 - **`place_order()` is granted to `authenticated`**, so a browser holding a user session can call the RPC directly and skip the server route's rate limiting. Safe by design — all price, stock and voucher logic is inside the function — but it is unthrottled until the rate limit lands.
 - **Deleting an `auth.users` row hard-fails** once that user has ordered (`orders.user_id ... on delete restrict`). Intentional, to preserve order history — but there is no working "delete my account" path as a result.
+- **Dev seed data lives in the only (future production) project.** Test users `customer*@paranoidz.test` and the mock catalog must be deleted before launch (fixed id prefixes: `c0000000-`, `d0000000-`, `e0000000-`, `a0000000-`).
+- **Seed image paths point at nothing.** No Storage bucket exists yet; `product_images.storage_path` values are placeholders.
+- **No admin user seeded.** Deliberately — a committed password on an `is_admin` account would be a real hole. Promote your own account when the admin shell lands.
+- **`db push --include-seed` never re-runs a seed file it has seen** — it only updates the hash. New seed data needs a new file in `sql_paths`.
 - **`supabase db dump` / `db reset` need Docker Desktop running.** `migration list`, `db push` and `inspect` do not.
