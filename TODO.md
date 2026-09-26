@@ -21,6 +21,7 @@ Session log and work queue. Read this first (CLAUDE.md §7), update it last (§5
 
 ## Next up
 
+- [ ] **Storefront layout shell** — announcement bar, two-row sticky header (mobile: hamburger → full-screen overlay), footer. Spec: DESIGN.md §4 + §8; visual ref: Stitch "Landing Page - Nested Nav" + "Mobile Navigation Menu" (layout only — translate classes to tokens). Announcement bar content is hardcoded (ARCHITECTURE.md §8.7). Decide the icon approach here (Stitch uses Material Symbols; not in DESIGN.md) — ask before adding a dependency.
 
 ---
 
@@ -28,7 +29,6 @@ Session log and work queue. Read this first (CLAUDE.md §7), update it last (§5
 
 Governed by `DESIGN.md` + `design-refs/`.
 
-- [ ] Layout shell: nav, announcement bar, footer
 - [ ] Catalog / collection listing
 - [ ] Product detail — variant matrix, sold-out states, size guide
 - [ ] Search (Postgres FTS + unaccent)
@@ -96,7 +96,7 @@ Surfaced during the schema review, deliberately not fixed:
 - **`order_number_seq` has gaps from smoke runs** (`last_value` = 3 after the first run). Real orders will not start at `PZ-2026-0001` unless it is reset with `setval` before launch. Each smoke run consumes ~3 more.
 - **Column-grant denials say "permission denied for table profiles"**, not "column". Map it to a friendly message in the account page, don't match on the word "column".
 - **Test sessions without passwords:** `auth.admin.generateLink({ type: "magiclink" })` → `verifyOtp({ token_hash })` gives a real user session from the service key. Use this for any future test that needs `auth.uid()`.
-- **Stitch ↔ DESIGN.md mismatches — awaiting user decision** (tokens follow DESIGN.md). Stitch project `16943126164010481608` uses: red `#FE2C2C` / `red-600`, Tailwind stock `zinc-*`/`neutral-*` greys, page bg `#F9F9F9`, `rounded` = 2px, text at 9–11px (DESIGN.md minimum is 12px caption), Material Symbols icon font (not in DESIGN.md — decide in the layout-shell task). Translate Stitch classes to tokens when porting; never paste them.
+- **Stitch ↔ DESIGN.md mismatches — resolved 2026-09-26: DESIGN.md wins.** Stitch project `16943126164010481608` uses red `#FE2C2C` / `red-600`, stock `zinc-*`/`neutral-*` greys, page bg `#F9F9F9`, `rounded` = 2px, 9–11px text; all are ignored in favour of DESIGN.md (12px minimum text). Icon font still open (layout-shell task). Translate Stitch classes to tokens when porting; never paste them.
 - **Stitch exports are Material-palette Tailwind v3 configs** (`on-tertiary-container`, `surface-container`…) inside a `<script>` block. Read the screen HTML (`list_screens` → `htmlCode.downloadUrl`) for layout, not for tokens.
 - **Tailwind only sees whole class names written in source.** `` `bg-${c}` `` generates nothing. Map variants to full literal class strings.
 - **Deleted routes leave stale types in `.next/dev/types`**, and `next build` then fails type-check (`Cannot find module .../zz-check/route.js`). `rm -rf apps/<app>/.next` after deleting a route.
