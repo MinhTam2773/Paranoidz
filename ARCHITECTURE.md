@@ -133,7 +133,7 @@ Order numbers: `PZ-YYYY-NNNN` from a Postgres sequence (concurrency-safe, 4+ dig
 
 | Table | Key fields | Notes |
 | ----- | ---------- | ----- |
-| products | id, name, slug, description, category_id, care_instructions, is_active | |
+| products | id, name, slug, description, category_id, care_instructions, size_guide, is_active | `size_guide` jsonb (nullable): `{ "sizes": ["S","M"], "rows": [{ "label": "Chest (cm)", "values": ["52","55"] }] }` — one string per size, units in the label |
 | product_variants | product_id, color, size, price, original_price, stock, sku | Stock lives HERE |
 | product_images | product_id, color (nullable), storage_path, sort_order, is_primary | Supabase Storage. Images belong to a COLORWAY, not a variant — `color` matches `product_variants.color`; NULL = general image |
 | categories | id, name, slug, sort_order | |

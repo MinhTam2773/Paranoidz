@@ -20,12 +20,14 @@ Session log and work queue. Read this first (CLAUDE.md §7), update it last (§5
 
 - [x] **Dev product images + Storage bucket** (2026-09-25) — migration `20260925000001_product_images_bucket.sql` (public `product-images` bucket, no storage write policies) + `pnpm --filter @paranoidz/db seed:images` (`packages/db/scripts/upload-dev-images.ts`): 25 Unsplash photos (free commercial licence, no Unsplash+, no visible third-party logos) cropped to 1200×1600 (3:4) and upserted to every seeded `storage_path`; the script fails if a DB path has no photo. Verified anonymously: 25/25 public URLs → 200 `image/jpeg`, all 1200×1600, anon upload rejected by RLS; visually checked each matches its product + colour.
 - [x] **Catalog listing** (2026-09-25) — `/products` (`src/app/products/page.tsx`), `ProductCard` (`src/components/product/`), `Breadcrumb` (`src/components/layout/`), `formatVnd` (`src/lib/format.ts`); `next.config.ts` allows `next/image` from the project's public Storage URLs. One query via `@paranoidz/db/server` (RLS = active only), first image by `sort_order`, price = cheapest in-stock variant. Verified at 1280px (3 × 395px cols, 16px gap, 3:4 image, every card token computed-exact, -13%/-17% badges + struck old price, tote SOLD OUT, hover → image scale 1.05 + shadow-1) and 375px (2 × 165.5px cols, 12px gap, 16px gutter, no overflow); all 10 images 200 via `/_next/image`; no console warnings after first-row `loading="eager"`.
+- [x] **Product detail** (2026-09-26) — `/products/[slug]` (`page.tsx`, `generateMetadata` + page share one `cache()`d query, unknown slug → 404), `ProductView` (client: gallery + colour/size pickers share the colourway state), `SizeGuide` (runtime shape guard). `size_guide` jsonb shape defined in ARCHITECTURE.md §7; dev guides in `supabase/seeds/dev_size_guides.sql` (pushed). Verified at 1280px (7/5 cols, sticky info at 144px; hoodie Cream → cream gallery with L/XL disabled + unclickable, M selected enables CTAs, back to Black keeps M + resets gallery, "Only 3 left"; tote → single disabled SOLD OUT; tee sale price red + struck old; cap preselects FREE, no size guide link; unknown slug → HTTP 404) and 375px (stacked, 44px options, no page overflow). No console errors.
 
 ---
 
 ## Next up
 
-- [ ] **Product detail** (`/products/[slug]`) — catalog cards already link here. Variant matrix (colour → size), sold-out variants unselectable and SOLD OUT product can't be carted (ARCHITECTURE.md §3), colourway images from `product_images.color`, size guide, breadcrumb HOME / PRODUCT / <NAME>. Cart itself is a separate task.
+- [ ] **Cart + Buy It Now** — wire the product page's ADD TO CART / BUY IT NOW (`ProductView.tsx`, buttons already encode disabled/sold-out states), quantity stepper (max = variant stock), mobile sticky add-to-cart bar (DESIGN.md §8), header cart badge (`<Header cartCount>`). Buy It Now skips the cart (ARCHITECTURE.md §4). Totals are display-only — the server recomputes.
+- [ ] **ISR for catalog + product detail** (ARCHITECTURE.md §2 says RSC+ISR; both pages are dynamic today because `@paranoidz/db/server` reads cookies). Needs a cookieless publishable-key client export in `packages/db` for public catalog reads, then `revalidate` + `generateStaticParams`. Stale stock is display-only — `place_order()` is authoritative.
 
 ---
 
@@ -34,7 +36,6 @@ Session log and work queue. Read this first (CLAUDE.md §7), update it last (§5
 Governed by `DESIGN.md` + `design-refs/`.
 
 - [ ] Search (Postgres FTS + unaccent)
-- [ ] Cart + Buy It Now (Buy It Now skips cart)
 - [ ] Order form → server route → `place_order()`
 - [ ] Auth (email/password, Google, Facebook); phone required + unique
 - [ ] Account: order history, addresses, wishlist
@@ -109,7 +110,7 @@ Surfaced during the schema review, deliberately not fixed:
 - **Footer content is placeholder — client to supply:** `STORE_ADDRESSES` is empty (Store info shows hotline only) and `SOCIAL_LINKS` hrefs are `#`, both in `apps/storefront/src/lib/site.ts`.
 - **Announcement bar says "Cash on delivery · Hotline"**, not a free-shipping message — shipping threshold is pending (§8.1). Swap once decided.
 - **Layout shell deviations from Stitch (DESIGN.md followed):** no PRODUCT mega-dropdown (build it from `categories` when the catalog lands, if wanted), no mobile bottom tab bar, mobile menu is full-screen from the right (not a left drawer), footer payment badge is COD only (Stitch showed VISA/MASTER — wrong for a COD-only shop).
-- **Nav routes 404 until built:** `/outlet`, `/new-collection`, `/feedback`, `/branding`, `/policy`, `/login`, `/cart`, `/search`, and every `/products/<slug>` card link (until product detail). Cart badge is hidden until the cart exists (`<Header cartCount>` defaults to 0).
+- **Nav routes 404 until built:** `/outlet`, `/new-collection`, `/feedback`, `/branding`, `/policy`, `/login`, `/cart`, `/search`. Cart badge is hidden until the cart exists (`<Header cartCount>` defaults to 0).
 - **Root layout now wraps pages in `<main>`**; the create-next-app `page.tsx` has its own `<main>` (nested). Resolved when the homepage replaces it.
 - **Tailwind v4 moves elements with the `translate` CSS property, not `transform`.** Check `getComputedStyle(el).translate` when verifying slide-ins.
 - **Off-screen elements' shadows bleed into view.** A `translate-x-full` panel with `shadow-3` paints a 32px grey strip on the right edge; apply the shadow only in the open state.
@@ -118,4 +119,6 @@ Surfaced during the schema review, deliberately not fixed:
 - **Catalog card choices DESIGN.md doesn't cover:** SOLD OUT pill is white with a `border` (tokens only; not dark — §2 limits `bg-dark` to footer/hero/inverted sections) and replaces the sale badge. No quick-view icon (no quick-view feature) and no pagination (10 products) yet — add both when the catalog grows.
 - **`next.config.ts` reads `NEXT_PUBLIC_SUPABASE_URL` at config time** (image `remotePatterns`). Vercel must have it set for the build, not just at runtime, or `new URL()` throws.
 - **Browser pane hidden = `innerWidth` 0, lazy images never load, CSS transitions freeze.** Set `resize_window` before measuring; verify hover effects via `el.getAnimations()` + `.finish()` then read the computed value.
+- **Product page choices the specs don't cover:** colours are text buttons (no hex in the schema — Stitch's swatches would need a colour→hex map); description/care/size guide are stacked sections, not Stitch's tabs; no SKU, reviews or "You may also like" yet. Size guide table scrolls horizontally inside its box at 375px (long Height values).
+- **Size order on the product page is a hardcoded list** (`SIZE_ORDER` in `ProductView.tsx`: XS…XXL, FREE); unknown sizes sort last. Variants have no sort column — add one if the client uses other size labels.
 - **`supabase db dump` / `db reset` need Docker Desktop running.** `migration list`, `db push` and `inspect` do not.
