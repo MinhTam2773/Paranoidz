@@ -1,26 +1,95 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/*
+ * Design tokens — DESIGN.md is the source of truth. Names map 1:1 to its
+ * tokens (--bg-primary → bg-bg-primary, --text-muted → text-text-muted).
+ * Tailwind's default colours and shadows are removed so off-spec values
+ * (e.g. zinc-400 copied from a Stitch export) produce no CSS at all.
+ */
+@theme {
+  /* §2 Colour palette */
+  --color-*: initial;
+  --color-bg-primary: #ffffff;
+  --color-bg-secondary: #f5f5f5;
+  --color-bg-tertiary: #ebebeb;
+  --color-bg-dark: #111111;
+  --color-text-primary: #111111;
+  --color-text-secondary: #666666;
+  --color-text-muted: #999999;
+  --color-text-on-dark: #ffffff;
+  --color-accent: #ff2d2d;
+  --color-accent-hover: #e01f1f;
+  --color-accent-soft: #ff2d2d10;
+  --color-border: #e0e0e0;
+  --color-border-hover: #cccccc;
+  --color-success: #00c853;
+  --color-warning: #ffd600;
+
+  /* §3 Typography — Inter everywhere, Rajdhani for the logo only */
+  --font-*: initial;
+  --font-sans: var(--font-inter), sans-serif;
+  --font-logo: var(--font-rajdhani), sans-serif;
+
+  --text-h1: 48px;
+  --text-h1--line-height: 1.1;
+  --text-h1--letter-spacing: -0.02em;
+  --text-h1--font-weight: 800;
+  --text-h1-mobile: 32px; /* §8: hero H1 on mobile */
+  --text-h1-mobile--line-height: 1.1;
+  --text-h1-mobile--letter-spacing: -0.02em;
+  --text-h1-mobile--font-weight: 800;
+  --text-h2: 28px;
+  --text-h2--line-height: 1.2;
+  --text-h2--letter-spacing: -0.01em;
+  --text-h2--font-weight: 700;
+  --text-h3: 20px;
+  --text-h3--line-height: 1.3;
+  --text-h3--font-weight: 600;
+  --text-body: 15px;
+  --text-body--line-height: 1.6;
+  --text-body--font-weight: 400;
+  --text-product-name: 14px;
+  --text-product-name--line-height: 1.4;
+  --text-product-name--font-weight: 500;
+  --text-price: 16px;
+  --text-price--line-height: 1;
+  --text-price--letter-spacing: 0.02em;
+  --text-price--font-weight: 700;
+  --text-price-old: 13px;
+  --text-price-old--line-height: 1;
+  --text-price-old--font-weight: 400;
+  --text-nav: 13px;
+  --text-nav--line-height: 1;
+  --text-nav--letter-spacing: 0.06em;
+  --text-nav--font-weight: 500;
+  --text-button: 14px;
+  --text-button--line-height: 1;
+  --text-button--letter-spacing: 0.04em;
+  --text-button--font-weight: 600;
+  --text-caption: 12px;
+  --text-caption--line-height: 1.4;
+  --text-caption--letter-spacing: 0.02em;
+  --text-caption--font-weight: 400;
+
+  /* §4/§7 Radius — 4px standard, 8px hard maximum */
+  --radius-*: initial;
+  --radius-sm: 4px;
+  --radius-lg: 8px;
+
+  /* §6 Elevation levels 1–3, plus the accent-button hover glow (§4) */
+  --shadow-*: initial;
+  --shadow-1: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-2: 0 4px 12px rgba(0, 0, 0, 0.1);
+  --shadow-3: 0 8px 32px rgba(0, 0, 0, 0.15);
+  --shadow-accent: 0 2px 8px rgba(255, 45, 45, 0.3);
+
+  /* §5 Spacing: Tailwind's 4px base already yields the --s-1…--s-8 scale
+     (1=4px 2=8px 4=16px 6=24px 8=32px 12=48px 16=64px 24=96px).
+     §8 Breakpoints: defaults sm=640px, lg=1024px match. Max width: max-w-7xl = 1280px. */
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  body {
+    @apply bg-bg-primary font-sans text-body text-text-primary;
   }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
 }

@@ -15,12 +15,12 @@ Session log and work queue. Read this first (CLAUDE.md §7), update it last (§5
 - [x] **Dev seed** — `supabase/seeds/dev.sql`, pushed to the linked project (2026-09-25): 4 categories, 10 products, 46 variants (7 sold out, 10 low stock, 11 on sale), 25 image rows, 3 email/password test customers with phone + default address. Kept separate from `seed.sql` so launch cleanup = drop it from `config.toml` `sql_paths` and delete the rows.
 - [x] **`packages/db`** (2026-09-25) — subpath exports only (`@paranoidz/db/client|server|admin|proxy|types`, no barrel, so `admin.ts` can't ride along with another import). Session refresh in each app's `src/proxy.ts` → `updateSession()` (calls `getClaims()`, forwards the no-cache headers). Types: `pnpm --filter @paranoidz/db gen:types`. Verified: both apps build; a `"use client"` import of `admin` fails the build; anon server client reads 10 products / 46 variants and 0 vouchers / 0 orders.
 - [x] **Migration smoke test** (2026-09-25) — `pnpm --filter @paranoidz/db smoke`, 7/7 pass: voucher `max_uses` race (1 of 3 redeems, losers roll back stock), duplicate-variant order restores all units on cancel, image snapshot picks the colourway, `is_admin` self-update rejected while `full_name` still works. Self-cleaning; re-run after any migration.
+- [x] **Storefront `@theme` tokens** (2026-09-26) — `apps/storefront/src/app/globals.css`, every DESIGN.md §2/§3/§6 value, names 1:1 (`bg-bg-secondary`, `text-text-muted`, `text-h1`, `text-price`, `shadow-1`, `rounded-sm`=4px, `rounded-lg`=8px max, `font-logo`). Tailwind default colours/shadows/radii/fonts removed. Inter (latin+vietnamese, 400–800) + Rajdhani 700 via `next/font`. Verified by computed styles in the browser at 1280px and 375px: all values exact, off-spec classes (`text-zinc-400`, `bg-red-600`, `shadow-lg`, `rounded-xl`) render unstyled.
 
 ---
 
 ## Next up
 
-- [ ] **Tailwind v4 `@theme` tokens** in storefront `globals.css` (no `tailwind.config` — §3). Visual reference: Stitch MCP screens (user-scoped server `stitch`; `design-refs/` doesn't exist). DESIGN.md stays source of truth — surface any Stitch ↔ DESIGN.md token mismatch, don't pick silently.
 
 ---
 
@@ -96,4 +96,10 @@ Surfaced during the schema review, deliberately not fixed:
 - **`order_number_seq` has gaps from smoke runs** (`last_value` = 3 after the first run). Real orders will not start at `PZ-2026-0001` unless it is reset with `setval` before launch. Each smoke run consumes ~3 more.
 - **Column-grant denials say "permission denied for table profiles"**, not "column". Map it to a friendly message in the account page, don't match on the word "column".
 - **Test sessions without passwords:** `auth.admin.generateLink({ type: "magiclink" })` → `verifyOtp({ token_hash })` gives a real user session from the service key. Use this for any future test that needs `auth.uid()`.
+- **Stitch ↔ DESIGN.md mismatches — awaiting user decision** (tokens follow DESIGN.md). Stitch project `16943126164010481608` uses: red `#FE2C2C` / `red-600`, Tailwind stock `zinc-*`/`neutral-*` greys, page bg `#F9F9F9`, `rounded` = 2px, text at 9–11px (DESIGN.md minimum is 12px caption), Material Symbols icon font (not in DESIGN.md — decide in the layout-shell task). Translate Stitch classes to tokens when porting; never paste them.
+- **Stitch exports are Material-palette Tailwind v3 configs** (`on-tertiary-container`, `surface-container`…) inside a `<script>` block. Read the screen HTML (`list_screens` → `htmlCode.downloadUrl`) for layout, not for tokens.
+- **Tailwind only sees whole class names written in source.** `` `bg-${c}` `` generates nothing. Map variants to full literal class strings.
+- **Deleted routes leave stale types in `.next/dev/types`**, and `next build` then fails type-check (`Cannot find module .../zz-check/route.js`). `rm -rf apps/<app>/.next` after deleting a route.
+- **Storefront `page.tsx` is still the create-next-app placeholder**; its `zinc-*`/`dark:` classes now no-op, so it renders unstyled. Replaced by the layout-shell / catalog task.
+- **Browser pane "mobile" preset can report a wider viewport** if content forces a min-width (mobile Chrome zooms out to fit). Check `innerWidth === 375` before trusting a mobile measurement.
 - **`supabase db dump` / `db reset` need Docker Desktop running.** `migration list`, `db push` and `inspect` do not.
