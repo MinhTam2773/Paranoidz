@@ -47,27 +47,26 @@ export default async function ProductPage({ params }: PageProps<"/products/[slug
         name={product.name}
         variants={product.product_variants}
         images={product.images}
-        hasSizeGuide={sizeGuide !== null}
-      >
-        {(product.description || product.care_instructions) && (
-          <div className="flex flex-col gap-4 border-t border-border pt-6 text-text-secondary">
-            {product.description && <p>{product.description}</p>}
-            {product.care_instructions && (
-              <p>
-                <span className="text-nav uppercase text-text-primary">Care: </span>
-                {product.care_instructions}
-              </p>
-            )}
-          </div>
-        )}
-      </ProductView>
-
-      {sizeGuide && (
-        <section id="size-guide" className="mt-16 scroll-mt-36">
-          <h2 className="mb-6 text-h3 uppercase">Size guide</h2>
-          <SizeGuide guide={sizeGuide} />
-        </section>
-      )}
+        details={
+          (product.description || product.care_instructions) && (
+            <div className="flex flex-col gap-8">
+              {product.description && (
+                <div className="flex flex-col gap-4">
+                  <h2 className="text-nav font-bold uppercase">Description</h2>
+                  <p className="text-text-secondary">{product.description}</p>
+                </div>
+              )}
+              {product.care_instructions && (
+                <div className="flex flex-col gap-4">
+                  <h2 className="text-nav font-bold uppercase">Care instructions</h2>
+                  <p className="text-text-secondary">{product.care_instructions}</p>
+                </div>
+              )}
+            </div>
+          )
+        }
+        sizeGuide={sizeGuide && <SizeGuide guide={sizeGuide} />}
+      />
     </div>
   );
 }
