@@ -95,3 +95,4 @@ Adapted from Andrej Karpathy's observations on LLM coding failures. These govern
 4. Implement the ONE task.
 5. Verify against the criteria. Fix until green.
 6. Update `TODO.md`, commit.
+7. Any lesson learned during the session (tool quirk, failed approach, non-obvious constraint) goes into `TODO.md` → "Known gaps — carried debt" before the session ends.

@@ -93,5 +93,6 @@ Surfaced during the schema review, deliberately not fixed:
 - **Dev seed data lives in the only (future production) project.** Test users `customer*@paranoidz.test` and the mock catalog must be deleted before launch (fixed id prefixes: `c0000000-`, `d0000000-`, `e0000000-`, `a0000000-`).
 - **Seed image paths point at nothing.** No Storage bucket exists yet; `product_images.storage_path` values are placeholders.
 - **No admin user seeded.** Deliberately — a committed password on an `is_admin` account would be a real hole. Promote your own account when the admin shell lands.
+- **The claude.ai Supabase connector is read-only.** `execute_sql` fails on any write (`cannot execute INSERT in a read-only transaction`). Use it to inspect; write data through the CLI (`supabase db push --include-seed`).
 - **`db push --include-seed` never re-runs a seed file it has seen** — it only updates the hash. New seed data needs a new file in `sql_paths`.
 - **`supabase db dump` / `db reset` need Docker Desktop running.** `migration list`, `db push` and `inspect` do not.
