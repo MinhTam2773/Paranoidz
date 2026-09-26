@@ -167,7 +167,7 @@ Order numbers: `PZ-YYYY-NNNN` from a Postgres sequence (concurrency-safe, 4+ dig
 ## 8. Pending Decisions (do NOT implement until resolved)
 
 1. Free shipping: all orders vs orders over ₫1.000.000 (designs contradict client statement).
-2. Guest checkout vs account required (current build assumes account required).
+2. ~~Guest checkout vs account required~~ — **RESOLVED 2026-09-26: guest checkout allowed, no account required.** Accounts stay optional (history, addresses, wishlist, reviews). The schema still assumes accounts (`orders.user_id not null`, `AUTH_REQUIRED`, voucher/loyalty/blacklist keyed on `profiles`); the guest-safe changes are listed under the Order form task in TODO.md and land with it.
 3. Voucher discount cap amount.
 4. Loyalty gift notification method + fulfillment method.
 5. Loyalty progress visibility on account page.

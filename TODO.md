@@ -38,9 +38,15 @@ Session log and work queue. Read this first (CLAUDE.md §7), update it last (§5
 Governed by `DESIGN.md` + `design-refs/`.
 
 - [ ] Search (Postgres FTS + unaccent)
-- [ ] Order form → server route → `place_order()` — `/checkout` reads the cart (`useCart`) or, for Buy It Now, `?variant=<id>&qty=<n>` (don't merge it into the cart). Recompute every price server-side; clear the cart (`removeFromCart` / write `[]`) only after `place_order()` succeeds.
+- [ ] Order form → server route → `place_order()` — **guest checkout (§8.2 resolved 2026-09-26)**, so this task first makes the schema guest-safe (one migration, re-run `smoke`):
+  - `orders.user_id` nullable (null = guest); RLS already hides guest orders from everyone but admin.
+  - `place_order()`: no `AUTH_REQUIRED`; revoke from `authenticated` too and call it only from the server route with the admin client, passing the session user id when there is one (also closes the "direct RPC skips rate limit" gap).
+  - Customer identity for guests = **normalized phone** (`0xxxxxxxxx`): refusal count + blacklist, first-5 voucher eligibility (count non-cancelled orders by phone), promo once-per-customer (`voucher_uses` keyed by phone, not `user_id`), loyalty `delivered_count`. Decide per rule whether it keys on phone only or phone-or-account; phone-only means a guest who later registers with the same phone keeps their history automatically.
+  - Abuse guard is now mandatory before launch, not later: guests can create `pending` orders that decrement stock, so a bot or prankster can lock inventory with fake COD orders. Rate limit per phone + IP (§6), cap units per order, and consider a limit on open `pending` orders per phone.
+  - Guests have no order history: the thank-you page renders from the route's response (RLS hides guest orders from reads), the confirmation email carries the order details, and plan an order lookup by order number + phone.
+  - Then the form itself: `/checkout` reads the cart (`useCart`) or, for Buy It Now, `?variant=<id>&qty=<n>` (don't merge it into the cart). Recompute every price server-side; clear the cart (`removeFromCart` / write `[]`) only after `place_order()` succeeds.
 - [ ] Auth (email/password, Google, Facebook); phone required + unique
-  - **Account cart sync** (needed once accounts exist): the cart is browser-only today (`src/lib/cart.ts`, localStorage), so it doesn't follow a user across devices, and the next person to log in on the same browser sees the previous person's cart. Add `cart_items` (user_id, variant_id, qty; own-rows RLS like `wishlists`). Guests keep localStorage. On login, merge the browser cart into the account cart (sum qty, cap at stock), then clear the browser copy. While logged in, `useCart`/`addToCart`/`setCartQty`/`removeFromCart` read and write the table. On logout, clear the browser cart. Only worth building if §8.2 resolves to account-required checkout.
+  - **Account cart sync** (needed once accounts exist): the cart is browser-only today (`src/lib/cart.ts`, localStorage), so it doesn't follow a user across devices, and the next person to log in on the same browser sees the previous person's cart. Add `cart_items` (user_id, variant_id, qty; own-rows RLS like `wishlists`). Guests keep localStorage. On login, merge the browser cart into the account cart (sum qty, cap at stock), then clear the browser copy. While logged in, `useCart`/`addToCart`/`setCartQty`/`removeFromCart` read and write the table. On logout, clear the browser cart. Low priority: §8.2 resolved to guest checkout (2026-09-26), so an account is optional and most buyers may never log in. Build only if the client asks for cross-device carts.
 - [ ] Account: order history, addresses, wishlist
 - [ ] Reviews + replies (server route — `is_brand_reply` must be unforgeable)
 
@@ -72,7 +78,7 @@ Governed by `DASHBOARD_DESIGN.md` §6.
 Do NOT implement (ARCHITECTURE.md §8). Each one has a concrete cost if guessed wrong:
 
 1. **Free shipping** — all orders vs over ₫1.000.000. `orders` has no shipping column and `orders_total_math` currently asserts `total = subtotal - discount`; adding shipping means altering that constraint.
-2. **Guest checkout vs account required** — current build assumes account required, and `place_order()` hard-fails on `AUTH_REQUIRED`.
+2. ~~Guest checkout vs account required~~ — **resolved 2026-09-26: guest checkout allowed.** Work moved to the Order form task.
 3. **Voucher discount cap** — `AUTO-FIRST5` is seeded uncapped (`cap_amount = null`) in `supabase/seed.sql`. Change there, no migration needed.
 4. Loyalty gift notification + fulfilment method.
 5. Loyalty progress visibility on the account page.
