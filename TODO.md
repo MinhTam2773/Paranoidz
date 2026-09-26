@@ -14,16 +14,12 @@ Session log and work queue. Read this first (CLAUDE.md §7), update it last (§5
 - [x] **Initial database schema** — `supabase/migrations/20260722000001_init.sql`, applied to the linked project (`f3f5a4e`). 19 tables, RLS on every table, `place_order()`, `transition_order_status()`, FTS index, seed voucher.
 - [x] **Dev seed** — `supabase/seeds/dev.sql`, pushed to the linked project (2026-09-25): 4 categories, 10 products, 46 variants (7 sold out, 10 low stock, 11 on sale), 25 image rows, 3 email/password test customers with phone + default address. Kept separate from `seed.sql` so launch cleanup = drop it from `config.toml` `sql_paths` and delete the rows.
 - [x] **`packages/db`** (2026-09-25) — subpath exports only (`@paranoidz/db/client|server|admin|proxy|types`, no barrel, so `admin.ts` can't ride along with another import). Session refresh in each app's `src/proxy.ts` → `updateSession()` (calls `getClaims()`, forwards the no-cache headers). Types: `pnpm --filter @paranoidz/db gen:types`. Verified: both apps build; a `"use client"` import of `admin` fails the build; anon server client reads 10 products / 46 variants and 0 vouchers / 0 orders.
+- [x] **Migration smoke test** (2026-09-25) — `pnpm --filter @paranoidz/db smoke`, 7/7 pass: voucher `max_uses` race (1 of 3 redeems, losers roll back stock), duplicate-variant order restores all units on cancel, image snapshot picks the colourway, `is_admin` self-update rejected while `full_name` still works. Self-cleaning; re-run after any migration.
 
 ---
 
 ## Next up
 
-- [ ] **Smoke test the migration's runtime logic** (deferred 2026-07-24; nothing has exercised these yet):
-  - Voucher `max_uses` under concurrent redemption
-  - Stock restore when one order holds two rows for the same variant
-  - Image snapshot picks the exact colourway, not the general image
-  - A customer cannot set `is_admin` on their own profile despite the UPDATE policy
 
 ---
 
@@ -96,4 +92,8 @@ Surfaced during the schema review, deliberately not fixed:
 - **Next 16: middleware is `src/proxy.ts`**, exporting `proxy()`, Node runtime only.
 - **`@supabase/ssr` `setAll(cookies, headers)`** — the second arg carries no-cache headers that must be put on the response, or a CDN can serve one user's session cookie to another. Any new cookie adapter must forward them.
 - **Each app has its own create-next-app `.gitignore`** that overrides the root one (`.env*` ignored). Needed `!.env.example` added per app. Check `git check-ignore -v` for any new file that should be tracked.
+- **The voucher race test didn't hit the atomic guard.** Both losers failed `INVALID_VOUCHER` (the winner had already committed), not `VOUCHER_EXHAUSTED` — the three HTTP calls never truly overlapped. Outcome correct; the `UPDATE ... WHERE used_count < max_uses` path itself is proven only by Postgres row-lock semantics, not by this test.
+- **`order_number_seq` has gaps from smoke runs** (`last_value` = 3 after the first run). Real orders will not start at `PZ-2026-0001` unless it is reset with `setval` before launch. Each smoke run consumes ~3 more.
+- **Column-grant denials say "permission denied for table profiles"**, not "column". Map it to a friendly message in the account page, don't match on the word "column".
+- **Test sessions without passwords:** `auth.admin.generateLink({ type: "magiclink" })` → `verifyOtp({ token_hash })` gives a real user session from the service key. Use this for any future test that needs `auth.uid()`.
 - **`supabase db dump` / `db reset` need Docker Desktop running.** `migration list`, `db push` and `inspect` do not.

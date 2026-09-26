@@ -12,7 +12,8 @@
   },
   "scripts": {
     "gen:types": "supabase gen types typescript --linked --schema public > src/types.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "smoke": "node --env-file=../../apps/admin/.env.local scripts/smoke-test.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
@@ -23,6 +24,7 @@
     "next": ">=16"
   },
   "devDependencies": {
+    "@types/node": "^20.19.43",
     "next": "16.2.10",
     "typescript": "^5.9.3"
   }
