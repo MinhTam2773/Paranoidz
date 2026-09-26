@@ -164,6 +164,11 @@ export function CheckoutView({ buyNow }: { buyNow: CartLine | null }) {
             Your order number is <strong className="text-text-primary">{placed.orderNumber}</strong>. We&apos;ll call{" "}
             <strong className="text-text-primary">{placed.phone}</strong> to confirm it before shipping. You pay in cash on delivery.
           </p>
+          <p className="text-text-secondary">
+            Check its status anytime on{" "}
+            <Link href={`/order-lookup?order=${placed.orderNumber}`} className="text-text-primary underline">order lookup</Link>{" "}
+            with this order number and your phone.
+          </p>
         </div>
         <dl className="flex flex-col gap-3 rounded-sm border border-border p-6">
           <div className="flex justify-between"><dt className="text-text-secondary">Subtotal</dt><dd>{formatVnd(placed.subtotal)}</dd></div>

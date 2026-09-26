@@ -18,6 +18,7 @@ export const POLICY_LINKS = [
   { label: "Shipping policy", href: "/policy#shipping" },
   { label: "Returns & exchanges", href: "/policy#returns" },
   { label: "Privacy policy", href: "/policy#privacy" },
+  { label: "Order lookup", href: "/order-lookup" },
 ] as const;
 
 // PLACEHOLDER — client to supply real store addresses. Empty = column shows hotline only.

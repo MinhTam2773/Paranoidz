@@ -49,6 +49,7 @@ Auth providers: email/password, Google, Facebook. Phone number required and **un
 | **Order submission**        | **Server only**  | Guest or signed in. Prices re-fetched from DB; voucher validated; atomic RPC `place_order()` callable by service_role ONLY (the order route). Client totals NEVER trusted |
 | Voucher validation          | Server only      | Client never computes its own discount |
 | Order status changes        | Server only      | Stock restore + loyalty counter must be atomic |
+| Guest order lookup          | Server only      | Order number + phone, rate limited; returns status, items, totals, ward/city only — no name, street, phones, email or note (order numbers are sequential, so a known phone + guessing must not reveal an address) |
 | Loyalty gift trigger        | Server / DB      | Counter math, pool selection |
 | Admin realtime order feed   | Client (admin)   | RLS restricts channel to admin role |
 
@@ -155,7 +156,7 @@ Order numbers: `PZ-YYYY-NNNN` from a Postgres sequence (concurrency-safe, 4+ dig
 - Abuse limits inside `place_order()`: max 20 units per order, max 3 open `pending` orders per phone (row-locked per phone, so not raceable).
 - `pending → confirmed` phone call verifies every order before shipping.
 - `delivery_failed` increments `customers.refusal_count`; client can set `customers.is_blacklisted` (blocks new orders from that phone at `place_order()`, whatever format it's typed in).
-- Order endpoint rate-limited per phone and IP: `hit_order_rate_limit()` (service role only), called by the order route before `place_order()` as a separate statement so rejected orders still count. Every attempt that passes form validation counts; 1-hour fixed windows, 5 per normalized phone, 10 per IP (IPv6 per /64, IPv4-mapped unwrapped). IP = `x-real-ip` / first `x-forwarded-for`, trustworthy only because Vercel overwrites them; no IP → phone limit only. Shared mobile-carrier IPs (CGNAT) are why the IP limit is loose. A residential-proxy botnet is not stopped by this — the confirmation call is the backstop.
+- Order and order-lookup endpoints rate-limited per phone and IP: `apps/storefront/src/lib/rate-limit.ts` → `hit_rate_limit(scope, …)` (service role only), called before any order / lookup work as a separate statement so rejected attempts still count. Every attempt that passes form validation counts; 1-hour fixed windows, separate counters per scope. Orders: 5 per normalized phone, 10 per IP. Lookups: 10 per phone, 20 per IP. IPv6 per /64, IPv4-mapped unwrapped. IP = `x-real-ip` / first `x-forwarded-for`, trustworthy only because Vercel overwrites them; no IP → phone limit only. Shared mobile-carrier IPs (CGNAT) are why the IP limits are loose. A residential-proxy botnet is not stopped by this — the confirmation call is the backstop.
 
 ---
 
@@ -183,7 +184,7 @@ Order numbers: `PZ-YYYY-NNNN` from a Postgres sequence (concurrency-safe, 4+ dig
 | collection_items | collection_id, product_id, sort_order | |
 | loyalty_gifts | name, description, image_url, is_active | |
 | loyalty_awards | phone (FK customers), gift_id (nullable), milestone, status (pending / fulfilled) | Survives empty pool |
-| rate_limits | bucket ('ip:…' / 'phone:…'), window_start, hits | Order attempt counters; rows older than the previous window are pruned on each call |
+| rate_limits | bucket ('order:ip:…' / 'lookup:phone:…'), window_start, hits | Order attempt counters; rows older than the previous window are pruned on each call |
 
 ### Required Postgres objects
 - Enum: `order_status` (6 values above).
