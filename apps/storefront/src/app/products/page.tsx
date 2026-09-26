@@ -1,12 +1,16 @@
 import type { Metadata } from "next";
-import { createClient } from "@paranoidz/db/server";
+import { createPublicClient } from "@paranoidz/db/public";
 import { Breadcrumb } from "@/components/layout/Breadcrumb";
 import { ProductCard, type ProductCardData } from "@/components/product/ProductCard";
 
 export const metadata: Metadata = { title: "All products | Paranoidz" };
 
+// ISR (ARCHITECTURE.md §2.2): rebuilt at most once a minute. Shown stock may lag by that much —
+// display only; place_order() re-checks stock atomically.
+export const revalidate = 60;
+
 export default async function ProductsPage() {
-  const supabase = await createClient();
+  const supabase = createPublicClient();
   // RLS returns active products only.
   const { data: products, error } = await supabase
     .from("products")

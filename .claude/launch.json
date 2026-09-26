@@ -1,7 +1,8 @@
 {
   "version": "0.0.1",
   "configurations": [
-    { "name": "storefront", "runtimeExecutable": "pnpm", "runtimeArgs": ["--filter", "storefront", "dev"], "port": 3000 },
-    { "name": "admin", "runtimeExecutable": "pnpm", "runtimeArgs": ["--filter", "admin", "dev", "--port", "3001"], "port": 3001 }
+    {"name": "storefront", "runtimeExecutable": "pnpm", "runtimeArgs": ["--filter", "storefront", "dev"], "port": 3000},
+    {"name": "admin", "runtimeExecutable": "pnpm", "runtimeArgs": ["--filter", "admin", "dev", "--port", "3001"], "port": 3001},
+    {"name": "storefront-prod", "runtimeExecutable": "pnpm", "runtimeArgs": ["--filter", "storefront", "start", "--port", "3002"], "port": 3002}
   ]
 }

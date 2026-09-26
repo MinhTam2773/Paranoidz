@@ -1,14 +1,24 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { cache } from "react";
-import { createClient } from "@paranoidz/db/server";
+import { createPublicClient } from "@paranoidz/db/public";
 import { Breadcrumb } from "@/components/layout/Breadcrumb";
 import { ProductView } from "@/components/product/ProductView";
 import { SizeGuide, isSizeGuide } from "@/components/product/SizeGuide";
 
-// Shared by generateMetadata and the page: one query per request. RLS = active products only.
+// ISR (ARCHITECTURE.md §2.2): every active product is prebuilt at deploy, then rebuilt at most once a
+// minute; slugs added later render on first visit. Shown stock is display only — place_order() re-checks.
+export const revalidate = 60;
+
+export async function generateStaticParams() {
+  const { data, error } = await createPublicClient().from("products").select("slug");
+  if (error) throw error;
+  return data;
+}
+
+// Shared by generateMetadata and the page: one query per render. RLS = active products only.
 const getProduct = cache(async (slug: string) => {
-  const supabase = await createClient();
+  const supabase = createPublicClient();
   const { data, error } = await supabase
     .from("products")
     .select(

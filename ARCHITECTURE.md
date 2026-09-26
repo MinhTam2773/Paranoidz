@@ -28,13 +28,14 @@ Auth providers: email/password, Google, Facebook. Phone number required and **un
 
 **Guiding rule: reads can be client-side behind RLS; anything touching money, stock, or counters is server-side only.**
 
-### 2.1 The three Supabase clients (packages/db)
+### 2.1 The four Supabase clients (packages/db)
 
 | Client          | Key                        | Used for |
 | --------------- | -------------------------- | -------- |
 | `client.ts`     | anon key                   | Auth flows, user-owned data (wishlist, addresses), realtime |
 | `server.ts`     | anon key + cookie session  | Server Components / route handlers acting AS the user (@supabase/ssr) |
 | `admin.ts`      | service_role key           | Server-only system ops that bypass RLS. `import "server-only"` — NEVER in client components |
+| `public.ts`     | anon key, no cookies       | Public catalog reads in Server Components. No session, so pages using it can be ISR-cached. Never for user-specific data |
 
 ### 2.2 Where features run
 
