@@ -49,7 +49,7 @@ export function MobileNav() {
 
       {searchOpen && (
         <div className="absolute inset-x-0 top-full border-b border-border bg-bg-primary px-4 py-3 lg:hidden">
-          <SearchForm autoFocus />
+          <SearchForm autoFocus onNavigate={() => setSearchOpen(false)} />
         </div>
       )}
 

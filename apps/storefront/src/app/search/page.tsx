@@ -3,8 +3,8 @@ import Link from "next/link";
 import { createPublicClient } from "@paranoidz/db/public";
 import { Breadcrumb } from "@/components/layout/Breadcrumb";
 import { SearchForm } from "@/components/layout/SearchForm";
-import { ProductCard, type ProductCardData } from "@/components/product/ProductCard";
-import { productCardQuery, toProductCard } from "@/lib/catalog";
+import { ProductCard } from "@/components/product/ProductCard";
+import { searchProductCards } from "@/lib/catalog";
 
 export const metadata: Metadata = { title: "Search | Paranoidz", robots: { index: false } };
 
@@ -14,18 +14,7 @@ export default async function SearchPage({ searchParams }: PageProps<"/search">)
   const { q } = await searchParams;
   const query = (typeof q === "string" ? q : "").trim().slice(0, 100);
 
-  let cards: ProductCardData[] = [];
-  if (query) {
-    const supabase = createPublicClient();
-    const { data: hits, error } = await supabase.rpc("search_products", { p_query: query });
-    if (error) throw error;
-    if (hits.length) {
-      const { data: rows, error: rowsError } = await productCardQuery(supabase).in("id", hits.map((h) => h.product_id));
-      if (rowsError) throw rowsError;
-      const rank = new Map(hits.map((h, i) => [h.product_id, i]));
-      cards = rows.toSorted((a, b) => rank.get(a.id)! - rank.get(b.id)!).map((p) => toProductCard(supabase, p));
-    }
-  }
+  const cards = query ? await searchProductCards(createPublicClient(), query) : [];
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 pb-16 lg:px-6">

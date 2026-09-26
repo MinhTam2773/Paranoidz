@@ -13,6 +13,18 @@ export function productCardQuery(supabase: PublicClient) {
     .limit(1, { referencedTable: "product_images" });
 }
 
+// search_products() hits as ranked cards (search page, header suggestions); the first `limit` only.
+export async function searchProductCards(supabase: PublicClient, query: string, limit?: number) {
+  const { data: hits, error } = await supabase.rpc("search_products", { p_query: query });
+  if (error) throw error;
+  const ids = hits.slice(0, limit).map((h) => h.product_id);
+  if (!ids.length) return [];
+  const { data: rows, error: rowsError } = await productCardQuery(supabase).in("id", ids);
+  if (rowsError) throw rowsError;
+  const rank = new Map(ids.map((id, i) => [id, i]));
+  return rows.toSorted((a, b) => rank.get(a.id)! - rank.get(b.id)!).map((p) => toProductCard(supabase, p));
+}
+
 type CardRow = NonNullable<Awaited<ReturnType<typeof productCardQuery>>["data"]>[number];
 
 export function toProductCard(supabase: PublicClient, p: CardRow): ProductCardData {
