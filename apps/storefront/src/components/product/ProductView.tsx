@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useRef, useState, type ReactNode } from "react";
 import { formatVnd } from "@/lib/format";
 import { ProductTabs } from "./ProductTabs";
+import { PurchaseActions } from "./PurchaseActions";
 
 export type ProductVariant = {
   id: string;
@@ -63,6 +64,7 @@ export function ProductView({
   ];
   const [activeTab, setActiveTab] = useState(tabs[0]?.id ?? "");
   const tabsRef = useRef<HTMLElement>(null);
+  const sizeGroupRef = useRef<HTMLDivElement>(null);
 
   const sizes = variants.filter((v) => v.color === color).toSorted((a, b) => sizeRank(a.size) - sizeRank(b.size));
   const selected = sizes.find((v) => v.size === size) ?? null;
@@ -152,7 +154,7 @@ export function ProductView({
               </div>
             </div>
 
-            <div role="group" aria-labelledby="size-label" className="flex flex-col gap-3">
+            <div ref={sizeGroupRef} role="group" aria-labelledby="size-label" className="flex flex-col gap-3">
               <div className="flex items-center justify-between">
                 <p id="size-label" className="text-nav uppercase">Size</p>
                 {sizeGuide && (
@@ -190,33 +192,15 @@ export function ProductView({
               )}
             </div>
 
-            {/* Click handlers land with the cart task (TODO.md); these encode the purchasable states. */}
-            {soldOut ? (
-              <button
-                type="button"
-                disabled
-                className="h-12 w-full rounded-sm bg-bg-tertiary text-button uppercase text-text-muted"
-              >
-                Sold out
-              </button>
-            ) : (
-              <div className="flex flex-col gap-3">
-                <button
-                  type="button"
-                  disabled={!selected}
-                  className="h-12 w-full rounded-sm bg-accent text-button uppercase text-text-on-dark transition-all duration-200 enabled:hover:-translate-y-px enabled:hover:bg-accent-hover enabled:hover:shadow-accent disabled:cursor-not-allowed disabled:bg-bg-tertiary disabled:text-text-muted"
-                >
-                  {selected ? "Add to cart" : "Select a size"}
-                </button>
-                <button
-                  type="button"
-                  disabled={!selected}
-                  className="h-12 w-full rounded-sm border border-text-primary text-button uppercase text-text-primary transition-colors duration-200 enabled:hover:bg-text-primary enabled:hover:text-text-on-dark disabled:cursor-not-allowed disabled:border-border disabled:text-text-muted"
-                >
-                  Buy it now
-                </button>
-              </div>
-            )}
+            <PurchaseActions
+              variant={selected}
+              soldOut={soldOut}
+              price={shown ? formatVnd(shown.price) : ""}
+              onNeedSize={() => {
+                sizeGroupRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+                sizeGroupRef.current?.querySelector<HTMLButtonElement>("button[aria-pressed]:enabled")?.focus({ preventScroll: true });
+              }}
+            />
           </div>
         </div>
       </div>

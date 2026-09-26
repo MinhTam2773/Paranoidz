@@ -31,6 +31,15 @@ export const UserIcon = (p: P) => (
 export const BagIcon = (p: P) => (
   <Icon {...p}><path d="M5 8h14l-1 13H6L5 8Z" /><path d="M9 8V6a3 3 0 0 1 6 0v2" /></Icon>
 );
+export const MinusIcon = (p: P) => (
+  <Icon {...p}><path d="M5 12h14" /></Icon>
+);
+export const PlusIcon = (p: P) => (
+  <Icon {...p}><path d="M5 12h14M12 5v14" /></Icon>
+);
+export const TrashIcon = (p: P) => (
+  <Icon {...p}><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" /></Icon>
+);
 export const MenuIcon = (p: P) => (
   <Icon {...p}><path d="M3 6h18M3 12h18M3 18h18" /></Icon>
 );
