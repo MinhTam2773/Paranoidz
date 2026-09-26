@@ -22,6 +22,8 @@ Session log and work queue. Read this first (CLAUDE.md §7), update it last (§5
 
 ## Next up
 
+- [ ] **Dev product images + Storage bucket** — create a public `product-images` bucket (read-only connector can't; use the service key via a script, or the dashboard) and upload one image per seeded path: 10 × `products/<slug>/main.jpg` + 15 colourway `products/<slug>/<color>-1.jpg` (25 files, paths already in `product_images`). Source must be licence-safe for a commercial site: AI-generated or free-licence stock, never scraped brand/product photos. Placeholders only — client's real photos replace them before launch.
+- [ ] **Catalog / collection listing** — product card (DESIGN.md §4: 3:4 image on `bg-bg-secondary`, hover zoom, sale badge + dual price, `₫269.000` format) + 3/2/2-column grid, server-rendered from the 10 seeded products via `@paranoidz/db/server`. Sold-out handling per ARCHITECTURE.md §3.
 
 ---
 
@@ -29,7 +31,6 @@ Session log and work queue. Read this first (CLAUDE.md §7), update it last (§5
 
 Governed by `DESIGN.md` + `design-refs/`.
 
-- [ ] Catalog / collection listing
 - [ ] Product detail — variant matrix, sold-out states, size guide
 - [ ] Search (Postgres FTS + unaccent)
 - [ ] Cart + Buy It Now (Buy It Now skips cart)
