@@ -43,7 +43,7 @@ Auth providers: email/password, Google, Facebook. Phone number required and **un
 | --------------------------- | ---------------- | --- |
 | Login / signup / OAuth      | Client           | Native supabase-js auth |
 | Catalog, product detail     | Server (RSC+ISR) | SEO, caching, public reads |
-| Search                      | Server           | FTS/unaccent SQL |
+| Search                      | Server           | `search_products(q)` (FTS + unaccent, security invoker → active only): name > category + variant colours > description, every word must prefix-match. Built per query, not indexed — fine at tens–hundreds of products; add a maintained search column + GIN index if the catalog grows into thousands |
 | Wishlist, addresses         | Client           | Own rows, RLS-enforced |
 | Reviews & replies           | Server route     | `is_brand_reply` must be unforgeable |
 | **Order submission**        | **Server only**  | Guest or signed in. Prices re-fetched from DB; voucher validated; atomic RPC `place_order()` callable by service_role ONLY (the order route). Client totals NEVER trusted |
@@ -191,7 +191,7 @@ Order numbers: `PZ-YYYY-NNNN` from a Postgres sequence (concurrency-safe, 4+ dig
 - Sequence + helper for `order_number`.
 - `place_order(...)` — SECURITY DEFINER, full transaction per section 3.
 - `transition_order_status(order_id, new_status)` — SECURITY DEFINER: validates transition, restores stock, bumps counters, creates loyalty awards.
-- Extension: `unaccent`; FTS index on products (name + description).
+- Extension: `unaccent` (`immutable_unaccent()` wrapper); `search_products()` for storefront search (§2.2).
 - RLS enabled on EVERY table, policies per section 2.3.
 
 ---

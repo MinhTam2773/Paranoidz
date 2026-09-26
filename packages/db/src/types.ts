@@ -903,6 +903,13 @@ export type Database = {
         }
         Returns: Json
       }
+      search_products: {
+        Args: { p_query: string }
+        Returns: {
+          product_id: string
+          rank: number
+        }[]
+      }
       transition_order_status: {
         Args: {
           p_new_status: Database["public"]["Enums"]["order_status"]

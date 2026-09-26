@@ -31,11 +31,12 @@ Session log and work queue. Read this first (CLAUDE.md §7), update it last (§5
 
 - [x] **Guest order lookup** (2026-09-26) — `/order-lookup` (`page.tsx`, `actions.ts` `lookupOrder`, `components/order/OrderLookup.tsx`, `lib/order-number.ts`). Order number (loose formats: `pz 2026 0091`, `2026-0091`) + phone (any format) → status in customer words, placed date, items, totals, ward/city. Deliberately NOT returned: recipient name, street, phones, email, note — order numbers are sequential, so knowing someone's phone + guessing numbers must not reveal their address. Wrong number and wrong phone give the same message. Read via admin client (guests have no session; orders are own-row RLS). Rate limiter generalised (migration `20260926000004_rate_limit_scopes.sql`: `hit_order_rate_limit` → `hit_rate_limit(scope, ip, phone, ip_limit, phone_limit)`, buckets `order:…` / `lookup:…`; `lib/rate-limit.ts` shared by both actions); lookups 10/phone, 20/IP per hour. Entry points: checkout confirmation links `/order-lookup?order=<number>` (number pre-filled; phone never in the URL) + footer Policy column. Smoke test 24/24 (+ scopes separate). Browser, production build: confirmation link → pre-filled; empty submit → both field errors, focus on order number, no server call; wrong phone / wrong number → identical "No order matches"; `pz 2026 0091` + `+84 90 000 0003` → found; action response contains only the allowed fields; lookups 3–10 found, 11th "Too many lookups"; counters exact (lookup phone 11, IP 12, order counters untouched); after cancelling → "CANCELLED". 1280px: 576px column; 375px: 343px column, 44px inputs at 16px, 48px buttons, no overflow. Test order PZ-2026-0091 cancelled + deleted, stock / voucher / rate rows restored.
 
+- [x] **Search** (2026-09-26) — `/search?q=` (`app/search/page.tsx`; header form already posted there) + migration `20260926000005_search_products.sql`: `search_products(p_query)` returns `(product_id, rank)`, security invoker (RLS → active only). Query unaccented + lowercased, split on non-`a-z0-9` (user text never reaches tsquery syntax), ≤ 8 words, each prefix-matched and all required. Searchable: name (A) > category + variant colours (B) > description (C) — beyond ARCHITECTURE.md's name + description, so "black hoodie" works (descriptions don't name colours); the text spans 3 tables, so it's built per query and the init `products_fts_idx` was dropped as unused. Card query + mapping moved to `lib/catalog.ts` (shared with `/products`, still ISR 1m). `SearchForm` takes `defaultValue` (results page pre-filled) and is 16px below `lg` (iOS zoom debt closed). Page: result count, product grid, empty prompt, no-match + VIEW ALL PRODUCTS; `noindex`. Verified as anon: "OVERTHÍNK" → Overthink hoodie; "hood" → both hoodies; "black hoodie" → Overthink only (Signal zip has no black); "tees" → 3 tees via category; "cream" → hoodie + tote via colour; "250gsm" → logo tee via description; `&|!:*' ) (`, `x' or 1=1 --`, empty, 11 words → no rows, no error. Browser (production): header search → `/search?q=black+hoodie` 1 result; 1280px 3 cols 395px; 375px 2 cols 166px, inputs 16px, mobile header icon → type → Enter works; 100-char query overflowed to 851px → fixed with `wrap-break-word`, now 375. Smoke 24/24.
+
 ---
 
 ## Next up
 
-- [ ] **Order confirmation email** (Resend, Backlog — infra) — needs a Resend API key + verified sending domain from the client (neither exists yet). Link the email to `/order-lookup?order=<number>`.
 
 ---
 
@@ -43,7 +44,6 @@ Session log and work queue. Read this first (CLAUDE.md §7), update it last (§5
 
 Governed by `DESIGN.md` + `design-refs/`.
 
-- [ ] Search (Postgres FTS + unaccent)
 - [ ] Auth (email/password, Google, Facebook); phone required + unique
   - **Account cart sync** (needed once accounts exist): the cart is browser-only today (`src/lib/cart.ts`, localStorage), so it doesn't follow a user across devices, and the next person to log in on the same browser sees the previous person's cart. Add `cart_items` (user_id, variant_id, qty; own-rows RLS like `wishlists`). Guests keep localStorage. On login, merge the browser cart into the account cart (sum qty, cap at stock), then clear the browser copy. While logged in, `useCart`/`addToCart`/`setCartQty`/`removeFromCart` read and write the table. On logout, clear the browser cart. Low priority: §8.2 resolved to guest checkout (2026-09-26), so an account is optional and most buyers may never log in. Build only if the client asks for cross-device carts.
 - [ ] Account: order history, addresses, wishlist — follow ARCHITECTURE.md §2.4: "My orders" = `user_id` orders only (no linking of earlier guest orders by phone); checkout pre-fills name/phone/address from the profile + saved addresses (`p_address_id`, ownership already checked in `place_order()`)
@@ -65,7 +65,7 @@ Governed by `DASHBOARD_DESIGN.md` §6.
 
 ## Backlog — infra
 
-- [ ] Resend transactional email (customer confirmation + client alert)
+- [ ] Resend transactional email (customer confirmation + client alert). Nothing built yet. Delivery needs a Resend API key + verified paranoidz.com domain from the client; template, send-after-`placeOrder` (only if an email was given, never failing the order) and a local preview can be built before that. A key alone can send from `onboarding@resend.dev` to the Resend account owner only. Link the email to `/order-lookup?order=<number>`.
 - [ ] Telegram bot new-order alert
 - [ ] Vercel: two projects from one monorepo, region `sin1`
 
@@ -116,7 +116,7 @@ Surfaced during the schema review, deliberately not fixed:
 - **Footer content is placeholder — client to supply:** `STORE_ADDRESSES` is empty (Store info shows hotline only) and `SOCIAL_LINKS` hrefs are `#`, both in `apps/storefront/src/lib/site.ts`.
 - **Announcement bar says "Cash on delivery · Hotline"**, not a free-shipping message — shipping threshold is pending (§8.1). Swap once decided.
 - **Layout shell deviations from Stitch (DESIGN.md followed):** no PRODUCT mega-dropdown (build it from `categories` when the catalog lands, if wanted), no mobile bottom tab bar, mobile menu is full-screen from the right (not a left drawer), footer payment badge is COD only (Stitch showed VISA/MASTER — wrong for a COD-only shop).
-- **Nav routes 404 until built:** `/outlet`, `/new-collection`, `/feedback`, `/branding`, `/policy`, `/login`, `/search`.
+- **Nav routes 404 until built:** `/outlet`, `/new-collection`, `/feedback`, `/branding`, `/policy`, `/login`.
 - **Root layout now wraps pages in `<main>`**; the create-next-app `page.tsx` has its own `<main>` (nested). Resolved when the homepage replaces it.
 - **Tailwind v4 moves elements with the `translate` CSS property, not `transform`.** Check `getComputedStyle(el).translate` when verifying slide-ins.
 - **Off-screen elements' shadows bleed into view.** A `translate-x-full` panel with `shadow-3` paints a 32px grey strip on the right edge; apply the shadow only in the open state.
@@ -135,11 +135,14 @@ Surfaced during the schema review, deliberately not fixed:
 - **Shipping fee is not in the order total** — §8.1 still pending; checkout says "confirmed on our call". `orders_total_math` asserts `total = subtotal - discount`.
 - **Storefront now needs `SUPABASE_SERVICE_ROLE_KEY`** (server-only, for `place_order`) — in `apps/storefront/.env.local` and in Vercel's storefront project env. Never `NEXT_PUBLIC_`.
 - **Province list is static data** (`apps/storefront/src/lib/provinces.ts`, 34 units per Resolution 202/2025/QH15). If boundaries change again, update it there; server validation rejects any city not in the list. `orders.district` is no longer written (districts abolished 2025-07-01) — admin order detail should not expect it.
-- **Inputs under 16px make iOS Safari zoom on focus.** Checkout inputs use `text-base` (16px) below `lg` as a deliberate exception to DESIGN.md sizes; the header search input is still 14px and will zoom on iPhone.
+- **Inputs under 16px make iOS Safari zoom on focus.** Checkout, order lookup and search inputs use `text-base` (16px) below `lg` as a deliberate exception to DESIGN.md sizes.
 - **Hidden browser pane: `document.visibilityState === "hidden"` → IntersectionObserver never fires.** Take a `computer` screenshot to force a painted frame, then read state (verified the sticky bar this way).
 - **`supabase db dump` / `db reset` need Docker Desktop running.** `migration list`, `db push` and `inspect` do not.
 - **Rate limit trusts `x-real-ip` / `x-forwarded-for`** because Vercel overwrites them. If the storefront is ever served behind another proxy/CDN (Cloudflare etc.), those headers become client-controlled — switch to that proxy's trusted header (e.g. `cf-connecting-ip`) first. Limits are passed by each caller of `hitRateLimit()` (`checkout/actions.ts`: 5/phone, 10/IP; `order-lookup/actions.ts`: 10/phone, 20/IP per hour) — no migration needed to change them.
 - **Every checkout attempt that reaches the DB counts**, including a customer's own voucher typos. A legit buyer behind a busy carrier CGNAT IP could hit the IP limit in a peak hour; the message points to the hotline. Revisit the numbers once real traffic exists.
 - **Browser checkout / lookup tests leave `rate_limits` hits** (`order:phone:<test phone>`, `order:ip:::/64` for local `::1`, same with `lookup:`). Delete them after, or the smoke test's phone-limit check fails for the rest of that hour (it assumes `order:phone:0900000001` starts at 0).
+- **Search only knows the words in the catalog (English names).** Vietnamese queries ("áo", "quần", "nón") find nothing, and "đen" (black) prefix-matches "denim". Fix with a small synonym table if the client's real product names stay English. `simple` config = no stemming or stop words: "hoodies" doesn't match "hoodie" (the prefix works the other way), "the hoodie" finds nothing.
+- **Search has no pagination or sort** (10 products). Add both with the catalog's.
+- **Long unbroken text overflows mobile.** Any user-supplied string echoed in a flex/`items-start` layout needs `wrap-break-word` (+ `max-w-full`), or the page zooms out on phones (search's 100-char query hit 851px).
 - **Two `next dev` servers can't share one app folder** ("Another next dev server is already running"). If another chat holds port 3000, verify on `storefront-prod` (build, then `preview_start`) instead of changing ports.
 - **Browser pane `ref` clicks can land on an element's bottom edge** (y = bottom) and silently miss. For repeated form submits, `form.requestSubmit()` via `javascript_tool` goes through the real React submit handler; confirm with DB state, not just on-screen text (an old error message stays visible between submits).
