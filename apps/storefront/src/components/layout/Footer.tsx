@@ -15,7 +15,6 @@ export function Footer() {
           <Link href="/" className="font-logo text-h2 italic uppercase tracking-[0.05em]">
             Paranoidz
           </Link>
-          <p className={muted}>Streetwear designed in Vietnam.</p>
         </div>
 
         <nav aria-label="Policy" className="flex flex-col gap-4">

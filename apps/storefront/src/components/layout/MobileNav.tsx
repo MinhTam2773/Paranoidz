@@ -87,7 +87,6 @@ export function MobileNav() {
               {label}
             </Link>
           ))}
-          {/* Not in DESIGN.md §9, but mobile has no other route to the account. */}
           <Link href="/login" onClick={() => setMenuOpen(false)} className="mt-4 flex min-h-12 items-center text-nav uppercase text-text-secondary">
             Login / Register
           </Link>

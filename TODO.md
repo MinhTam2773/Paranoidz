@@ -102,7 +102,7 @@ Surfaced during the schema review, deliberately not fixed:
 - **Deleted routes leave stale types in `.next/dev/types`**, and `next build` then fails type-check (`Cannot find module .../zz-check/route.js`). `rm -rf apps/<app>/.next` after deleting a route.
 - **Storefront `page.tsx` is still the create-next-app placeholder**; its `zinc-*`/`dark:` classes now no-op, so it renders unstyled. Replaced by the layout-shell / catalog task.
 - **Browser pane "mobile" preset can report a wider viewport** if content forces a min-width (mobile Chrome zooms out to fit). Check `innerWidth === 375` before trusting a mobile measurement.
-- **Footer content is placeholder — client to supply:** `STORE_ADDRESSES` is empty (Store info shows hotline only) and `SOCIAL_LINKS` hrefs are `#`, both in `apps/storefront/src/lib/site.ts`. Footer blurb "Streetwear designed in Vietnam." is from the Stitch design, unconfirmed.
+- **Footer content is placeholder — client to supply:** `STORE_ADDRESSES` is empty (Store info shows hotline only) and `SOCIAL_LINKS` hrefs are `#`, both in `apps/storefront/src/lib/site.ts`.
 - **Announcement bar says "Cash on delivery · Hotline"**, not a free-shipping message — shipping threshold is pending (§8.1). Swap once decided.
 - **Layout shell deviations from Stitch (DESIGN.md followed):** no PRODUCT mega-dropdown (build it from `categories` when the catalog lands, if wanted), no mobile bottom tab bar, mobile menu is full-screen from the right (not a left drawer), footer payment badge is COD only (Stitch showed VISA/MASTER — wrong for a COD-only shop).
 - **Added beyond DESIGN.md:** "Login / Register" link inside the mobile overlay — the spec'd mobile header has no account entry point. Confirm or add to DESIGN.md.

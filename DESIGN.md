@@ -88,7 +88,7 @@
 - Bottom border: `1px solid --border`
 **Mobile behavior:**
 - Row 1 collapses: logo left, hamburger icon right, search becomes icon that expands on tap
-- Row 2 hidden — nav links move into hamburger full-screen overlay menu
+- Row 2 hidden — nav links move into hamburger full-screen overlay menu, followed by a "LOGIN / REGISTER" link (`--text-secondary`, nav style) — the only account entry point on mobile
 - Cart icon + item count always visible in Row 1
 ### Breadcrumb (path subheader)
 - Appears below the navigation bar on all inner pages (NOT on homepage)
@@ -284,4 +284,4 @@ Border:      #E0E0E0 (default), #CCCCCC (hover)
 "Dark footer (#111111) with 4 columns: brand intro with hotline, policy links, store address, and social media links. White text at 70% opacity, full white for hotline number. White Paranoidz logo wordmark top-left. Payment method icons bottom-right."
  
 **Mobile navigation:**
-"Mobile header: Row 1 simplifies to PARANOIDZ logo left, search icon + cart icon + hamburger right. Row 2 nav links hidden — they move into a full-screen overlay menu with white background, large centered uppercase links with 48px touch targets. Close button top-right. Social icons at bottom. Smooth slide-in from right."
+"Mobile header: Row 1 simplifies to PARANOIDZ logo left, search icon + cart icon + hamburger right. Row 2 nav links hidden — they move into a full-screen overlay menu with white background, large centered uppercase links with 48px touch targets, then a smaller gray LOGIN / REGISTER link. Close button top-right. Social icons at bottom. Smooth slide-in from right."
