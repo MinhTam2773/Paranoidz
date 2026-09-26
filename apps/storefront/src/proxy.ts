@@ -1,0 +1,11 @@
+import type { NextRequest } from "next/server";
+import { updateSession } from "@paranoidz/db/proxy";
+
+export async function proxy(request: NextRequest) {
+  return updateSession(request);
+}
+
+export const config = {
+  // Skip static assets and images; every page/route refreshes the session.
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\.(?:svg|png|jpg|jpeg|gif|webp|avif)$).*)"],
+};

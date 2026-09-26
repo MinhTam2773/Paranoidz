@@ -13,16 +13,12 @@ Session log and work queue. Read this first (CLAUDE.md §7), update it last (§5
 - [x] Write `ARCHITECTURE.md`, `DESIGN.md`, `DASHBOARD_DESIGN.md`, `CLAUDE.md`
 - [x] **Initial database schema** — `supabase/migrations/20260722000001_init.sql`, applied to the linked project (`f3f5a4e`). 19 tables, RLS on every table, `place_order()`, `transition_order_status()`, FTS index, seed voucher.
 - [x] **Dev seed** — `supabase/seeds/dev.sql`, pushed to the linked project (2026-09-25): 4 categories, 10 products, 46 variants (7 sold out, 10 low stock, 11 on sale), 25 image rows, 3 email/password test customers with phone + default address. Kept separate from `seed.sql` so launch cleanup = drop it from `config.toml` `sql_paths` and delete the rows.
+- [x] **`packages/db`** (2026-09-25) — subpath exports only (`@paranoidz/db/client|server|admin|proxy|types`, no barrel, so `admin.ts` can't ride along with another import). Session refresh in each app's `src/proxy.ts` → `updateSession()` (calls `getClaims()`, forwards the no-cache headers). Types: `pnpm --filter @paranoidz/db gen:types`. Verified: both apps build; a `"use client"` import of `admin` fails the build; anon server client reads 10 products / 46 variants and 0 vouchers / 0 orders.
 
 ---
 
 ## Next up
 
-- [ ] **`packages/db`** — the three clients from ARCHITECTURE.md §2.1:
-  - `client.ts` (anon, browser), `server.ts` (anon + cookie session, `@supabase/ssr`), `admin.ts` (service_role, starts with `import "server-only"`)
-  - Corrected session-refresh middleware — the Supabase quickstart snippet creates the client and never calls `getUser()`, so it refreshes nothing
-  - Generated types via `supabase gen types typescript --linked`
-  - Wire into workspace; add `.env.example`. Install with `pnpm`, never `npm` (§3)
 - [ ] **Smoke test the migration's runtime logic** (deferred 2026-07-24; nothing has exercised these yet):
   - Voucher `max_uses` under concurrent redemption
   - Stock restore when one order holds two rows for the same variant
@@ -95,4 +91,9 @@ Surfaced during the schema review, deliberately not fixed:
 - **No admin user seeded.** Deliberately — a committed password on an `is_admin` account would be a real hole. Promote your own account when the admin shell lands.
 - **The claude.ai Supabase connector is read-only.** `execute_sql` fails on any write (`cannot execute INSERT in a read-only transaction`). Use it to inspect; write data through the CLI (`supabase db push --include-seed`).
 - **`db push --include-seed` never re-runs a seed file it has seen** — it only updates the hash. New seed data needs a new file in `sql_paths`.
+- **`admin.ts` is untested at runtime.** `SUPABASE_SERVICE_ROLE_KEY` isn't in `apps/admin/.env.local` — the read-only connector can't fetch secret keys. Add it from the dashboard (API Keys → secret) before the admin shell task.
+- **Env var is `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`**, not `..._ANON_KEY`: uses the modern `sb_publishable_` key (same `anon` role under RLS, rotates independently). ARCHITECTURE.md §2.1 still says "anon key" — same thing.
+- **Next 16: middleware is `src/proxy.ts`**, exporting `proxy()`, Node runtime only.
+- **`@supabase/ssr` `setAll(cookies, headers)`** — the second arg carries no-cache headers that must be put on the response, or a CDN can serve one user's session cookie to another. Any new cookie adapter must forward them.
+- **Each app has its own create-next-app `.gitignore`** that overrides the root one (`.env*` ignored). Needed `!.env.example` added per app. Check `git check-ignore -v` for any new file that should be tracked.
 - **`supabase db dump` / `db reset` need Docker Desktop running.** `migration list`, `db push` and `inspect` do not.

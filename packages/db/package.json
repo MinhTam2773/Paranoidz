@@ -1,0 +1,29 @@
+{
+  "name": "@paranoidz/db",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./client": "./src/client.ts",
+    "./server": "./src/server.ts",
+    "./admin": "./src/admin.ts",
+    "./proxy": "./src/proxy.ts",
+    "./types": "./src/types.ts"
+  },
+  "scripts": {
+    "gen:types": "supabase gen types typescript --linked --schema public > src/types.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@supabase/ssr": "^0.12.7",
+    "@supabase/supabase-js": "^2.117.1",
+    "server-only": "^0.0.1"
+  },
+  "peerDependencies": {
+    "next": ">=16"
+  },
+  "devDependencies": {
+    "next": "16.2.10",
+    "typescript": "^5.9.3"
+  }
+}
