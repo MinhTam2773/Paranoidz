@@ -19,12 +19,13 @@ Session log and work queue. Read this first (CLAUDE.md §7), update it last (§5
 - [x] **Storefront layout shell** (2026-09-26) — `src/components/layout/` (AnnouncementBar, Header, NavLinks, MobileNav, SearchForm, Footer, icons) + `src/lib/site.ts` (nav, hotline, policy/social links). Icons: hand-written inline SVGs, no dependency. Verified at 1280px (rows 64+48px, sticky, active link black + red underline, 4-col footer) and 375px (logo | search, cart, menu at 44px; overlay opens/closes incl. Escape, body scroll lock, 48px links; search expands + focuses; single-column footer; no overflow).
 
 - [x] **Dev product images + Storage bucket** (2026-09-25) — migration `20260925000001_product_images_bucket.sql` (public `product-images` bucket, no storage write policies) + `pnpm --filter @paranoidz/db seed:images` (`packages/db/scripts/upload-dev-images.ts`): 25 Unsplash photos (free commercial licence, no Unsplash+, no visible third-party logos) cropped to 1200×1600 (3:4) and upserted to every seeded `storage_path`; the script fails if a DB path has no photo. Verified anonymously: 25/25 public URLs → 200 `image/jpeg`, all 1200×1600, anon upload rejected by RLS; visually checked each matches its product + colour.
+- [x] **Catalog listing** (2026-09-25) — `/products` (`src/app/products/page.tsx`), `ProductCard` (`src/components/product/`), `Breadcrumb` (`src/components/layout/`), `formatVnd` (`src/lib/format.ts`); `next.config.ts` allows `next/image` from the project's public Storage URLs. One query via `@paranoidz/db/server` (RLS = active only), first image by `sort_order`, price = cheapest in-stock variant. Verified at 1280px (3 × 395px cols, 16px gap, 3:4 image, every card token computed-exact, -13%/-17% badges + struck old price, tote SOLD OUT, hover → image scale 1.05 + shadow-1) and 375px (2 × 165.5px cols, 12px gap, 16px gutter, no overflow); all 10 images 200 via `/_next/image`; no console warnings after first-row `loading="eager"`.
 
 ---
 
 ## Next up
 
-- [ ] **Catalog / collection listing** — product card (DESIGN.md §4: 3:4 image on `bg-bg-secondary`, hover zoom, sale badge + dual price, `₫269.000` format) + 3/2/2-column grid, server-rendered from the 10 seeded products via `@paranoidz/db/server`. Sold-out handling per ARCHITECTURE.md §3.
+- [ ] **Product detail** (`/products/[slug]`) — catalog cards already link here. Variant matrix (colour → size), sold-out variants unselectable and SOLD OUT product can't be carted (ARCHITECTURE.md §3), colourway images from `product_images.color`, size guide, breadcrumb HOME / PRODUCT / <NAME>. Cart itself is a separate task.
 
 ---
 
@@ -32,7 +33,6 @@ Session log and work queue. Read this first (CLAUDE.md §7), update it last (§5
 
 Governed by `DESIGN.md` + `design-refs/`.
 
-- [ ] Product detail — variant matrix, sold-out states, size guide
 - [ ] Search (Postgres FTS + unaccent)
 - [ ] Cart + Buy It Now (Buy It Now skips cart)
 - [ ] Order form → server route → `place_order()`
@@ -109,10 +109,13 @@ Surfaced during the schema review, deliberately not fixed:
 - **Footer content is placeholder — client to supply:** `STORE_ADDRESSES` is empty (Store info shows hotline only) and `SOCIAL_LINKS` hrefs are `#`, both in `apps/storefront/src/lib/site.ts`.
 - **Announcement bar says "Cash on delivery · Hotline"**, not a free-shipping message — shipping threshold is pending (§8.1). Swap once decided.
 - **Layout shell deviations from Stitch (DESIGN.md followed):** no PRODUCT mega-dropdown (build it from `categories` when the catalog lands, if wanted), no mobile bottom tab bar, mobile menu is full-screen from the right (not a left drawer), footer payment badge is COD only (Stitch showed VISA/MASTER — wrong for a COD-only shop).
-- **Nav routes 404 until built:** `/outlet`, `/new-collection`, `/products`, `/feedback`, `/branding`, `/policy`, `/login`, `/cart`, `/search`. Cart badge is hidden until the cart exists (`<Header cartCount>` defaults to 0).
+- **Nav routes 404 until built:** `/outlet`, `/new-collection`, `/feedback`, `/branding`, `/policy`, `/login`, `/cart`, `/search`, and every `/products/<slug>` card link (until product detail). Cart badge is hidden until the cart exists (`<Header cartCount>` defaults to 0).
 - **Root layout now wraps pages in `<main>`**; the create-next-app `page.tsx` has its own `<main>` (nested). Resolved when the homepage replaces it.
 - **Tailwind v4 moves elements with the `translate` CSS property, not `transform`.** Check `getComputedStyle(el).translate` when verifying slide-ins.
 - **Off-screen elements' shadows bleed into view.** A `translate-x-full` panel with `shadow-3` paints a 32px grey strip on the right edge; apply the shadow only in the open state.
 - **React Compiler lint (`react-hooks/set-state-in-effect`) rejects "reset state on pathname change" effects.** Close menus in the link's `onClick` instead.
 - **Browser pane screenshots are unreliable after scrolling in an emulated viewport** (tiled / half-painted captures). Trust measured values (`getBoundingClientRect`, `scrollWidth`) and re-screenshot after a wait.
+- **Catalog card choices DESIGN.md doesn't cover:** SOLD OUT pill is white with a `border` (tokens only; not dark — §2 limits `bg-dark` to footer/hero/inverted sections) and replaces the sale badge. No quick-view icon (no quick-view feature) and no pagination (10 products) yet — add both when the catalog grows.
+- **`next.config.ts` reads `NEXT_PUBLIC_SUPABASE_URL` at config time** (image `remotePatterns`). Vercel must have it set for the build, not just at runtime, or `new URL()` throws.
+- **Browser pane hidden = `innerWidth` 0, lazy images never load, CSS transitions freeze.** Set `resize_window` before measuring; verify hover effects via `el.getAnimations()` + `.finish()` then read the computed value.
 - **`supabase db dump` / `db reset` need Docker Desktop running.** `migration list`, `db push` and `inspect` do not.
