@@ -20,6 +20,7 @@ Session log and work queue. Read this first (CLAUDE.md §7), update it last (§5
 
 ## Next up
 
+- [ ] **Tailwind v4 `@theme` tokens** in storefront `globals.css` (no `tailwind.config` — §3). Visual reference: Stitch MCP screens (user-scoped server `stitch`; `design-refs/` doesn't exist). DESIGN.md stays source of truth — surface any Stitch ↔ DESIGN.md token mismatch, don't pick silently.
 
 ---
 
@@ -27,7 +28,6 @@ Session log and work queue. Read this first (CLAUDE.md §7), update it last (§5
 
 Governed by `DESIGN.md` + `design-refs/`.
 
-- [ ] Tailwind v4 `@theme` tokens in `globals.css` (no `tailwind.config` — §3)
 - [ ] Layout shell: nav, announcement bar, footer
 - [ ] Catalog / collection listing
 - [ ] Product detail — variant matrix, sold-out states, size guide
