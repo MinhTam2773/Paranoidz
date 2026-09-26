@@ -39,6 +39,7 @@ Governed by `DESIGN.md` + `design-refs/`.
 - [ ] Search (Postgres FTS + unaccent)
 - [ ] Order form → server route → `place_order()` — `/checkout` reads the cart (`useCart`) or, for Buy It Now, `?variant=<id>&qty=<n>` (don't merge it into the cart). Recompute every price server-side; clear the cart (`removeFromCart` / write `[]`) only after `place_order()` succeeds.
 - [ ] Auth (email/password, Google, Facebook); phone required + unique
+  - **Account cart sync** (needed once accounts exist): the cart is browser-only today (`src/lib/cart.ts`, localStorage), so it doesn't follow a user across devices, and the next person to log in on the same browser sees the previous person's cart. Add `cart_items` (user_id, variant_id, qty; own-rows RLS like `wishlists`). Guests keep localStorage. On login, merge the browser cart into the account cart (sum qty, cap at stock), then clear the browser copy. While logged in, `useCart`/`addToCart`/`setCartQty`/`removeFromCart` read and write the table. On logout, clear the browser cart. Only worth building if §8.2 resolves to account-required checkout.
 - [ ] Account: order history, addresses, wishlist
 - [ ] Reviews + replies (server route — `is_brand_reply` must be unforgeable)
 
