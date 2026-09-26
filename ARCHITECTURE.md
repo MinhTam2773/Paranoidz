@@ -66,6 +66,33 @@ Auth providers: email/password, Google, Facebook. Phone number required and **un
 
 Admin authenticates via Supabase Auth with an `admin` role claim; all admin mutations go through server routes using the admin client.
 
+### 2.4 Identity: account vs customer (decided 2026-09-26)
+
+Two separate identities. Orders connect them.
+
+```
+  ACCOUNT  (optional — only if they sign up / log in)
+  auth.users ──1:1── profiles (full_name, phone UNIQUE, is_admin)
+                        ├── addresses   (saved delivery addresses)
+                        ├── wishlists
+                        └── reviews / review_replies
+                        ▲
+                        │ orders.user_id   ← NULL for guests, set when logged in
+                     ORDERS  ── order_items, order_status_history
+                        │ orders.phone     ← ALWAYS set, normalized (0901234567)
+                        ▼
+  CUSTOMER  (always — created by the first order from a phone)
+  customers (phone PK, delivered_count, refusal_count, is_blacklisted)
+                        ├── loyalty_awards
+                        └── voucher_uses (first-5, promo once)
+```
+
+- **Account = convenience:** saved addresses, wishlist, reviews, "My orders", checkout pre-fill. Login is never required to order (§8.2).
+- **Customer (phone) = rules:** first-5 discount, promo once, loyalty, refusals, blacklist — keyed on `orders.phone` ONLY. Logging in changes none of them.
+- A logged-in user ordering to someone else's phone: the order is in *their* history (`user_id`), but discounts/loyalty count on the *recipient's* phone. Accepted trade-off of phone-only rules.
+- **"My orders" = orders with `user_id = auth.uid()` only** (already what `orders_select_own` RLS allows). Guest orders placed before signing up are NOT linked to the account, even if the profile phone matches — `profiles.phone` is self-typed, so matching on it would let anyone read another person's orders and address. Linking past guest orders would need SMS/OTP phone verification (per-message cost); not planned unless the client asks.
+- Guests reach a past order only via the confirmation email / order lookup (order number + phone) — see TODO.md.
+
 ---
 
 ## 3. Stock Management (atomic — non-negotiable)
