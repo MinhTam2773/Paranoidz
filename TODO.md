@@ -16,12 +16,12 @@ Session log and work queue. Read this first (CLAUDE.md §7), update it last (§5
 - [x] **`packages/db`** (2026-09-25) — subpath exports only (`@paranoidz/db/client|server|admin|proxy|types`, no barrel, so `admin.ts` can't ride along with another import). Session refresh in each app's `src/proxy.ts` → `updateSession()` (calls `getClaims()`, forwards the no-cache headers). Types: `pnpm --filter @paranoidz/db gen:types`. Verified: both apps build; a `"use client"` import of `admin` fails the build; anon server client reads 10 products / 46 variants and 0 vouchers / 0 orders.
 - [x] **Migration smoke test** (2026-09-25) — `pnpm --filter @paranoidz/db smoke`, 7/7 pass: voucher `max_uses` race (1 of 3 redeems, losers roll back stock), duplicate-variant order restores all units on cancel, image snapshot picks the colourway, `is_admin` self-update rejected while `full_name` still works. Self-cleaning; re-run after any migration.
 - [x] **Storefront `@theme` tokens** (2026-09-26) — `apps/storefront/src/app/globals.css`, every DESIGN.md §2/§3/§6 value, names 1:1 (`bg-bg-secondary`, `text-text-muted`, `text-h1`, `text-price`, `shadow-1`, `rounded-sm`=4px, `rounded-lg`=8px max, `font-logo`). Tailwind default colours/shadows/radii/fonts removed. Inter (latin+vietnamese, 400–800) + Rajdhani 700 via `next/font`. Verified by computed styles in the browser at 1280px and 375px: all values exact, off-spec classes (`text-zinc-400`, `bg-red-600`, `shadow-lg`, `rounded-xl`) render unstyled.
+- [x] **Storefront layout shell** (2026-09-26) — `src/components/layout/` (AnnouncementBar, Header, NavLinks, MobileNav, SearchForm, Footer, icons) + `src/lib/site.ts` (nav, hotline, policy/social links). Icons: hand-written inline SVGs, no dependency. Verified at 1280px (rows 64+48px, sticky, active link black + red underline, 4-col footer) and 375px (logo | search, cart, menu at 44px; overlay opens/closes incl. Escape, body scroll lock, 48px links; search expands + focuses; single-column footer; no overflow).
 
 ---
 
 ## Next up
 
-- [ ] **Storefront layout shell** — announcement bar, two-row sticky header (mobile: hamburger → full-screen overlay), footer. Spec: DESIGN.md §4 + §8; visual ref: Stitch "Landing Page - Nested Nav" + "Mobile Navigation Menu" (layout only — translate classes to tokens). Announcement bar content is hardcoded (ARCHITECTURE.md §8.7). Decide the icon approach here (Stitch uses Material Symbols; not in DESIGN.md) — ask before adding a dependency.
 
 ---
 
@@ -102,4 +102,14 @@ Surfaced during the schema review, deliberately not fixed:
 - **Deleted routes leave stale types in `.next/dev/types`**, and `next build` then fails type-check (`Cannot find module .../zz-check/route.js`). `rm -rf apps/<app>/.next` after deleting a route.
 - **Storefront `page.tsx` is still the create-next-app placeholder**; its `zinc-*`/`dark:` classes now no-op, so it renders unstyled. Replaced by the layout-shell / catalog task.
 - **Browser pane "mobile" preset can report a wider viewport** if content forces a min-width (mobile Chrome zooms out to fit). Check `innerWidth === 375` before trusting a mobile measurement.
+- **Footer content is placeholder — client to supply:** `STORE_ADDRESSES` is empty (Store info shows hotline only) and `SOCIAL_LINKS` hrefs are `#`, both in `apps/storefront/src/lib/site.ts`. Footer blurb "Streetwear designed in Vietnam." is from the Stitch design, unconfirmed.
+- **Announcement bar says "Cash on delivery · Hotline"**, not a free-shipping message — shipping threshold is pending (§8.1). Swap once decided.
+- **Layout shell deviations from Stitch (DESIGN.md followed):** no PRODUCT mega-dropdown (build it from `categories` when the catalog lands, if wanted), no mobile bottom tab bar, mobile menu is full-screen from the right (not a left drawer), footer payment badge is COD only (Stitch showed VISA/MASTER — wrong for a COD-only shop).
+- **Added beyond DESIGN.md:** "Login / Register" link inside the mobile overlay — the spec'd mobile header has no account entry point. Confirm or add to DESIGN.md.
+- **Nav routes 404 until built:** `/outlet`, `/new-collection`, `/products`, `/feedback`, `/branding`, `/policy`, `/login`, `/cart`, `/search`. Cart badge is hidden until the cart exists (`<Header cartCount>` defaults to 0).
+- **Root layout now wraps pages in `<main>`**; the create-next-app `page.tsx` has its own `<main>` (nested). Resolved when the homepage replaces it.
+- **Tailwind v4 moves elements with the `translate` CSS property, not `transform`.** Check `getComputedStyle(el).translate` when verifying slide-ins.
+- **Off-screen elements' shadows bleed into view.** A `translate-x-full` panel with `shadow-3` paints a 32px grey strip on the right edge; apply the shadow only in the open state.
+- **React Compiler lint (`react-hooks/set-state-in-effect`) rejects "reset state on pathname change" effects.** Close menus in the link's `onClick` instead.
+- **Browser pane screenshots are unreliable after scrolling in an emulated viewport** (tiled / half-painted captures). Trust measured values (`getBoundingClientRect`, `scrollWidth`) and re-screenshot after a wait.
 - **`supabase db dump` / `db reset` need Docker Desktop running.** `migration list`, `db push` and `inspect` do not.
