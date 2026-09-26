@@ -1,13 +1,16 @@
-// Runtime smoke test for the init migration's money/stock/security logic.
+// Runtime smoke test for the order migrations' money/stock/security logic.
 // Run: pnpm --filter @paranoidz/db smoke   (needs apps/admin/.env.local)
 //
-// Acts as real seeded customers: sessions come from the admin magic-link API
-// (generateLink → verifyOtp), so auth.uid() is genuine inside place_order().
-// Cleans up after itself; the only permanent trace is order_number_seq gaps.
+// place_order() is service-role only (guest checkout, 20260926000001), so orders go through
+// the admin client exactly like the storefront order route, with p_user_id for account orders.
+// Customer sessions (admin magic-link → verifyOtp) are only used to prove what a browser
+// can't do. Every per-customer rule is keyed on the normalized phone; test phones are
+// 0900000001-0900000009. Cleans up after itself; the only permanent trace is order_number_seq gaps.
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../src/types.ts";
 
 type Db = SupabaseClient<Database>;
+type Placed = { order_id: string; order_number: string; subtotal: number; discount: number; total: number };
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const publishable = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!;
@@ -17,8 +20,9 @@ if (!secret) throw new Error("SUPABASE_SERVICE_ROLE_KEY missing from apps/admin/
 const noPersist = { auth: { persistSession: false, autoRefreshToken: false } };
 const admin: Db = createClient<Database>(url, secret, noPersist);
 
-const CUSTOMERS = ["customer1@paranoidz.test", "customer2@paranoidz.test", "customer3@paranoidz.test"];
+const CUSTOMERS = ["customer1@paranoidz.test", "customer3@paranoidz.test"];
 const VOUCHER = "SMOKE-TEST";
+const PHONES = Array.from({ length: 9 }, (_, i) => `090000000${i + 1}`);
 
 let failures = 0;
 function check(name: string, ok: boolean, detail = "") {
@@ -45,26 +49,53 @@ async function variant(id: string) {
   return data;
 }
 
-async function placeOrder(db: Db, items: { variant_id: string; qty: number }[], voucher?: string) {
-  return db.rpc("place_order", {
+const createdOrders: string[] = [];
+const deliveredItems: { variant_id: string; qty: number }[] = [];
+let autoUsedBefore: number | null = null;
+
+async function placeOrder(
+  items: { variant_id: string; qty: number }[],
+  opts: { phone?: string; voucher?: string; userId?: string; db?: Db } = {},
+) {
+  const res = await (opts.db ?? admin).rpc("place_order", {
     p_items: items,
     p_recipient_name: "Smoke Test",
-    p_phone: "0900000000",
+    p_phone: opts.phone ?? PHONES[0],
     p_address: "1 Test St",
     p_city: "TP. Hồ Chí Minh",
-    p_voucher_code: voucher,
+    p_voucher_code: opts.voucher,
+    p_user_id: opts.userId,
   });
+  if (res.data) createdOrders.push((res.data as Placed).order_id);
+  return res as { data: Placed | null; error: { message: string } | null };
 }
 
-const createdOrders: string[] = [];
+async function transition(orderId: string, ...statuses: Database["public"]["Enums"]["order_status"][]) {
+  for (const s of statuses) {
+    const { error } = await admin.rpc("transition_order_status", { p_order_id: orderId, p_new_status: s });
+    if (error) throw error;
+  }
+}
+
+async function customer(phone: string) {
+  const { data } = await admin.from("customers").select("*").eq("phone", phone).maybeSingle();
+  return data;
+}
 
 async function main() {
-  const [c1, c2, c3] = await Promise.all(CUSTOMERS.map(signInAs));
+  const [c1, c3] = await Promise.all(CUSTOMERS.map(signInAs));
+  const c1Id = (await c1.auth.getUser()).data.user!.id;
+
+  const { data: auto } = await admin.from("vouchers").select("used_count").eq("type", "auto_first5").single();
+  autoUsedBefore = auto?.used_count ?? null;
 
   // Pick in-stock variants so the test doesn't depend on the seed's random stock.
+  // ~13 single units are held at once below, so spread them over three variants.
   const { data: pool } = await admin
-    .from("product_variants").select("id, stock").gte("stock", 5).order("id");
-  if (!pool || pool.length < 2) throw new Error("need 2 variants with stock >= 5");
+    .from("product_variants").select("id, stock").gte("stock", 8).order("stock", { ascending: false }).limit(4);
+  if (!pool || pool.length < 4) throw new Error("need 4 variants with stock >= 8");
+  let n = 0;
+  const one = () => [{ variant_id: pool[1 + (n++ % 3)].id, qty: 1 }];
 
   // 1. Voucher max_uses under concurrent redemption ------------------------
   // 50% beats the 10% auto-first5, so place_order must pick the promo.
@@ -76,10 +107,9 @@ async function main() {
 
   const racer = await variant(pool[0].id);
   const results = await Promise.all(
-    [c1, c2, c3].map((db) => placeOrder(db, [{ variant_id: racer.id, qty: 1 }], VOUCHER)),
+    [PHONES[0], PHONES[1], PHONES[2]].map((phone) =>
+      placeOrder([{ variant_id: racer.id, qty: 1 }], { phone, voucher: VOUCHER })),
   );
-  for (const r of results) if (r.data) createdOrders.push((r.data as { order_id: string }).order_id);
-
   const { data: vAfter } = await admin.from("vouchers").select("used_count").eq("id", v.id).single();
   const { count: uses } = await admin.from("voucher_uses")
     .select("*", { count: "exact", head: true }).eq("voucher_id", v.id);
@@ -92,19 +122,11 @@ async function main() {
 
   // 2. Stock restore when one order holds two rows for the same variant ----
   const dup = await variant(pool[1].id);
-  const { data: dupOrder, error: dupErr } = await placeOrder(c1, [
-    { variant_id: dup.id, qty: 1 },
-    { variant_id: dup.id, qty: 2 },
-  ]);
+  const { data: dupOrder, error: dupErr } = await placeOrder(
+    [{ variant_id: dup.id, qty: 1 }, { variant_id: dup.id, qty: 2 }], { phone: PHONES[3] });
   if (dupErr) throw dupErr;
-  const dupId = (dupOrder as { order_id: string }).order_id;
-  createdOrders.push(dupId);
   check("duplicate-variant order decrements 3", (await variant(pool[1].id)).stock === dup.stock - 3);
-
-  const { error: cancelErr } = await admin.rpc("transition_order_status", {
-    p_order_id: dupId, p_new_status: "cancelled",
-  });
-  if (cancelErr) throw cancelErr;
+  await transition(dupOrder!.order_id, "cancelled");
   const dupRestored = await variant(pool[1].id);
   check("cancel restores all 3 units", dupRestored.stock === dup.stock,
     `before=${dup.stock} after-cancel=${dupRestored.stock}`);
@@ -114,36 +136,102 @@ async function main() {
     .select("id, color, products!inner(slug)").gt("stock", 0)
     .eq("products.slug", "paranoid-logo-tee").eq("color", "White").limit(1).single();
   if (!colourway) throw new Error("no in-stock White paranoid-logo-tee variant");
-  const { data: imgOrder, error: imgErr } = await placeOrder(c2, [{ variant_id: colourway.id, qty: 1 }]);
+  const { data: imgOrder, error: imgErr } = await placeOrder([{ variant_id: colourway.id, qty: 1 }], { phone: PHONES[3] });
   if (imgErr) throw imgErr;
-  createdOrders.push((imgOrder as { order_id: string }).order_id);
   const { data: item } = await admin.from("order_items")
-    .select("image_snapshot").eq("order_id", (imgOrder as { order_id: string }).order_id).single();
+    .select("image_snapshot").eq("order_id", imgOrder!.order_id).single();
   check("image snapshot = White colourway, not general image",
     item?.image_snapshot === "products/paranoid-logo-tee/white-1.jpg", `got ${item?.image_snapshot}`);
 
   // 4. Customer cannot set is_admin on their own profile -------------------
-  const { data: me } = await c3.auth.getUser();
-  const { error: escalate } = await c3.from("profiles")
-    .update({ is_admin: true }).eq("id", me.user!.id);
-  const { data: prof } = await admin.from("profiles").select("is_admin").eq("id", me.user!.id).single();
+  const { error: escalate } = await c3.from("profiles").update({ is_admin: true }).eq("id", (await c3.auth.getUser()).data.user!.id);
+  const { data: prof } = await admin.from("profiles").select("is_admin").eq("id", (await c3.auth.getUser()).data.user!.id).single();
   check("is_admin self-update is rejected", !!escalate && prof?.is_admin === false,
     `error=${escalate?.message} is_admin=${prof?.is_admin}`);
   const { error: nameErr } = await c3.from("profiles")
-    .update({ full_name: "Lê Minh Châu" }).eq("id", me.user!.id);
+    .update({ full_name: "Lê Minh Châu" }).eq("id", (await c3.auth.getUser()).data.user!.id);
   check("full_name self-update still allowed", !nameErr, nameErr?.message);
+
+  // 5. Browsers can't call place_order at all (anon or signed in) ----------
+  const anon = createClient<Database>(url, publishable, noPersist);
+  const [anonTry, userTry] = await Promise.all([
+    placeOrder(one(), { phone: PHONES[4], db: anon }),
+    placeOrder(one(), { phone: PHONES[4], db: c3 }),
+  ]);
+  check("place_order denied to anon and signed-in browsers", !!anonTry.error && !!userTry.error,
+    `anon=${anonTry.error?.message} user=${userTry.error?.message}`);
+
+  // 6. Guest order + phone normalization -----------------------------------
+  const { data: guest, error: guestErr } = await placeOrder(one(), { phone: "+84 90 000 0005" });
+  const { data: guestRow } = await admin.from("orders").select("user_id, phone").eq("id", guest?.order_id ?? "").maybeSingle();
+  check("guest order: user_id null, phone stored normalized, customer row created",
+    !guestErr && guestRow?.user_id === null && guestRow?.phone === PHONES[4] && !!(await customer(PHONES[4])),
+    `err=${guestErr?.message} row=${JSON.stringify(guestRow)}`);
+  const bad = await placeOrder(one(), { phone: "12345" });
+  check("invalid phone rejected", bad.error?.message === "INVALID_PHONE", bad.error?.message);
+
+  // 7. First-5 voucher counts orders by phone, across guest and account ----
+  // PHONES[5]: 5 orders get 10%, the 6th — placed while signed in — gets nothing.
+  const discounts: number[] = [];
+  for (let i = 0; i < 6; i++) {
+    const r = await placeOrder(one(), { phone: PHONES[5], userId: i === 5 ? c1Id : undefined });
+    if (r.error) throw new Error(`first-5 order ${i + 1}: ${r.error.message}`);
+    discounts.push(r.data!.discount);
+    await transition(r.data!.order_id, "confirmed"); // stay under the pending limit
+  }
+  check("first-5 by phone: orders 1-5 discounted, 6th (signed in, same phone) not",
+    discounts.slice(0, 5).every((d) => d > 0) && discounts[5] === 0, `discounts=${discounts.join(",")}`);
+
+  // 8. Promo once per phone, even when switching guest → account ----------
+  await admin.from("vouchers").update({ max_uses: null, used_count: 0 }).eq("id", v.id);
+  const promo1 = await placeOrder(one(), { phone: PHONES[6], voucher: VOUCHER });
+  const promo2 = await placeOrder(one(), { phone: "090 000 0007", voucher: VOUCHER, userId: c1Id });
+  check("promo once per phone (2nd try, other format + signed in, refused)",
+    !promo1.error && promo2.error?.message === "VOUCHER_ALREADY_USED", `1st=${promo1.error?.message ?? "ok"} 2nd=${promo2.error?.message}`);
+
+  // 9. Blacklist is per phone, whatever the format -------------------------
+  await admin.from("customers").upsert({ phone: PHONES[7], is_blacklisted: true });
+  const bl = await placeOrder(one(), { phone: "+84900000008", userId: c1Id });
+  check("blacklisted phone refused (+84 format, signed in)", bl.error?.message === "BLACKLISTED", bl.error?.message);
+
+  // 10. Abuse limits --------------------------------------------------------
+  const pend = [];
+  for (let i = 0; i < 4; i++) pend.push(await placeOrder(one(), { phone: PHONES[8] }));
+  check("4th open pending order for one phone refused",
+    pend.slice(0, 3).every((r) => !r.error) && pend[3].error?.message === "TOO_MANY_PENDING", pend.map((r) => r.error?.message ?? "ok").join(","));
+  const big = await placeOrder([{ variant_id: pool[1].id, qty: 21 }], { phone: PHONES[4] });
+  check("21 units in one order refused", big.error?.message === "TOO_MANY_ITEMS", big.error?.message);
+
+  // 11. Delivered / refused counters land on the phone ---------------------
+  const dItems = one();
+  const d = await placeOrder(dItems, { phone: PHONES[4] });
+  await transition(d.data!.order_id, "confirmed", "shipped", "delivered");
+  deliveredItems.push(...dItems);
+  const f = await placeOrder(one(), { phone: PHONES[4] });
+  await transition(f.data!.order_id, "confirmed", "shipped", "delivery_failed");
+  const c = await customer(PHONES[4]);
+  check("delivered_count and refusal_count increment on the customer (phone)",
+    c?.delivered_count === 1 && c?.refusal_count === 1, JSON.stringify(c));
 }
 
 async function cleanup() {
-  // Cancel anything still pending so stock is restored, then delete test rows.
+  // Cancel anything still cancellable so stock is restored, then delete test rows.
   for (const id of createdOrders) {
     const { data } = await admin.from("orders").select("status").eq("id", id).single();
-    if (data?.status === "pending") {
+    if (data?.status === "pending" || data?.status === "confirmed") {
       await admin.rpc("transition_order_status", { p_order_id: id, p_new_status: "cancelled" });
     }
   }
+  // Delivered orders can't be cancelled: put their units back by hand.
+  for (const { variant_id, qty } of deliveredItems) {
+    const { stock } = await variant(variant_id);
+    await admin.from("product_variants").update({ stock: stock + qty }).eq("id", variant_id);
+  }
   if (createdOrders.length) await admin.from("orders").delete().in("id", createdOrders);
+  await admin.from("customers").delete().in("phone", PHONES);
   await admin.from("vouchers").delete().eq("code", VOUCHER);
+  // The delivered test order kept its AUTO-FIRST5 use; put the counter back.
+  if (autoUsedBefore !== null) await admin.from("vouchers").update({ used_count: autoUsedBefore }).eq("type", "auto_first5");
   const { data: left } = await admin.from("vouchers").select("code, used_count").eq("type", "auto_first5");
   console.log(`cleanup: removed ${createdOrders.length} test orders; auto voucher ${JSON.stringify(left)}`);
 }

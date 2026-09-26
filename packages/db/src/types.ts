@@ -214,30 +214,57 @@ export type Database = {
         }
         Relationships: []
       }
+      customers: {
+        Row: {
+          created_at: string
+          delivered_count: number
+          is_blacklisted: boolean
+          phone: string
+          refusal_count: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          delivered_count?: number
+          is_blacklisted?: boolean
+          phone: string
+          refusal_count?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          delivered_count?: number
+          is_blacklisted?: boolean
+          phone?: string
+          refusal_count?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       loyalty_awards: {
         Row: {
           created_at: string
           gift_id: string | null
           id: string
           milestone: number
+          phone: string
           status: Database["public"]["Enums"]["award_status"]
-          user_id: string
         }
         Insert: {
           created_at?: string
           gift_id?: string | null
           id?: string
           milestone: number
+          phone: string
           status?: Database["public"]["Enums"]["award_status"]
-          user_id: string
         }
         Update: {
           created_at?: string
           gift_id?: string | null
           id?: string
           milestone?: number
+          phone?: string
           status?: Database["public"]["Enums"]["award_status"]
-          user_id?: string
         }
         Relationships: [
           {
@@ -248,11 +275,11 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "loyalty_awards_user_id_fkey"
-            columns: ["user_id"]
+            foreignKeyName: "loyalty_awards_phone_fkey"
+            columns: ["phone"]
             isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
+            referencedRelation: "customers"
+            referencedColumns: ["phone"]
           },
         ]
       }
@@ -394,7 +421,7 @@ export type Database = {
           status: Database["public"]["Enums"]["order_status"]
           subtotal: number
           total: number
-          user_id: string
+          user_id: string | null
           ward: string | null
         }
         Insert: {
@@ -414,7 +441,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["order_status"]
           subtotal: number
           total: number
-          user_id: string
+          user_id?: string | null
           ward?: string | null
         }
         Update: {
@@ -434,7 +461,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["order_status"]
           subtotal?: number
           total?: number
-          user_id?: string
+          user_id?: string | null
           ward?: string | null
         }
         Relationships: [
@@ -589,35 +616,26 @@ export type Database = {
       profiles: {
         Row: {
           created_at: string
-          delivered_count: number
           full_name: string
           id: string
           is_admin: boolean
-          is_blacklisted: boolean
           phone: string | null
-          refusal_count: number
           updated_at: string
         }
         Insert: {
           created_at?: string
-          delivered_count?: number
           full_name?: string
           id: string
           is_admin?: boolean
-          is_blacklisted?: boolean
           phone?: string | null
-          refusal_count?: number
           updated_at?: string
         }
         Update: {
           created_at?: string
-          delivered_count?: number
           full_name?: string
           id?: string
           is_admin?: boolean
-          is_blacklisted?: boolean
           phone?: string | null
-          refusal_count?: number
           updated_at?: string
         }
         Relationships: []
@@ -714,8 +732,8 @@ export type Database = {
           created_at: string
           id: string
           order_id: string
+          phone: string
           released_at: string | null
-          user_id: string
           voucher_id: string
           voucher_type: Database["public"]["Enums"]["voucher_type"]
         }
@@ -723,8 +741,8 @@ export type Database = {
           created_at?: string
           id?: string
           order_id: string
+          phone: string
           released_at?: string | null
-          user_id: string
           voucher_id: string
           voucher_type: Database["public"]["Enums"]["voucher_type"]
         }
@@ -732,8 +750,8 @@ export type Database = {
           created_at?: string
           id?: string
           order_id?: string
+          phone?: string
           released_at?: string | null
-          user_id?: string
           voucher_id?: string
           voucher_type?: Database["public"]["Enums"]["voucher_type"]
         }
@@ -743,13 +761,6 @@ export type Database = {
             columns: ["order_id"]
             isOneToOne: true
             referencedRelation: "orders"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "voucher_uses_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
@@ -845,6 +856,7 @@ export type Database = {
     }
     Functions: {
       immutable_unaccent: { Args: { "": string }; Returns: string }
+      normalize_vn_phone: { Args: { p: string }; Returns: string }
       place_order: {
         Args: {
           p_address?: string
@@ -857,6 +869,7 @@ export type Database = {
           p_phone: string
           p_recipient_name: string
           p_secondary_phone?: string
+          p_user_id?: string
           p_voucher_code?: string
           p_ward?: string
         }

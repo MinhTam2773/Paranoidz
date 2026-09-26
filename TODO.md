@@ -38,7 +38,7 @@ Session log and work queue. Read this first (CLAUDE.md §7), update it last (§5
 Governed by `DESIGN.md` + `design-refs/`.
 
 - [ ] Search (Postgres FTS + unaccent)
-- [ ] Order form → server route → `place_order()` — **guest checkout (§8.2 resolved 2026-09-26)**, so this task first makes the schema guest-safe (one migration, re-run `smoke`):
+- [ ] Order form → server route → `place_order()` — **guest checkout (§8.2 resolved 2026-09-26)**. **Step 1 DONE (2026-09-26):** migration `20260926000001_guest_checkout.sql` (pushed) + smoke test 16/16, DB state identical before/after. Phone-only confirmed by the user. What it did / what's left:
   - `orders.user_id` nullable (null = guest); RLS already hides guest orders from everyone but admin.
   - `place_order()`: no `AUTH_REQUIRED`; revoke from `authenticated` too and call it only from the server route with the admin client, passing the session user id when there is one (also closes the "direct RPC skips rate limit" gap).
   - Customer identity for guests = **normalized phone** (`0xxxxxxxxx`): refusal count + blacklist, first-5 voucher eligibility (count non-cancelled orders by phone), promo once-per-customer (`voucher_uses` keyed by phone, not `user_id`), loyalty `delivered_count`. Decide per rule whether it keys on phone only or phone-or-account; phone-only means a guest who later registers with the same phone keeps their history automatically.
@@ -58,7 +58,7 @@ Governed by `DASHBOARD_DESIGN.md` §6.
 - [ ] Dashboard: stat cards, latest orders, low-stock (stock ≤ 3)
 - [ ] Orders list + detail (every transition via `transition_order_status()`)
 - [ ] Products list + edit (variant matrix, image uploader — needs `storage.objects` insert/update/delete policies for `is_admin` on `product-images`, or upload through a server route)
-- [ ] Customers list + detail (loyalty progress, blacklist toggle)
+- [ ] Customers list + detail (loyalty progress, blacklist toggle) — customers are now **phones** (`customers` table), many of them guests with no profile. DASHBOARD_DESIGN.md §6.4 assumes accounts (email, joined date, addresses): build the list from `customers` + the latest order's name/email per phone, show account info only when a profile has that phone. Blacklist toggle writes `customers.is_blacklisted`.
 - [ ] Bundles, Collections (drag-to-reorder)
 - [ ] Promo codes (auto first-5 vouchers are system-managed, not listed)
 - [ ] Gift pool (+ empty-pool banner for pending awards)
@@ -92,7 +92,6 @@ Do NOT implement (ARCHITECTURE.md §8). Each one has a concrete cost if guessed 
 Surfaced during the schema review, deliberately not fixed:
 
 - **Reviews can't show author names.** `profiles` is own-row-only under RLS, so joining `full_name` onto a public review returns nothing. Decide when building reviews: snapshot an `author_name` column, or expose a narrow view.
-- **`place_order()` is granted to `authenticated`**, so a browser holding a user session can call the RPC directly and skip the server route's rate limiting. Safe by design — all price, stock and voucher logic is inside the function — but it is unthrottled until the rate limit lands.
 - **Deleting an `auth.users` row hard-fails** once that user has ordered (`orders.user_id ... on delete restrict`). Intentional, to preserve order history — but there is no working "delete my account" path as a result.
 - **Dev seed data lives in the only (future production) project.** Test users `customer*@paranoidz.test` and the mock catalog must be deleted before launch (fixed id prefixes: `c0000000-`, `d0000000-`, `e0000000-`, `a0000000-`).
 - **Product photos are Unsplash placeholders** (sources listed in `upload-dev-images.ts`). Replace with the client's photos before launch; delete the bucket's `products/<seed-slug>/` objects along with the seed rows. Olive cargo reads grey-olive and the grey static tee is a flat-lay crop — fine for dev only.

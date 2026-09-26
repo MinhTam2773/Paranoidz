@@ -46,7 +46,7 @@ Auth providers: email/password, Google, Facebook. Phone number required and **un
 | Search                      | Server           | FTS/unaccent SQL |
 | Wishlist, addresses         | Client           | Own rows, RLS-enforced |
 | Reviews & replies           | Server route     | `is_brand_reply` must be unforgeable |
-| **Order submission**        | **Server only**  | Prices re-fetched from DB; voucher validated; atomic RPC. Client totals NEVER trusted |
+| **Order submission**        | **Server only**  | Guest or signed in. Prices re-fetched from DB; voucher validated; atomic RPC `place_order()` callable by service_role ONLY (the order route). Client totals NEVER trusted |
 | Voucher validation          | Server only      | Client never computes its own discount |
 | Order status changes        | Server only      | Stock restore + loyalty counter must be atomic |
 | Loyalty gift trigger        | Server / DB      | Counter math, pool selection |
@@ -59,7 +59,8 @@ Auth providers: email/password, Google, Facebook. Phone number required and **un
 | products, product_variants, product_images, categories, collections, bundles | Public SELECT (active rows) | Admin server routes only |
 | wishlists, addresses | Full CRUD own rows (`user_id = auth.uid()`) | Client-side, RLS-enforced |
 | orders, order_items | SELECT own rows | Server only — NO client INSERT/UPDATE policy exists |
-| profiles | SELECT own; UPDATE name only | `delivered_count`, `refusal_count`, `is_blacklisted`: server only |
+| profiles | SELECT own; UPDATE name + phone only | `is_admin`: server only |
+| customers (per phone) | No direct access | Server only — counters + blacklist |
 | reviews, review_replies | SELECT visible rows | Server route |
 | vouchers, voucher_uses, loyalty_gifts, loyalty_awards | No direct access | Server only |
 
@@ -107,14 +108,14 @@ Order numbers: `PZ-YYYY-NNNN` from a Postgres sequence (concurrency-safe, 4+ dig
 ## 5. Voucher & Loyalty Rules
 
 ### First-5-orders voucher (auto)
-- Eligibility at placement: count of user's orders NOT IN (`cancelled`, `delivery_failed`) < 5.
+- Eligibility at placement: count of that **phone's** orders NOT IN (`cancelled`, `delivery_failed`) < 5 — guest or signed in, phone only.
 - Cancelled/refused orders release their slot (`voucher_uses.released_at`).
 - 10% auto-applied. If customer enters a promo code too, apply the BETTER of the two — no stacking (Shopee-style).
 - Promo codes are redeemable ONCE per customer (enforced by a partial unique index on `voucher_uses`); a released slot frees the code again. `auto_first5` is exempt — it applies to all 5 qualifying orders.
 - Discount cap: PENDING client decision.
 
 ### Loyalty program
-- Counter = lifetime `delivered_count`. Never resets.
+- Counter = lifetime `customers.delivered_count` for the order's **phone**. Never resets.
 - Gift triggered at every multiple of 10 (10, 20, 30, …) → row in `loyalty_awards`.
 - Gift randomly selected from active `loyalty_gifts`. Empty pool → award banked with `gift_id = NULL`, fulfilled when pool refills.
 - Fulfillment method: PENDING client decision (recommend bundling with next order).
@@ -123,14 +124,15 @@ Order numbers: `PZ-YYYY-NNNN` from a Postgres sequence (concurrency-safe, 4+ dig
 
 ## 6. Fraud Prevention (COD)
 
-- Phone unique per account — blocks voucher farming via multi-accounts.
+- **Customer identity = normalized phone** (`normalize_vn_phone()`: VN mobile, `0xxxxxxxxx`), for guests and accounts alike — every per-customer rule (first-5, promo once, loyalty, refusals, blacklist) keys on it ONLY, so switching guest ↔ account dodges nothing. Phone is also unique per account.
+- Abuse limits inside `place_order()`: max 20 units per order, max 3 open `pending` orders per phone (row-locked per phone, so not raceable).
 - `pending → confirmed` phone call verifies every order before shipping.
-- `delivery_failed` increments `refusal_count`; client can set `is_blacklisted` (blocks new orders at `place_order()`).
+- `delivery_failed` increments `customers.refusal_count`; client can set `customers.is_blacklisted` (blocks new orders from that phone at `place_order()`, whatever format it's typed in).
 - Order endpoint rate-limited per phone and IP.
 
 ---
 
-## 7. Database Schema (19 tables)
+## 7. Database Schema (20 tables)
 
 | Table | Key fields | Notes |
 | ----- | ---------- | ----- |
@@ -138,21 +140,22 @@ Order numbers: `PZ-YYYY-NNNN` from a Postgres sequence (concurrency-safe, 4+ dig
 | product_variants | product_id, color, size, price, original_price, stock, sku | Stock lives HERE |
 | product_images | product_id, color (nullable), storage_path, sort_order, is_primary | Supabase Storage. Images belong to a COLORWAY, not a variant — `color` matches `product_variants.color`; NULL = general image |
 | categories | id, name, slug, sort_order | |
-| profiles | id (FK auth.users), full_name, phone UNIQUE, delivered_count, refusal_count, is_blacklisted | |
+| profiles | id (FK auth.users), full_name, phone UNIQUE, is_admin | Optional — guests have none |
+| customers | phone PK (normalized), delivered_count, refusal_count, is_blacklisted | One row per phone, created on first order. Identity for all per-customer rules |
 | addresses | user_id, name, phone, address, ward, district, city, is_default, label | |
-| orders | order_number (PZ-YYYY-NNNN, sequence), user_id, address snapshot fields, status enum, subtotal, discount, total, note, timestamps | Address is SNAPSHOTTED, not FK-only |
+| orders | order_number (PZ-YYYY-NNNN, sequence), user_id (NULL = guest), phone (normalized), address snapshot fields, status enum, subtotal, discount, total, note, timestamps | Address is SNAPSHOTTED, not FK-only |
 | order_items | order_id, product_id, variant_id, name_snapshot, price_snapshot, qty, image_snapshot | Frozen at order time |
 | reviews | user_id, product_id, rating 1–5, content, is_visible | No pre-moderation |
 | review_replies | review_id, user_id, content, is_brand_reply | Brand flag server-enforced |
 | wishlists | user_id, product_id, added_at | |
 | vouchers | code, type (auto_first5 / promo), discount_pct, cap_amount, max_uses, used_count, is_active, expires_at | |
-| voucher_uses | voucher_id, user_id, order_id, voucher_type, released_at (nullable) | Slot released on cancel/refusal. `voucher_type` is denormalised from `vouchers.type` so the one-promo-per-user partial unique index can exist |
+| voucher_uses | voucher_id, phone, order_id, voucher_type, released_at (nullable) | Slot released on cancel/refusal. `voucher_type` is denormalised from `vouchers.type` so the one-promo-per-phone partial unique index can exist |
 | bundles | name, discount_amount, is_active | |
 | bundle_items | bundle_id, product_id | |
 | collections | name, slug, sort_order, is_active | |
 | collection_items | collection_id, product_id, sort_order | |
 | loyalty_gifts | name, description, image_url, is_active | |
-| loyalty_awards | user_id, gift_id (nullable), milestone, status (pending / fulfilled) | Survives empty pool |
+| loyalty_awards | phone (FK customers), gift_id (nullable), milestone, status (pending / fulfilled) | Survives empty pool |
 
 ### Required Postgres objects
 - Enum: `order_status` (6 values above).
