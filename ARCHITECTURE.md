@@ -95,7 +95,7 @@ Valid transitions: pending→confirmed→shipped→delivered; pending/confirmed�
 
 ### End-to-end flow
 1. Customer browses; Buy It Now skips cart, Add to Cart doesn't.
-2. Order form: full name, phone, secondary phone, email, address, note, voucher code.
+2. Order form: full name, phone, street address, ward/commune, city/province, secondary phone, email, note, voucher code. Province = one of Vietnam's 34 units since 1 July 2025 (searchable list, `apps/storefront/src/lib/provinces.ts`); districts no longer exist, so `orders.district` stays NULL. Field rules live in `lib/checkout-validation.ts`, run live in the form AND again in the server action.
 3. Server route validates voucher, recomputes ALL prices from DB, calls `place_order()`.
 4. Customer gets Resend confirmation email; client gets Telegram + email alert.
 5. Client calls to confirm (standard VN COD practice) → `confirmed` → `shipped` → `delivered`.

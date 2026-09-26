@@ -2,11 +2,23 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState, useTransition, type FormEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, useTransition, type FocusEvent, type FormEvent, type ReactNode } from "react";
 import { getCartItems, type CartItem } from "@/app/cart/actions";
-import { placeOrder, type CheckoutField, type CheckoutResult } from "@/app/checkout/actions";
+import { placeOrder, type CheckoutResult } from "@/app/checkout/actions";
 import { clearCart, useCart, type CartLine } from "@/lib/cart";
+import {
+  ALLOWED_CHARS,
+  CHECKOUT_FIELDS,
+  MAX_LENGTH,
+  formatPhone,
+  validateAll,
+  validateField,
+  type CheckoutField,
+  type CheckoutValues,
+  type FieldErrors,
+} from "@/lib/checkout-validation";
 import { formatVnd } from "@/lib/format";
+import { ProvinceSelect } from "./ProvinceSelect";
 
 type Placed = Extract<CheckoutResult, { ok: true }>["order"];
 
@@ -62,9 +74,12 @@ export function CheckoutView({ buyNow }: { buyNow: CartLine | null }) {
   const cart = useCart();
   const lines = buyNow ? [buyNow] : cart;
   const [items, setItems] = useState<Map<string, CartItem> | null>(null);
-  const [result, setResult] = useState<CheckoutResult | null>(null);
+  const [message, setMessage] = useState<string | undefined>();
+  const [errors, setErrors] = useState<FieldErrors>({});
+  const [city, setCity] = useState("");
   const [placed, setPlaced] = useState<Placed | null>(null);
   const [pending, startTransition] = useTransition();
+  const formRef = useRef<HTMLFormElement>(null);
   const idsKey = lines.map((l) => l.variantId).toSorted().join(",");
 
   useEffect(() => {
@@ -77,23 +92,66 @@ export function CheckoutView({ buyNow }: { buyNow: CartLine | null }) {
     };
   }, [idsKey]);
 
+  // FormData of the form includes the voucher (form="checkout-form") and the city's hidden input.
+  function values(): CheckoutValues {
+    const form = new FormData(formRef.current!);
+    return Object.fromEntries(CHECKOUT_FIELDS.map((k) => [k, String(form.get(k) ?? "")])) as CheckoutValues;
+  }
+
+  function check(field: CheckoutField, value: string) {
+    setErrors((e) => ({ ...e, [field]: validateField(field, value, values()) }));
+  }
+
+  function focusFirst(errs: FieldErrors) {
+    const first = CHECKOUT_FIELDS.find((f) => errs[f]);
+    if (first) document.getElementById(`checkout-${first}`)?.focus();
+  }
+
+  function fieldOf(target: EventTarget) {
+    const el = target as HTMLInputElement;
+    const field = el.name as CheckoutField;
+    return (el.tagName === "INPUT" || el.tagName === "TEXTAREA") && CHECKOUT_FIELDS.includes(field) ? { el, field } : null;
+  }
+
+  // Live validation. Typing: strip characters the field can't hold, and once a field shows an
+  // error re-check on every keystroke so it clears the moment it's fixed. Leaving a field: check
+  // it if something was typed (empty required fields are reported on submit, not while tabbing).
+  function onInput(e: FormEvent<HTMLDivElement>) {
+    const f = fieldOf(e.target);
+    if (!f) return;
+    const strip = ALLOWED_CHARS[f.field];
+    if (strip) {
+      const clean = f.el.value.replace(strip, "");
+      if (clean !== f.el.value) f.el.value = clean;
+    }
+    if (errors[f.field]) check(f.field, f.el.value);
+  }
+
+  function onBlur(e: FocusEvent<HTMLDivElement>) {
+    const f = fieldOf(e.target);
+    if (!f) return;
+    if (f.field === "phone" || f.field === "secondaryPhone") f.el.value = formatPhone(f.el.value);
+    if (f.el.value.trim() || errors[f.field]) check(f.field, f.el.value);
+  }
+
   function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const form = new FormData(e.currentTarget);
-    const value = (k: CheckoutField) => String(form.get(k) ?? "");
+    const v = values();
+    const errs = validateAll(v);
+    setErrors(errs);
+    setMessage(undefined);
+    if (Object.keys(errs).length) return focusFirst(errs);
     startTransition(async () => {
-      const res = await placeOrder({
-        items: lines.map((l) => ({ variantId: l.variantId, qty: l.qty })),
-        name: value("name"), phone: value("phone"), secondaryPhone: value("secondaryPhone"), email: value("email"),
-        address: value("address"), ward: value("ward"), district: value("district"), city: value("city"),
-        note: value("note"), voucher: value("voucher"),
-      });
-      setResult(res);
+      const res: CheckoutResult = await placeOrder({ items: lines.map((l) => ({ variantId: l.variantId, qty: l.qty })), ...v });
       if (res.ok) {
         setPlaced(res.order);
         if (!buyNow) clearCart();
         window.scrollTo({ top: 0 });
+        return;
       }
+      setErrors(res.fieldErrors ?? {});
+      setMessage(res.message);
+      if (res.fieldErrors) focusFirst(res.fieldErrors);
     });
   }
 
@@ -136,40 +194,46 @@ export function CheckoutView({ buyNow }: { buyNow: CartLine | null }) {
   const rows = lines.map((line) => ({ line, item: items.get(line.variantId) }));
   const problem = rows.some(({ line, item }) => !item || line.qty > item.stock);
   const subtotal = rows.reduce((sum, { line, item }) => sum + (item ? item.price * line.qty : 0), 0);
-  const errors = result && !result.ok ? (result.fieldErrors ?? {}) : {};
-  const message = result && !result.ok ? result.message : undefined;
-
   return (
-    <div className="grid gap-8 lg:grid-cols-12 lg:gap-12">
-      <form id="checkout-form" onSubmit={submit} noValidate className="flex flex-col gap-6 lg:col-span-7">
+    <div onInput={onInput} onBlur={onBlur} className="grid gap-8 lg:grid-cols-12 lg:gap-12">
+      <form ref={formRef} id="checkout-form" onSubmit={submit} noValidate className="flex flex-col gap-6 lg:col-span-7">
         <h2 className="text-h3 uppercase">Delivery details</h2>
         <div className="grid gap-6 sm:grid-cols-2">
           <Field name="name" label="Full name" required error={errors.name}>
-            {(p) => <input {...p} className={`${p.className} h-11`} autoComplete="name" />}
+            {(p) => <input {...p} className={`${p.className} h-11`} autoComplete="name" maxLength={MAX_LENGTH.name} />}
           </Field>
           <Field name="phone" label="Phone number" required error={errors.phone}>
-            {(p) => <input {...p} className={`${p.className} h-11`} type="tel" inputMode="tel" autoComplete="tel" placeholder="0901 234 567" />}
+            {(p) => <input {...p} className={`${p.className} h-11`} type="tel" inputMode="tel" autoComplete="tel" placeholder="0901 234 567" maxLength={MAX_LENGTH.phone} />}
           </Field>
           <Field name="address" label="Street address" required error={errors.address} className="sm:col-span-2">
-            {(p) => <input {...p} className={`${p.className} h-11`} autoComplete="street-address" placeholder="House number, street" />}
+            {(p) => <input {...p} className={`${p.className} h-11`} autoComplete="street-address" placeholder="House number, street" maxLength={MAX_LENGTH.address} />}
           </Field>
-          <Field name="ward" label="Ward" error={errors.ward}>
-            {(p) => <input {...p} className={`${p.className} h-11`} autoComplete="address-level3" />}
-          </Field>
-          <Field name="district" label="District" error={errors.district}>
-            {(p) => <input {...p} className={`${p.className} h-11`} autoComplete="address-level2" />}
+          <Field name="ward" label="Ward / commune" required error={errors.ward}>
+            {(p) => <input {...p} className={`${p.className} h-11`} autoComplete="address-level3" placeholder="e.g. Phường Bến Thành" maxLength={MAX_LENGTH.ward} />}
           </Field>
           <Field name="city" label="City / province" required error={errors.city}>
-            {(p) => <input {...p} className={`${p.className} h-11`} autoComplete="address-level1" placeholder="TP. Hồ Chí Minh" />}
+            {(p) => (
+              <ProvinceSelect
+                id={p.id}
+                name={p.name}
+                value={city}
+                onChange={(v) => {
+                  setCity(v);
+                  check("city", v);
+                }}
+                invalid={p["aria-invalid"]}
+                describedBy={p["aria-describedby"]}
+              />
+            )}
           </Field>
           <Field name="secondaryPhone" label="Secondary phone" error={errors.secondaryPhone}>
-            {(p) => <input {...p} className={`${p.className} h-11`} type="tel" inputMode="tel" placeholder="Backup number" />}
+            {(p) => <input {...p} className={`${p.className} h-11`} type="tel" inputMode="tel" placeholder="Backup number" maxLength={MAX_LENGTH.secondaryPhone} />}
           </Field>
-          <Field name="email" label="Email" error={errors.email} className="sm:col-span-2">
-            {(p) => <input {...p} className={`${p.className} h-11`} type="email" autoComplete="email" placeholder="For your order confirmation" />}
+          <Field name="email" label="Email" error={errors.email}>
+            {(p) => <input {...p} className={`${p.className} h-11`} type="email" autoComplete="email" placeholder="For your order confirmation" maxLength={MAX_LENGTH.email} />}
           </Field>
           <Field name="note" label="Order note" error={errors.note} className="sm:col-span-2">
-            {(p) => <textarea {...p} className={`${p.className} py-3`} rows={3} placeholder="Delivery instructions" />}
+            {(p) => <textarea {...p} className={`${p.className} py-3`} rows={3} placeholder="Delivery instructions" maxLength={MAX_LENGTH.note} />}
           </Field>
         </div>
       </form>
@@ -194,7 +258,7 @@ export function CheckoutView({ buyNow }: { buyNow: CartLine | null }) {
           </ul>
 
           <Field name="voucher" label="Voucher code" error={errors.voucher}>
-            {(p) => <input {...p} form="checkout-form" className={`${p.className} h-11 uppercase`} autoComplete="off" />}
+            {(p) => <input {...p} form="checkout-form" className={`${p.className} h-11 uppercase`} autoComplete="off" maxLength={MAX_LENGTH.voucher} />}
           </Field>
 
           <dl className="flex flex-col gap-3 border-t border-border pt-4">

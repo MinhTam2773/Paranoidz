@@ -3,34 +3,17 @@
 import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@paranoidz/db/admin";
 import { createClient } from "@paranoidz/db/server";
+import { CHECKOUT_FIELDS, normalizePhone, validateAll, type CheckoutValues, type FieldErrors } from "@/lib/checkout-validation";
 import { HOTLINE } from "@/lib/site";
 
-export type CheckoutField =
-  | "name" | "phone" | "secondaryPhone" | "email" | "address" | "ward" | "district" | "city" | "note" | "voucher";
-
-export type CheckoutInput = { items: { variantId: string; qty: number }[] } & Record<CheckoutField, string>;
+export type CheckoutInput = { items: { variantId: string; qty: number }[] } & CheckoutValues;
 
 export type CheckoutResult =
   | { ok: true; order: { orderNumber: string; subtotal: number; discount: number; total: number; phone: string } }
-  | { ok: false; message?: string; fieldErrors?: Partial<Record<CheckoutField, string>> };
+  | { ok: false; message?: string; fieldErrors?: FieldErrors };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const LIMITS: Record<CheckoutField, number> = {
-  name: 100, phone: 20, secondaryPhone: 20, email: 200, address: 300,
-  ward: 100, district: 100, city: 100, note: 500, voucher: 50,
-};
-const REQUIRED: CheckoutField[] = ["name", "phone", "address", "city"];
-
-// Mirrors public.normalize_vn_phone() for a friendly field error; the DB check is authoritative.
-function normalizePhone(raw: string) {
-  const d = raw.replace(/\D/g, "");
-  if (/^0[35789]\d{8}$/.test(d)) return d;
-  if (/^84[35789]\d{8}$/.test(d)) return "0" + d.slice(2);
-  return null;
-}
-
-const PHONE_HELP = "Enter a Vietnamese mobile number, e.g. 0901 234 567.";
+const PHONE_HELP = "Enter a Vietnamese mobile number: 10 digits starting with 03, 05, 07, 08 or 09.";
 
 // place_order() error codes → what the customer sees (and which field it belongs to).
 function explain(code: string): CheckoutResult {
@@ -55,7 +38,7 @@ function explain(code: string): CheckoutResult {
 // is attached for order history only — every per-customer rule keys on the phone inside
 // place_order(), which also recomputes all prices, stock and vouchers. Nothing the browser sends
 // about money is trusted: only variant ids, quantities and delivery details go in.
-// TODO(launch blocker): per-IP + per-phone rate limit (TODO.md, Backlog — infra).
+// TODO(launch blocker): per-IP + per-phone rate limit (TODO.md, Next up).
 export async function placeOrder(input: CheckoutInput): Promise<CheckoutResult> {
   const items = Array.isArray(input?.items) ? input.items : [];
   if (
@@ -65,17 +48,10 @@ export async function placeOrder(input: CheckoutInput): Promise<CheckoutResult> 
     return { ok: false, message: "Your order is empty or invalid. Please review your cart." };
   }
 
-  const f = {} as Record<CheckoutField, string>;
-  const fieldErrors: Partial<Record<CheckoutField, string>> = {};
-  for (const key of Object.keys(LIMITS) as CheckoutField[]) {
-    const value = typeof input[key] === "string" ? input[key].trim() : "";
-    f[key] = value;
-    if (value.length > LIMITS[key]) fieldErrors[key] = `Keep this under ${LIMITS[key]} characters.`;
-    else if (!value && REQUIRED.includes(key)) fieldErrors[key] = "Required.";
-  }
-  if (f.phone && !fieldErrors.phone && !normalizePhone(f.phone)) fieldErrors.phone = PHONE_HELP;
-  if (f.secondaryPhone && !fieldErrors.secondaryPhone && !normalizePhone(f.secondaryPhone)) fieldErrors.secondaryPhone = PHONE_HELP;
-  if (f.email && !fieldErrors.email && !EMAIL.test(f.email)) fieldErrors.email = "Enter a valid email address.";
+  // Same rules as the form (lib/checkout-validation), re-run here because the browser is untrusted.
+  const f = {} as CheckoutValues;
+  for (const key of CHECKOUT_FIELDS) f[key] = typeof input?.[key] === "string" ? input[key].trim() : "";
+  const fieldErrors = validateAll(f);
   if (Object.keys(fieldErrors).length) return { ok: false, fieldErrors };
 
   const { data: claims } = await (await createClient()).auth.getClaims();
@@ -87,9 +63,8 @@ export async function placeOrder(input: CheckoutInput): Promise<CheckoutResult> 
     p_secondary_phone: f.secondaryPhone || undefined,
     p_email: f.email || undefined,
     p_address: f.address,
-    p_ward: f.ward || undefined,
-    p_district: f.district || undefined,
-    p_city: f.city,
+    p_ward: f.ward,
+    p_city: f.city, // one of the 34 post-2025 provinces; districts no longer exist (p_district unused)
     p_note: f.note || undefined,
     p_voucher_code: f.voucher || undefined,
     p_user_id: claims?.claims.sub,
