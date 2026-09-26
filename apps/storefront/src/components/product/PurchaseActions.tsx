@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type MouseEvent, type RefObject } from "react";
 import { addToCart } from "@/lib/cart";
+import { flyToCart } from "@/lib/fly-to-cart";
 import type { ProductVariant } from "./ProductView";
 import { QuantityStepper } from "./QuantityStepper";
 
@@ -17,11 +18,13 @@ export function PurchaseActions({
   variant,
   soldOut,
   price,
+  imageRef,
   onNeedSize,
 }: {
   variant: ProductVariant | null;
   soldOut: boolean;
   price: string;
+  imageRef: RefObject<HTMLImageElement | null>; // the displayed main image, flown to the cart
   onNeedSize: () => void;
 }) {
   const router = useRouter();
@@ -45,9 +48,11 @@ export function PurchaseActions({
     return () => io.disconnect();
   }, []);
 
-  function add() {
+  function add(e: MouseEvent<HTMLButtonElement>) {
     if (!variant) return;
-    const added = addToCart(variant.id, qty, variant.stock);
+    const added = flyToCart(e.currentTarget, imageRef.current?.currentSrc, () =>
+      addToCart(variant.id, qty, variant.stock),
+    );
     setNotice({
       id: variant.id,
       added: added > 0,

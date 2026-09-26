@@ -65,6 +65,7 @@ export function ProductView({
   const [activeTab, setActiveTab] = useState(tabs[0]?.id ?? "");
   const tabsRef = useRef<HTMLElement>(null);
   const sizeGroupRef = useRef<HTMLDivElement>(null);
+  const mainImageRef = useRef<HTMLImageElement>(null);
 
   const sizes = variants.filter((v) => v.color === color).toSorted((a, b) => sizeRank(a.size) - sizeRank(b.size));
   const selected = sizes.find((v) => v.size === size) ?? null;
@@ -92,6 +93,7 @@ export function ProductView({
           <div className="relative aspect-3/4 overflow-hidden rounded-sm bg-bg-secondary">
             {mainImage && (
               <Image
+                ref={mainImageRef}
                 src={mainImage.url}
                 alt={name}
                 fill
@@ -196,6 +198,7 @@ export function ProductView({
               variant={selected}
               soldOut={soldOut}
               price={shown ? formatVnd(shown.price) : ""}
+              imageRef={mainImageRef}
               onNeedSize={() => {
                 sizeGroupRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
                 sizeGroupRef.current?.querySelector<HTMLButtonElement>("button[aria-pressed]:enabled")?.focus({ preventScroll: true });

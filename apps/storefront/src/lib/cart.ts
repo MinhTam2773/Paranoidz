@@ -55,6 +55,10 @@ export function useCart() {
   return useSyncExternalStore(subscribe, read, () => EMPTY);
 }
 
+export function cartItemCount() {
+  return read().reduce((sum, l) => sum + l.qty, 0);
+}
+
 /** Adds up to `qty`, never past `stock` in total. Returns how many were actually added. */
 export function addToCart(variantId: string, qty: number, stock: number) {
   const lines = read();
