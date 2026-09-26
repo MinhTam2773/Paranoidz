@@ -62,7 +62,7 @@ Auth providers: email/password, Google, Facebook. Phone number required and **un
 | profiles | SELECT own; UPDATE name + phone only | `is_admin`: server only |
 | customers (per phone) | No direct access | Server only — counters + blacklist |
 | reviews, review_replies | SELECT visible rows | Server route |
-| vouchers, voucher_uses, loyalty_gifts, loyalty_awards | No direct access | Server only |
+| vouchers, voucher_uses, loyalty_gifts, loyalty_awards, rate_limits | No direct access | Server only |
 
 Admin authenticates via Supabase Auth with an `admin` role claim; all admin mutations go through server routes using the admin client.
 
@@ -155,11 +155,11 @@ Order numbers: `PZ-YYYY-NNNN` from a Postgres sequence (concurrency-safe, 4+ dig
 - Abuse limits inside `place_order()`: max 20 units per order, max 3 open `pending` orders per phone (row-locked per phone, so not raceable).
 - `pending → confirmed` phone call verifies every order before shipping.
 - `delivery_failed` increments `customers.refusal_count`; client can set `customers.is_blacklisted` (blocks new orders from that phone at `place_order()`, whatever format it's typed in).
-- Order endpoint rate-limited per phone and IP.
+- Order endpoint rate-limited per phone and IP: `hit_order_rate_limit()` (service role only), called by the order route before `place_order()` as a separate statement so rejected orders still count. Every attempt that passes form validation counts; 1-hour fixed windows, 5 per normalized phone, 10 per IP (IPv6 per /64, IPv4-mapped unwrapped). IP = `x-real-ip` / first `x-forwarded-for`, trustworthy only because Vercel overwrites them; no IP → phone limit only. Shared mobile-carrier IPs (CGNAT) are why the IP limit is loose. A residential-proxy botnet is not stopped by this — the confirmation call is the backstop.
 
 ---
 
-## 7. Database Schema (20 tables)
+## 7. Database Schema (21 tables)
 
 | Table | Key fields | Notes |
 | ----- | ---------- | ----- |
@@ -183,6 +183,7 @@ Order numbers: `PZ-YYYY-NNNN` from a Postgres sequence (concurrency-safe, 4+ dig
 | collection_items | collection_id, product_id, sort_order | |
 | loyalty_gifts | name, description, image_url, is_active | |
 | loyalty_awards | phone (FK customers), gift_id (nullable), milestone, status (pending / fulfilled) | Survives empty pool |
+| rate_limits | bucket ('ip:…' / 'phone:…'), window_start, hits | Order attempt counters; rows older than the previous window are pruned on each call |
 
 ### Required Postgres objects
 - Enum: `order_status` (6 values above).

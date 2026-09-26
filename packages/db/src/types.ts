@@ -640,6 +640,24 @@ export type Database = {
         }
         Relationships: []
       }
+      rate_limits: {
+        Row: {
+          bucket: string
+          hits: number
+          window_start: string
+        }
+        Insert: {
+          bucket: string
+          hits?: number
+          window_start: string
+        }
+        Update: {
+          bucket?: string
+          hits?: number
+          window_start?: string
+        }
+        Relationships: []
+      }
       review_replies: {
         Row: {
           content: string
@@ -855,6 +873,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      hit_order_rate_limit: {
+        Args: { p_ip: string; p_phone: string }
+        Returns: boolean
+      }
       immutable_unaccent: { Args: { "": string }; Returns: string }
       normalize_vn_phone: { Args: { p: string }; Returns: string }
       place_order: {

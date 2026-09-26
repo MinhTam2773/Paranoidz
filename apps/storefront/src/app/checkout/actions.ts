@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import { createAdminClient } from "@paranoidz/db/admin";
 import { createClient } from "@paranoidz/db/server";
 import { CHECKOUT_FIELDS, normalizePhone, validateAll, type CheckoutValues, type FieldErrors } from "@/lib/checkout-validation";
@@ -38,7 +39,7 @@ function explain(code: string): CheckoutResult {
 // is attached for order history only — every per-customer rule keys on the phone inside
 // place_order(), which also recomputes all prices, stock and vouchers. Nothing the browser sends
 // about money is trusted: only variant ids, quantities and delivery details go in.
-// TODO(launch blocker): per-IP + per-phone rate limit (TODO.md, Next up).
+// Rate limited per IP + phone (hit_order_rate_limit) before any order work.
 export async function placeOrder(input: CheckoutInput): Promise<CheckoutResult> {
   const items = Array.isArray(input?.items) ? input.items : [];
   if (
@@ -56,6 +57,18 @@ export async function placeOrder(input: CheckoutInput): Promise<CheckoutResult> 
 
   const { data: claims } = await (await createClient()).auth.getClaims();
   const admin = createAdminClient();
+
+  // Vercel overwrites these with the real client IP, so they can't be spoofed there.
+  // No IP (unexpected off Vercel) → the phone limit still applies.
+  const h = await headers();
+  const ip = h.get("x-real-ip") ?? h.get("x-forwarded-for")?.split(",")[0].trim() ?? "";
+  const { data: allowed, error: limitError } = await admin.rpc("hit_order_rate_limit", { p_ip: ip, p_phone: f.phone });
+  if (limitError) {
+    console.error("hit_order_rate_limit failed", limitError);
+    return explain("");
+  }
+  if (!allowed) return { ok: false, message: `Too many order attempts. Please wait an hour and try again, or call ${HOTLINE}.` };
+
   const { data, error } = await admin.rpc("place_order", {
     p_items: items.map((i) => ({ variant_id: i.variantId, qty: i.qty })),
     p_recipient_name: f.name,

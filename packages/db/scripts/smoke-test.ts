@@ -212,6 +212,39 @@ async function main() {
   const c = await customer(PHONES[4]);
   check("delivered_count and refusal_count increment on the customer (phone)",
     c?.delivered_count === 1 && c?.refusal_count === 1, JSON.stringify(c));
+
+  // 12. Order rate limit: 5 attempts / hour per phone, 10 per IP (IPv6 per /64) ---
+  // Test IPs are documentation ranges (192.0.2.0/24, 2001:db8::/32); '' = no IP.
+  const hit = async (ip: string, phone: string) => {
+    const { data, error } = await admin.rpc("hit_order_rate_limit", { p_ip: ip, p_phone: phone });
+    if (error) throw error;
+    return data;
+  };
+  const phoneHits = [];
+  for (const p of ["0900000001", "+84 90 000 0001", "090.000.0001", "84900000001", "0900 000 001", "0900000001"]) {
+    phoneHits.push(await hit("", p));
+  }
+  check("phone limit: 5 allowed, 6th refused, any format", phoneHits.join() === "true,true,true,true,true,false", phoneHits.join());
+  check("other phone unaffected", await hit("", PHONES[1]));
+
+  const ipHits = [];
+  for (let i = 0; i < 11; i++) ipHits.push(await hit("192.0.2.1", ""));
+  check("IPv4 limit: 10 allowed, 11th refused", ipHits.slice(0, 10).every(Boolean) && !ipHits[10], ipHits.join());
+  check("other IPv4 unaffected", await hit("192.0.2.2", ""));
+  const mapped = [await hit("::ffff:192.0.2.1", ""), await hit("::ffff:192.0.2.3", "")];
+  check("IPv4-mapped IPv6 counts as its IPv4 address (not one shared ::/64)", mapped.join() === "false,true", mapped.join());
+
+  const v6Hits = [];
+  for (let i = 1; i <= 10; i++) v6Hits.push(await hit(`2001:db8:0:1::${i.toString(16)}`, ""));
+  const sameSlash64 = await hit("2001:db8:0:1:ffff:ffff:ffff:ffff", "");
+  const otherSlash64 = await hit("2001:db8:0:2::1", "");
+  check("IPv6 counted per /64: 11th address in the /64 refused, next /64 allowed",
+    v6Hits.every(Boolean) && !sameSlash64 && otherSlash64, `same=${sameSlash64} other=${otherSlash64}`);
+
+  const { error: anonHit } = await anon.rpc("hit_order_rate_limit", { p_ip: "192.0.2.3", p_phone: "" });
+  const { data: anonRows } = await anon.from("rate_limits").select("bucket");
+  check("rate limit function + table closed to browsers", !!anonHit && (anonRows ?? []).length === 0,
+    `rpc=${anonHit?.message} rows=${anonRows?.length}`);
 }
 
 async function cleanup() {
@@ -229,6 +262,8 @@ async function cleanup() {
   }
   if (createdOrders.length) await admin.from("orders").delete().in("id", createdOrders);
   await admin.from("customers").delete().in("phone", PHONES);
+  await admin.from("rate_limits").delete().in("bucket", PHONES.map((p) => `phone:${p}`));
+  await admin.from("rate_limits").delete().or("bucket.like.ip:192.0.2.%,bucket.like.ip:2001:db8:%");
   await admin.from("vouchers").delete().eq("code", VOUCHER);
   // The delivered test order kept its AUTO-FIRST5 use; put the counter back.
   if (autoUsedBefore !== null) await admin.from("vouchers").update({ used_count: autoUsedBefore }).eq("type", "auto_first5");
