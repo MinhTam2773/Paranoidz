@@ -80,3 +80,8 @@ export function setCartQty(variantId: string, qty: number) {
 export function removeFromCart(variantId: string) {
   write(read().filter((l) => l.variantId !== variantId));
 }
+
+/** After a successful cart checkout only — never for Buy It Now. */
+export function clearCart() {
+  write([]);
+}
