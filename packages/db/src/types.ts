@@ -873,8 +873,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      hit_order_rate_limit: {
-        Args: { p_ip: string; p_phone: string }
+      hit_rate_limit: {
+        Args: {
+          p_ip: string
+          p_ip_limit: number
+          p_phone: string
+          p_phone_limit: number
+          p_scope: string
+        }
         Returns: boolean
       }
       immutable_unaccent: { Args: { "": string }; Returns: string }
