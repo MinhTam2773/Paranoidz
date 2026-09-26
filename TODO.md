@@ -105,7 +105,6 @@ Surfaced during the schema review, deliberately not fixed:
 - **Footer content is placeholder — client to supply:** `STORE_ADDRESSES` is empty (Store info shows hotline only) and `SOCIAL_LINKS` hrefs are `#`, both in `apps/storefront/src/lib/site.ts`.
 - **Announcement bar says "Cash on delivery · Hotline"**, not a free-shipping message — shipping threshold is pending (§8.1). Swap once decided.
 - **Layout shell deviations from Stitch (DESIGN.md followed):** no PRODUCT mega-dropdown (build it from `categories` when the catalog lands, if wanted), no mobile bottom tab bar, mobile menu is full-screen from the right (not a left drawer), footer payment badge is COD only (Stitch showed VISA/MASTER — wrong for a COD-only shop).
-- **Added beyond DESIGN.md:** "Login / Register" link inside the mobile overlay — the spec'd mobile header has no account entry point. Confirm or add to DESIGN.md.
 - **Nav routes 404 until built:** `/outlet`, `/new-collection`, `/products`, `/feedback`, `/branding`, `/policy`, `/login`, `/cart`, `/search`. Cart badge is hidden until the cart exists (`<Header cartCount>` defaults to 0).
 - **Root layout now wraps pages in `<main>`**; the create-next-app `page.tsx` has its own `<main>` (nested). Resolved when the homepage replaces it.
 - **Tailwind v4 moves elements with the `translate` CSS property, not `transform`.** Check `getComputedStyle(el).translate` when verifying slide-ins.
