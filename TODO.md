@@ -18,11 +18,12 @@ Session log and work queue. Read this first (CLAUDE.md §7), update it last (§5
 - [x] **Storefront `@theme` tokens** (2026-09-26) — `apps/storefront/src/app/globals.css`, every DESIGN.md §2/§3/§6 value, names 1:1 (`bg-bg-secondary`, `text-text-muted`, `text-h1`, `text-price`, `shadow-1`, `rounded-sm`=4px, `rounded-lg`=8px max, `font-logo`). Tailwind default colours/shadows/radii/fonts removed. Inter (latin+vietnamese, 400–800) + Rajdhani 700 via `next/font`. Verified by computed styles in the browser at 1280px and 375px: all values exact, off-spec classes (`text-zinc-400`, `bg-red-600`, `shadow-lg`, `rounded-xl`) render unstyled.
 - [x] **Storefront layout shell** (2026-09-26) — `src/components/layout/` (AnnouncementBar, Header, NavLinks, MobileNav, SearchForm, Footer, icons) + `src/lib/site.ts` (nav, hotline, policy/social links). Icons: hand-written inline SVGs, no dependency. Verified at 1280px (rows 64+48px, sticky, active link black + red underline, 4-col footer) and 375px (logo | search, cart, menu at 44px; overlay opens/closes incl. Escape, body scroll lock, 48px links; search expands + focuses; single-column footer; no overflow).
 
+- [x] **Dev product images + Storage bucket** (2026-09-25) — migration `20260925000001_product_images_bucket.sql` (public `product-images` bucket, no storage write policies) + `pnpm --filter @paranoidz/db seed:images` (`packages/db/scripts/upload-dev-images.ts`): 25 Unsplash photos (free commercial licence, no Unsplash+, no visible third-party logos) cropped to 1200×1600 (3:4) and upserted to every seeded `storage_path`; the script fails if a DB path has no photo. Verified anonymously: 25/25 public URLs → 200 `image/jpeg`, all 1200×1600, anon upload rejected by RLS; visually checked each matches its product + colour.
+
 ---
 
 ## Next up
 
-- [ ] **Dev product images + Storage bucket** — create a public `product-images` bucket (read-only connector can't; use the service key via a script, or the dashboard) and upload one image per seeded path: 10 × `products/<slug>/main.jpg` + 15 colourway `products/<slug>/<color>-1.jpg` (25 files, paths already in `product_images`). Source must be licence-safe for a commercial site: AI-generated or free-licence stock, never scraped brand/product photos. Placeholders only — client's real photos replace them before launch.
 - [ ] **Catalog / collection listing** — product card (DESIGN.md §4: 3:4 image on `bg-bg-secondary`, hover zoom, sale badge + dual price, `₫269.000` format) + 3/2/2-column grid, server-rendered from the 10 seeded products via `@paranoidz/db/server`. Sold-out handling per ARCHITECTURE.md §3.
 
 ---
@@ -46,7 +47,7 @@ Governed by `DASHBOARD_DESIGN.md` §6.
 - [ ] Admin shell + auth gate (`is_admin`)
 - [ ] Dashboard: stat cards, latest orders, low-stock (stock ≤ 3)
 - [ ] Orders list + detail (every transition via `transition_order_status()`)
-- [ ] Products list + edit (variant matrix, image uploader)
+- [ ] Products list + edit (variant matrix, image uploader — needs `storage.objects` insert/update/delete policies for `is_admin` on `product-images`, or upload through a server route)
 - [ ] Customers list + detail (loyalty progress, blacklist toggle)
 - [ ] Bundles, Collections (drag-to-reorder)
 - [ ] Promo codes (auto first-5 vouchers are system-managed, not listed)
@@ -84,7 +85,9 @@ Surfaced during the schema review, deliberately not fixed:
 - **`place_order()` is granted to `authenticated`**, so a browser holding a user session can call the RPC directly and skip the server route's rate limiting. Safe by design — all price, stock and voucher logic is inside the function — but it is unthrottled until the rate limit lands.
 - **Deleting an `auth.users` row hard-fails** once that user has ordered (`orders.user_id ... on delete restrict`). Intentional, to preserve order history — but there is no working "delete my account" path as a result.
 - **Dev seed data lives in the only (future production) project.** Test users `customer*@paranoidz.test` and the mock catalog must be deleted before launch (fixed id prefixes: `c0000000-`, `d0000000-`, `e0000000-`, `a0000000-`).
-- **Seed image paths point at nothing.** No Storage bucket exists yet; `product_images.storage_path` values are placeholders.
+- **Product photos are Unsplash placeholders** (sources listed in `upload-dev-images.ts`). Replace with the client's photos before launch; delete the bucket's `products/<seed-slug>/` objects along with the seed rows. Olive cargo reads grey-olive and the grey static tee is a flat-lay crop — fine for dev only.
+- **Unsplash search without an API key:** `https://unsplash.com/napi/search/photos?query=…` returns JSON (`premium`/`plus` flag Unsplash+ — skip those). Python `urllib` gets 401 there; `curl`/Node `fetch` work. Resize/crop server-side with `images.unsplash.com/<photo>?w=1200&h=1600&fit=crop&fm=jpg`.
+- **Browser pane can't screenshot `file://` pages.** For visual review of local images, build a contact sheet PNG with Pillow and Read it.
 - **No admin user seeded.** Deliberately — a committed password on an `is_admin` account would be a real hole. Promote your own account when the admin shell lands.
 - **The claude.ai Supabase connector is read-only.** `execute_sql` fails on any write (`cannot execute INSERT in a read-only transaction`). Use it to inspect; write data through the CLI (`supabase db push --include-seed`).
 - **`db push --include-seed` never re-runs a seed file it has seen** — it only updates the hash. New seed data needs a new file in `sql_paths`.

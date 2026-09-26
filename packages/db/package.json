@@ -13,7 +13,8 @@
   "scripts": {
     "gen:types": "supabase gen types typescript --linked --schema public > src/types.ts",
     "typecheck": "tsc --noEmit",
-    "smoke": "node --env-file=../../apps/admin/.env.local scripts/smoke-test.ts"
+    "smoke": "node --env-file=../../apps/admin/.env.local scripts/smoke-test.ts",
+    "seed:images": "node --env-file=../../apps/admin/.env.local scripts/upload-dev-images.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
