@@ -23,6 +23,7 @@ const admin: Db = createClient<Database>(url, secret, noPersist);
 const CUSTOMERS = ["customer1@paranoidz.test", "customer3@paranoidz.test"];
 const VOUCHER = "SMOKE-TEST";
 const PHONES = Array.from({ length: 9 }, (_, i) => `090000000${i + 1}`);
+const AUTH_EMAILS = [1, 2, 3].map((i) => `smoke-auth-${i}@paranoidz.test`);
 
 let failures = 0;
 function check(name: string, ok: boolean, detail = "") {
@@ -50,6 +51,7 @@ async function variant(id: string) {
 }
 
 const createdOrders: string[] = [];
+const createdUsers: string[] = [];
 const deliveredItems: { variant_id: string; qty: number }[] = [];
 let autoUsedBefore: number | null = null;
 
@@ -100,6 +102,7 @@ async function main() {
   // 1. Voucher max_uses under concurrent redemption ------------------------
   // 50% beats the 10% auto-first5, so place_order must pick the promo.
   await admin.from("vouchers").delete().eq("code", VOUCHER);
+  for (const id of createdUsers) await admin.auth.admin.deleteUser(id);
   const { data: v, error: vErr } = await admin.from("vouchers")
     .insert({ code: VOUCHER, type: "promo", discount_pct: 50, max_uses: 1 })
     .select("id").single();
@@ -246,6 +249,31 @@ async function main() {
   const { data: anonRows } = await anon.from("rate_limits").select("bucket");
   check("rate limit function + table closed to browsers", !!anonHit && (anonRows ?? []).length === 0,
     `rpc=${anonHit?.message} rows=${anonRows?.length}`);
+
+  // 9. Account phone: normalized + unique, never blocks a signup -----------
+  const signUp = async (email: string, meta: Record<string, string>) => {
+    const { data, error } = await admin.auth.admin.createUser({ email, email_confirm: true, user_metadata: meta });
+    if (error) throw error;
+    createdUsers.push(data.user.id);
+    return (await admin.from("profiles").select("full_name, phone").eq("id", data.user.id).single()).data;
+  };
+  const first = await signUp(AUTH_EMAILS[0], { full_name: "Smoke One", phone: "+84 90 000 0008" });
+  check("signup metadata → profile name + normalized phone",
+    first?.full_name === "Smoke One" && first?.phone === PHONES[7], JSON.stringify(first));
+  const taken = await signUp(AUTH_EMAILS[1], { full_name: "Smoke Two", phone: "090.000.0008" });
+  check("signup with a taken phone still creates the account, phone left empty",
+    taken?.full_name === "Smoke Two" && taken?.phone === null, JSON.stringify(taken));
+  const oauth = await signUp(AUTH_EMAILS[2], { name: "Smoke Oauth" });
+  check("OAuth-style metadata (name, no phone) → full_name, phone empty",
+    oauth?.full_name === "Smoke Oauth" && oauth?.phone === null, JSON.stringify(oauth));
+
+  const two = await signInAs(AUTH_EMAILS[1]);
+  const twoId = (await two.auth.getUser()).data.user!.id;
+  const { error: takenErr } = await two.from("profiles").update({ phone: PHONES[7] }).eq("id", twoId);
+  const { error: rawErr } = await two.from("profiles").update({ phone: "090 000 0009" }).eq("id", twoId);
+  const { error: okErr } = await two.from("profiles").update({ phone: PHONES[8] }).eq("id", twoId);
+  check("phone self-update: taken → 23505, unnormalized → 23514, free normalized → ok",
+    takenErr?.code === "23505" && rawErr?.code === "23514" && !okErr, `${takenErr?.code} ${rawErr?.code} ${okErr?.message}`);
 }
 
 async function cleanup() {
