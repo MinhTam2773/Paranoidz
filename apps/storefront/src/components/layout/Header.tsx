@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { HOTLINE } from "@/lib/site";
+import { AccountLink } from "./AccountLink";
 import { CartLink } from "./CartLink";
-import { UserIcon } from "./icons";
 import { MobileNav } from "./MobileNav";
 import { NavLinks } from "./NavLinks";
 import { SearchForm } from "./SearchForm";
@@ -28,10 +28,7 @@ export function Header() {
 
           <div className="flex items-center gap-2 lg:gap-6">
             <span className="hidden text-nav uppercase text-text-primary lg:inline">Hotline: {HOTLINE}</span>
-            <Link href="/login" className="hidden items-center gap-2 text-nav uppercase text-text-primary lg:flex">
-              <UserIcon width={20} height={20} />
-              Login / Register
-            </Link>
+            <AccountLink icon className="hidden items-center gap-2 text-nav uppercase text-text-primary lg:flex" />
             <CartLink />
             <MobileNav />
           </div>

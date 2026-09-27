@@ -102,7 +102,6 @@ async function main() {
   // 1. Voucher max_uses under concurrent redemption ------------------------
   // 50% beats the 10% auto-first5, so place_order must pick the promo.
   await admin.from("vouchers").delete().eq("code", VOUCHER);
-  for (const id of createdUsers) await admin.auth.admin.deleteUser(id);
   const { data: v, error: vErr } = await admin.from("vouchers")
     .insert({ code: VOUCHER, type: "promo", discount_pct: 50, max_uses: 1 })
     .select("id").single();
@@ -294,6 +293,7 @@ async function cleanup() {
   await admin.from("rate_limits").delete().in("bucket", PHONES.flatMap((p) => [`order:phone:${p}`, `lookup:phone:${p}`]));
   await admin.from("rate_limits").delete().or("bucket.like.order:ip:192.0.2.%,bucket.like.order:ip:2001:db8:%");
   await admin.from("vouchers").delete().eq("code", VOUCHER);
+  for (const id of createdUsers) await admin.auth.admin.deleteUser(id);
   // The delivered test order kept its AUTO-FIRST5 use; put the counter back.
   if (autoUsedBefore !== null) await admin.from("vouchers").update({ used_count: autoUsedBefore }).eq("type", "auto_first5");
   const { data: left } = await admin.from("vouchers").select("code, used_count").eq("type", "auto_first5");

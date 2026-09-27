@@ -20,7 +20,7 @@ Self-contained headless e-commerce for a Vietnamese streetwear brand. COD only �
 | Notifications       | Telegram Bot (client new-order alerts) |
 | Hosting             | Vercel (sin1), two projects from one monorepo |
 
-Auth providers: email/password, Google, Facebook. Phone number required and **unique** per account.
+Auth providers: email/password, Google, Facebook. Phone number required and **unique** per account, stored normalized (`profiles_phone_normalized`). Email signup sends it as metadata (`handle_new_user()`); OAuth accounts, or a signup phone another account already has, get it at `/account/phone`, which every login passes through.
 
 ---
 
@@ -168,7 +168,7 @@ Order numbers: `PZ-YYYY-NNNN` from a Postgres sequence (concurrency-safe, 4+ dig
 | product_variants | product_id, color, size, price, original_price, stock, sku | Stock lives HERE |
 | product_images | product_id, color (nullable), storage_path, sort_order, is_primary | Supabase Storage. Images belong to a COLORWAY, not a variant — `color` matches `product_variants.color`; NULL = general image |
 | categories | id, name, slug, sort_order | |
-| profiles | id (FK auth.users), full_name, phone UNIQUE, is_admin | Optional — guests have none |
+| profiles | id (FK auth.users), full_name, phone UNIQUE (normalized, NULL until the phone step), is_admin | Optional — guests have none |
 | customers | phone PK (normalized), delivered_count, refusal_count, is_blacklisted | One row per phone, created on first order. Identity for all per-customer rules |
 | addresses | user_id, name, phone, address, ward, district, city, is_default, label | |
 | orders | order_number (PZ-YYYY-NNNN, sequence), user_id (NULL = guest), phone (normalized), address snapshot fields, status enum, subtotal, discount, total, note, timestamps | Address is SNAPSHOTTED, not FK-only |

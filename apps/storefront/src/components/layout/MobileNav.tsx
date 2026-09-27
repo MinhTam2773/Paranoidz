@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { NAV_LINKS, SOCIAL_LINKS } from "@/lib/site";
+import { AccountLink } from "./AccountLink";
 import { CloseIcon, MenuIcon, SearchIcon, SOCIAL_ICONS } from "./icons";
 import { isActive } from "./NavLinks";
 import { SearchForm } from "./SearchForm";
@@ -87,9 +88,7 @@ export function MobileNav() {
               {label}
             </Link>
           ))}
-          <Link href="/login" onClick={() => setMenuOpen(false)} className="mt-4 flex min-h-12 items-center text-nav uppercase text-text-secondary">
-            Login / Register
-          </Link>
+          <AccountLink onClick={() => setMenuOpen(false)} className="mt-4 flex min-h-12 items-center text-nav uppercase text-text-secondary" />
         </nav>
         <div className="flex justify-center gap-3 pb-8">
           {SOCIAL_LINKS.map(({ label, href, icon }) => {
