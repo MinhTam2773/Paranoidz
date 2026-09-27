@@ -41,6 +41,7 @@ Session log and work queue. Read this first (CLAUDE.md §7), update it last (§5
 
 ## Next up
 
+- [ ] **Account — My orders** (first slice of the Account backlog item; one feature per session): `/account` gets an order list for the signed-in user (`orders` where `user_id = auth.uid()` via `@paranoidz/db/server`, already allowed by `orders_select_own` RLS) — order number, date, status in customer words (reuse `OrderLookup`'s STATUS copy), item count, total — plus `/account/orders/[number]` detail (items with snapshots, totals, full delivery address: it's the user's own order, unlike guest lookup). No linking of earlier guest orders by phone (ARCHITECTURE.md §2.4). Remaining Account slices stay in the backlog: saved addresses + checkout pre-fill, wishlist, edit name / change phone.
 
 ---
 
@@ -49,7 +50,7 @@ Session log and work queue. Read this first (CLAUDE.md §7), update it last (§5
 Governed by `DESIGN.md` + `design-refs/`.
 
 - [ ] **Account cart sync** (needed once accounts exist): the cart is browser-only today (`src/lib/cart.ts`, localStorage), so it doesn't follow a user across devices, and the next person to log in on the same browser sees the previous person's cart. Add `cart_items` (user_id, variant_id, qty; own-rows RLS like `wishlists`). Guests keep localStorage. On login, merge the browser cart into the account cart (sum qty, cap at stock), then clear the browser copy. While logged in, `useCart`/`addToCart`/`setCartQty`/`removeFromCart` read and write the table. On logout, clear the browser cart. Low priority: §8.2 resolved to guest checkout (2026-09-26), so an account is optional and most buyers may never log in. Build only if the client asks for cross-device carts.
-- [ ] Account: order history, addresses, wishlist — follow ARCHITECTURE.md §2.4: "My orders" = `user_id` orders only (no linking of earlier guest orders by phone); checkout pre-fills name/phone/address from the profile + saved addresses (`p_address_id`, ownership already checked in `place_order()`)
+- [ ] Account (after My orders): saved addresses, wishlist, edit name / change phone — follow ARCHITECTURE.md §2.4: "My orders" = `user_id` orders only (no linking of earlier guest orders by phone); checkout pre-fills name/phone/address from the profile + saved addresses (`p_address_id`, ownership already checked in `place_order()`)
 - [ ] Reviews + replies (server route — `is_brand_reply` must be unforgeable)
 
 ## Backlog — admin
@@ -156,5 +157,8 @@ Surfaced during the schema review, deliberately not fixed:
 - **Email links use PKCE**: opened in another browser than the one that asked, the code exchange fails → `/login?notice=link` (a signup email is still confirmed, so logging in works). If customers hit this, switch the email templates to `{{ .TokenHash }}` links + a `verifyOtp` route.
 - **Account phones are self-typed and unique**, so someone can add another person's number first and block them from using it on their own account (message points to the hotline). Nothing is gained by it — every rule keys on `orders.phone`. Only fix is SMS OTP (per-message cost). `savePhone` also tells a signed-in user whether a number is on another account; not rate-limited (needs a confirmed account per try).
 - **Password minimum is 8 in both the forms and the Supabase project** (set 2026-09-27).
+- **Google let a non-test user sign in while the consent screen is in Testing (unexplained, 2026-09-27).** Only `tamnguyen277353@gmail.com` is a listed test user, yet `bimtretrau@gmail.com` signed in with Google fine (new account → phone step → `0968874402`). Expected Google to block it with "access blocked / app not verified". Not investigated: that account may have a role on the `paranoidz` Cloud project, or Google may not enforce the test-user list for non-sensitive scopes (email, profile, openid). Harmless either way; publishing the consent screen after launch makes it moot. Don't rely on the test-user list as an access control.
+- **Facebook development mode refuses anyone without an app role** ("Ứng dụng không hoạt động" / "App not active" page, seen 2026-09-27 with a second Facebook account in a private window). Only the app admin (owner's Facebook) can log in until the app goes Live. To test with another Facebook account: Meta app → App roles → Roles → Testers → Add people, then that account accepts at `developers.facebook.com/requests`.
+- **Supabase links logins that share a verified email into one account**: `tamnguyen277353@gmail.com` has email + Google + Facebook identities on one user, so a Google/Facebook login on an existing email account lands straight on `/account` (phone already set). Expected Supabase behaviour; nothing in our code does it.
 - **Header says LOGIN / REGISTER until hydration** for signed-in visitors (`AccountLink` reads the session client-side so the layout stays cookie-free and ISR keeps working).
 - **No edit name / change phone UI yet** — belongs to the Account task. `/account/phone` only fills an empty phone.
