@@ -46,6 +46,9 @@ export const MenuIcon = (p: P) => (
 export const CloseIcon = (p: P) => (
   <Icon {...p}><path d="M6 6l12 12M18 6 6 18" /></Icon>
 );
+export const ChevronDownIcon = (p: P) => (
+  <Icon {...p}><path d="m6 9 6 6 6-6" /></Icon>
+);
 export const FacebookIcon = (p: P) => (
   <Icon {...p}><path d="M15 3h-2a4 4 0 0 0-4 4v3H7v4h2v7h4v-7h3l1-4h-4V7a1 1 0 0 1 1-1h2V3Z" /></Icon>
 );

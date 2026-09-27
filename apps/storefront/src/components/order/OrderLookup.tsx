@@ -1,30 +1,18 @@
 "use client";
 
-import Image from "next/image";
 import { useState, useTransition, type FormEvent } from "react";
 import { lookupOrder, type LookedUpOrder } from "@/app/order-lookup/actions";
 import { normalizePhone } from "@/lib/checkout-validation";
-import { formatVnd } from "@/lib/format";
 import { parseOrderNumber } from "@/lib/order-number";
+import { placedOn, STATUS } from "@/lib/order-status";
 import { HOTLINE } from "@/lib/site";
+import { OrderSummary } from "./OrderSummary";
 
 // 16px on mobile so iOS Safari doesn't zoom on focus (same exception as checkout).
 const inputClass =
   "h-11 w-full rounded-sm border bg-bg-primary px-3 text-base text-text-primary lg:text-product-name placeholder:text-text-muted focus:border-text-primary focus:shadow-[0_0_0_2px_var(--color-accent-soft)] focus:outline-none";
 const secondaryClass =
   "flex h-12 w-full items-center justify-center rounded-sm border border-text-primary text-button uppercase text-text-primary transition-colors duration-200 hover:bg-text-primary hover:text-text-on-dark";
-
-// ARCHITECTURE.md §4 statuses, in the customer's words.
-const STATUS: Record<LookedUpOrder["status"], { label: string; detail: string }> = {
-  pending: { label: "Awaiting confirmation", detail: "We'll call you to confirm this order before shipping." },
-  confirmed: { label: "Confirmed", detail: "Your order is confirmed and being packed." },
-  shipped: { label: "Shipped", detail: "Your order is on its way. Have cash ready to pay on delivery." },
-  delivered: { label: "Delivered", detail: "Delivered and paid. Thank you for shopping with Paranoidz." },
-  cancelled: { label: "Cancelled", detail: `This order was cancelled. Questions? Call ${HOTLINE}.` },
-  delivery_failed: { label: "Not delivered", detail: `Delivery wasn't completed. Call ${HOTLINE} if you still want this order.` },
-};
-
-const placedOn = new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "Asia/Ho_Chi_Minh" });
 
 type Errors = { orderNumber?: string; phone?: string };
 
@@ -68,35 +56,11 @@ export function OrderLookup({ defaultOrderNumber }: { defaultOrderNumber: string
           <p className="text-text-secondary">{status.detail}</p>
         </div>
 
-        <ul className="flex flex-col gap-4 rounded-sm bg-bg-secondary p-6">
-          {order.items.map((item, i) => (
-            <li key={i} className="flex gap-3">
-              <div className="relative aspect-3/4 w-16 shrink-0 overflow-hidden rounded-sm bg-bg-tertiary">
-                {item.imageUrl && <Image src={item.imageUrl} alt={item.name} fill sizes="64px" className="object-cover" />}
-              </div>
-              <div className="flex min-w-0 flex-1 flex-col gap-1">
-                <span className="text-product-name">{item.name}</span>
-                <span className="text-caption uppercase text-text-secondary">
-                  {[item.color, item.size].filter(Boolean).join(" / ")} · Qty {item.qty}
-                </span>
-              </div>
-              <span className="text-product-name">{formatVnd(item.price * item.qty)}</span>
-            </li>
-          ))}
-        </ul>
-
-        <dl className="flex flex-col gap-3 rounded-sm border border-border p-6">
-          <div className="flex justify-between"><dt className="text-text-secondary">Subtotal</dt><dd>{formatVnd(order.subtotal)}</dd></div>
-          {order.discount > 0 && (
-            <div className="flex justify-between"><dt className="text-text-secondary">Discount</dt><dd className="text-accent">−{formatVnd(order.discount)}</dd></div>
-          )}
-          <div className="flex justify-between border-t border-border pt-3">
-            <dt className="text-nav uppercase">Total, cash on delivery</dt><dd className="text-price">{formatVnd(order.total)}</dd>
-          </div>
+        <OrderSummary items={order.items} subtotal={order.subtotal} discount={order.discount} total={order.total}>
           <p className="text-caption text-text-muted">
             Delivering to {[order.ward, order.city].filter(Boolean).join(", ")}. To change anything, call {HOTLINE}.
           </p>
-        </dl>
+        </OrderSummary>
 
         <button type="button" onClick={() => setOrder(null)} className={`${secondaryClass} max-w-xs`}>
           Look up another order
