@@ -14,10 +14,12 @@ export function WishlistGrid({ products }: { products: ProductCardData[] }) {
   return (
     <section aria-labelledby="wishlist" className="flex flex-col gap-4">
       <h2 id="wishlist" className="text-h3 uppercase">Wishlist</h2>
+      {/* Same grid as /products. Each <li> is a grid cell so the card fills the column width and
+          the row height — as a flex row it shrank to its content (name length set the width). */}
       {shown.length ? (
-        <ul className="grid grid-cols-2 gap-3 lg:grid-cols-3 lg:gap-4">
+        <ul className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
           {shown.map((p) => (
-            <li key={p.id} className="flex"><ProductCard product={p} /></li>
+            <li key={p.id} className="grid"><ProductCard product={p} /></li>
           ))}
         </ul>
       ) : (
