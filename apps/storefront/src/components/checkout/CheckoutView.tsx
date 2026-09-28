@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState, useTransition, type FocusEvent, type FormEvent, type ReactNode } from "react";
 import { getCartItems, type CartItem } from "@/app/cart/actions";
 import { placeOrder, type CheckoutResult } from "@/app/checkout/actions";
+import type { SavedAddress } from "@/components/account/AddressBook";
 import { clearCart, useCart, type CartLine } from "@/lib/cart";
 import {
   ALLOWED_CHARS,
@@ -21,6 +22,12 @@ import { formatVnd } from "@/lib/format";
 import { ProvinceSelect } from "./ProvinceSelect";
 
 type Placed = Extract<CheckoutResult, { ok: true }>["order"];
+
+// Signed-in customer: pre-fill source. Addresses come default-first, then newest.
+export type CheckoutAccount = { name: string; phone: string; email: string; addresses: SavedAddress[] } | null;
+
+// Fields a saved address fills; typing in any of them unlinks the address (orders.address_id).
+const ADDRESS_FIELDS = ["name", "phone", "address", "ward"] as const;
 
 // 16px on mobile: iOS Safari zooms the page when focusing an input under 16px (DESIGN.md has no
 // 16px text token; deliberate exception). Desktop keeps the 14px product-name size.
@@ -70,13 +77,15 @@ function Field({
 
 // COD checkout (ARCHITECTURE.md §4): delivery form + summary. Lines come from Buy It Now or the cart;
 // the order itself is priced and validated server-side by placeOrder → place_order().
-export function CheckoutView({ buyNow }: { buyNow: CartLine | null }) {
+export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; account: CheckoutAccount }) {
   const cart = useCart();
   const lines = buyNow ? [buyNow] : cart;
   const [items, setItems] = useState<Map<string, CartItem> | null>(null);
   const [message, setMessage] = useState<string | undefined>();
   const [errors, setErrors] = useState<FieldErrors>({});
-  const [city, setCity] = useState("");
+  const initial = account?.addresses[0];
+  const [city, setCity] = useState(initial?.city ?? "");
+  const [addressId, setAddressId] = useState<string | null>(initial?.id ?? null);
   const [placed, setPlaced] = useState<Placed | null>(null);
   const [pending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
@@ -119,6 +128,7 @@ export function CheckoutView({ buyNow }: { buyNow: CartLine | null }) {
   function onInput(e: FormEvent<HTMLDivElement>) {
     const f = fieldOf(e.target);
     if (!f) return;
+    if ((ADDRESS_FIELDS as readonly string[]).includes(f.field)) setAddressId(null);
     const strip = ALLOWED_CHARS[f.field];
     if (strip) {
       const clean = f.el.value.replace(strip, "");
@@ -134,6 +144,18 @@ export function CheckoutView({ buyNow }: { buyNow: CartLine | null }) {
     if (f.el.value.trim() || errors[f.field]) check(f.field, f.el.value);
   }
 
+  // Saved address picker: fill the fields from it, or clear them for a new address (name and
+  // phone fall back to the profile).
+  function pick(id: string) {
+    const a = account?.addresses.find((x) => x.id === id);
+    const fill = a ?? { name: account?.name ?? "", phone: account?.phone ?? "", address: "", ward: "", city: "" };
+    const form = formRef.current!;
+    for (const k of ADDRESS_FIELDS) (form.elements.namedItem(k) as HTMLInputElement).value = k === "phone" ? formatPhone(fill.phone) : fill[k];
+    setCity(fill.city);
+    setAddressId(a?.id ?? null);
+    setErrors((e) => ({ ...e, name: undefined, phone: undefined, address: undefined, ward: undefined, city: undefined }));
+  }
+
   function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const v = values();
@@ -142,7 +164,11 @@ export function CheckoutView({ buyNow }: { buyNow: CartLine | null }) {
     setMessage(undefined);
     if (Object.keys(errs).length) return focusFirst(errs);
     startTransition(async () => {
-      const res: CheckoutResult = await placeOrder({ items: lines.map((l) => ({ variantId: l.variantId, qty: l.qty })), ...v });
+      const res: CheckoutResult = await placeOrder({
+        items: lines.map((l) => ({ variantId: l.variantId, qty: l.qty })),
+        addressId: addressId ?? undefined,
+        ...v,
+      });
       if (res.ok) {
         setPlaced(res.order);
         if (!buyNow) clearCart();
@@ -203,18 +229,47 @@ export function CheckoutView({ buyNow }: { buyNow: CartLine | null }) {
     <div onInput={onInput} onBlur={onBlur} className="grid gap-8 lg:grid-cols-12 lg:gap-12">
       <form ref={formRef} id="checkout-form" onSubmit={submit} noValidate className="flex flex-col gap-6 lg:col-span-7">
         <h2 className="text-h3 uppercase">Delivery details</h2>
+        {!!account?.addresses.length && (
+          <div className="flex flex-col gap-2">
+            <label htmlFor="checkout-saved" className="text-nav uppercase text-text-secondary">Saved addresses</label>
+            <select
+              id="checkout-saved"
+              value={addressId ?? ""}
+              onChange={(e) => pick(e.target.value)}
+              className={`${inputClass} h-11 border-border`}
+            >
+              {account.addresses.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.name} — {[a.address, a.ward, a.city].join(", ")}{a.isDefault ? " (default)" : ""}
+                </option>
+              ))}
+              <option value="">New address</option>
+            </select>
+          </div>
+        )}
         <div className="grid gap-6 sm:grid-cols-2">
           <Field name="name" label="Full name" required error={errors.name}>
-            {(p) => <input {...p} className={`${p.className} h-11`} autoComplete="name" maxLength={MAX_LENGTH.name} />}
+            {(p) => <input {...p} className={`${p.className} h-11`} defaultValue={initial?.name ?? account?.name} autoComplete="name" maxLength={MAX_LENGTH.name} />}
           </Field>
           <Field name="phone" label="Phone number" required error={errors.phone}>
-            {(p) => <input {...p} className={`${p.className} h-11`} type="tel" inputMode="tel" autoComplete="tel" placeholder="0901 234 567" maxLength={MAX_LENGTH.phone} />}
+            {(p) => (
+              <input
+                {...p}
+                className={`${p.className} h-11`}
+                defaultValue={formatPhone(initial?.phone ?? account?.phone ?? "")}
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel"
+                placeholder="0901 234 567"
+                maxLength={MAX_LENGTH.phone}
+              />
+            )}
           </Field>
           <Field name="address" label="Street address" required error={errors.address} className="sm:col-span-2">
-            {(p) => <input {...p} className={`${p.className} h-11`} autoComplete="street-address" placeholder="House number, street" maxLength={MAX_LENGTH.address} />}
+            {(p) => <input {...p} className={`${p.className} h-11`} defaultValue={initial?.address} autoComplete="street-address" placeholder="House number, street" maxLength={MAX_LENGTH.address} />}
           </Field>
           <Field name="ward" label="Ward / commune" required error={errors.ward}>
-            {(p) => <input {...p} className={`${p.className} h-11`} autoComplete="address-level3" placeholder="e.g. Phường Bến Thành" maxLength={MAX_LENGTH.ward} />}
+            {(p) => <input {...p} className={`${p.className} h-11`} defaultValue={initial?.ward} autoComplete="address-level3" placeholder="e.g. Phường Bến Thành" maxLength={MAX_LENGTH.ward} />}
           </Field>
           <Field name="city" label="City / province" required error={errors.city}>
             {(p) => (
@@ -224,6 +279,7 @@ export function CheckoutView({ buyNow }: { buyNow: CartLine | null }) {
                 value={city}
                 onChange={(v) => {
                   setCity(v);
+                  setAddressId(null);
                   check("city", v);
                 }}
                 invalid={p["aria-invalid"]}
@@ -235,7 +291,7 @@ export function CheckoutView({ buyNow }: { buyNow: CartLine | null }) {
             {(p) => <input {...p} className={`${p.className} h-11`} type="tel" inputMode="tel" placeholder="Backup number" maxLength={MAX_LENGTH.secondaryPhone} />}
           </Field>
           <Field name="email" label="Email" error={errors.email}>
-            {(p) => <input {...p} className={`${p.className} h-11`} type="email" autoComplete="email" placeholder="For your order confirmation" maxLength={MAX_LENGTH.email} />}
+            {(p) => <input {...p} className={`${p.className} h-11`} defaultValue={account?.email} type="email" autoComplete="email" placeholder="For your order confirmation" maxLength={MAX_LENGTH.email} />}
           </Field>
           <Field name="note" label="Order note" error={errors.note} className="sm:col-span-2">
             {(p) => <textarea {...p} className={`${p.className} py-3`} rows={3} placeholder="Delivery instructions" maxLength={MAX_LENGTH.note} />}

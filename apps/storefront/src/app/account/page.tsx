@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@paranoidz/db/server";
+import { AddressBook } from "@/components/account/AddressBook";
 import { LogoutButton } from "@/components/auth/LogoutButton";
 import { linkClass } from "@/components/auth/styles";
 import { Breadcrumb } from "@/components/layout/Breadcrumb";
@@ -26,6 +27,13 @@ export default async function AccountPage() {
     .eq("user_id", claims.claims.sub)
     .order("created_at", { ascending: false });
   if (error) throw error;
+  const { data: addresses, error: addressError } = await supabase
+    .from("addresses")
+    .select("id, name, phone, address, ward, city, is_default")
+    .eq("user_id", claims.claims.sub)
+    .order("is_default", { ascending: false })
+    .order("created_at", { ascending: false });
+  if (addressError) throw addressError;
   const images = supabase.storage.from("product-images");
 
   const rows = [
@@ -74,6 +82,19 @@ export default async function AccountPage() {
               price: i.price_snapshot,
               imageUrl: i.image_snapshot ? images.getPublicUrl(i.image_snapshot).data.publicUrl : null,
             })),
+          }))}
+        />
+      </div>
+      <div className="mt-12 max-w-4xl">
+        <AddressBook
+          addresses={addresses.map((a) => ({
+            id: a.id,
+            name: a.name,
+            phone: a.phone,
+            address: a.address,
+            ward: a.ward ?? "",
+            city: a.city,
+            isDefault: a.is_default,
           }))}
         />
       </div>

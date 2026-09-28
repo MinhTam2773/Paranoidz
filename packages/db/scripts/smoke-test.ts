@@ -273,6 +273,23 @@ async function main() {
   const { error: okErr } = await two.from("profiles").update({ phone: PHONES[8] }).eq("id", twoId);
   check("phone self-update: taken → 23505, unnormalized → 23514, free normalized → ok",
     takenErr?.code === "23505" && rawErr?.code === "23514" && !okErr, `${takenErr?.code} ${rawErr?.code} ${okErr?.message}`);
+
+  // 10. Saved address link: only the owner's own address -----------------
+  const c1Address = "a0000000-0000-4000-8000-000000000001"; // seed: customer1's default address
+  const c3Id = (await c3.auth.getUser()).data.user!.id;
+  const withAddress = async (userId: string | undefined, phone: string) => {
+    const res = await admin.rpc("place_order", {
+      p_items: one(), p_recipient_name: "Smoke Test", p_phone: phone, p_address: "1 Test St",
+      p_city: "TP. Hồ Chí Minh", p_user_id: userId, p_address_id: c1Address,
+    });
+    if (res.data) createdOrders.push((res.data as Placed).order_id);
+    return res as { data: Placed | null; error: { message: string } | null };
+  };
+  const [stolen, guestLink, own] = [await withAddress(c3Id, PHONES[5]), await withAddress(undefined, PHONES[5]), await withAddress(c1Id, PHONES[6])];
+  const { data: linked } = await admin.from("orders").select("address_id").eq("id", own.data?.order_id ?? "").maybeSingle();
+  check("p_address_id: other user's → INVALID_ADDRESS, guest → INVALID_ADDRESS, owner → linked",
+    stolen.error?.message === "INVALID_ADDRESS" && guestLink.error?.message === "INVALID_ADDRESS" && linked?.address_id === c1Address,
+    `${stolen.error?.message} ${guestLink.error?.message} ${linked?.address_id}`);
 }
 
 async function cleanup() {

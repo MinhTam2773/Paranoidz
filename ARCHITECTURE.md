@@ -44,7 +44,8 @@ Auth providers: email/password, Google, Facebook. Phone number required and **un
 | Login / signup / OAuth      | Client           | Native supabase-js auth |
 | Catalog, product detail     | Server (RSC+ISR) | SEO, caching, public reads |
 | Search                      | Server           | `search_products(q)` (FTS + unaccent, security invoker → active only): name > category + variant colours > description, every word must prefix-match. Built per query, not indexed — fine at tens–hundreds of products; add a maintained search column + GIN index if the catalog grows into thousands |
-| Wishlist, addresses         | Client           | Own rows, RLS-enforced |
+| Wishlist                    | Client           | Own rows, RLS-enforced |
+| Addresses                   | Server actions, as the user | Own rows, RLS-enforced (server client, not admin); running server-side lets the checkout field rules (`lib/checkout-validation.ts`) be enforced and phones stored normalized. Max 10 per account; first one is the default |
 | Reviews & replies           | Server route     | `is_brand_reply` must be unforgeable |
 | **Order submission**        | **Server only**  | Guest or signed in. Prices re-fetched from DB; voucher validated; atomic RPC `place_order()` callable by service_role ONLY (the order route). Client totals NEVER trusted |
 | Voucher validation          | Server only      | Client never computes its own discount |
@@ -58,7 +59,7 @@ Auth providers: email/password, Google, Facebook. Phone number required and **un
 | Tables | Customer access | Writes |
 | ------ | --------------- | ------ |
 | products, product_variants, product_images, categories, collections, bundles | Public SELECT (active rows) | Admin server routes only |
-| wishlists, addresses | Full CRUD own rows (`user_id = auth.uid()`) | Client-side, RLS-enforced |
+| wishlists, addresses | Full CRUD own rows (`user_id = auth.uid()`) | Wishlists client-side; addresses via `app/account/actions.ts` acting as the user. RLS-enforced either way |
 | orders, order_items | SELECT own rows | Server only — NO client INSERT/UPDATE policy exists |
 | profiles | SELECT own; UPDATE name + phone only | `is_admin`: server only |
 | customers (per phone) | No direct access | Server only — counters + blacklist |

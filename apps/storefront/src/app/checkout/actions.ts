@@ -7,7 +7,8 @@ import { CHECKOUT_FIELDS, normalizePhone, validateAll, type CheckoutValues, type
 import { hitRateLimit } from "@/lib/rate-limit";
 import { HOTLINE } from "@/lib/site";
 
-export type CheckoutInput = { items: { variantId: string; qty: number }[] } & CheckoutValues;
+// addressId: the saved address the form was filled from, if untouched (links orders.address_id).
+export type CheckoutInput = { items: { variantId: string; qty: number }[]; addressId?: string } & CheckoutValues;
 
 export type CheckoutResult =
   | { ok: true; order: { orderNumber: string; subtotal: number; discount: number; total: number; phone: string } }
@@ -26,6 +27,8 @@ function explain(code: string): CheckoutResult {
     return { ok: false, fieldErrors: { voucher: "This code has already been used with this phone number." } };
   if (code.startsWith("OUT_OF_STOCK") || code.startsWith("PRODUCT_INACTIVE"))
     return { ok: false, message: "Some items just sold out or are no longer available. Please review your cart." };
+  if (code === "INVALID_ADDRESS")
+    return { ok: false, message: "That saved address is no longer available. Pick another one or type the address." };
   if (code === "TOO_MANY_ITEMS")
     return { ok: false, message: `Orders are limited to 20 items. For larger orders, call ${HOTLINE}.` };
   if (code === "TOO_MANY_PENDING")
@@ -56,6 +59,8 @@ export async function placeOrder(input: CheckoutInput): Promise<CheckoutResult> 
   if (Object.keys(fieldErrors).length) return { ok: false, fieldErrors };
 
   const { data: claims } = await (await createClient()).auth.getClaims();
+  // Only an account can link a saved address; place_order() also checks it belongs to that user.
+  const addressId = claims && typeof input?.addressId === "string" && UUID.test(input.addressId) ? input.addressId : undefined;
   const admin = createAdminClient();
 
   // Every attempt that gets this far counts, so rejected orders (e.g. voucher guesses) do too.
@@ -80,6 +85,7 @@ export async function placeOrder(input: CheckoutInput): Promise<CheckoutResult> 
     p_note: f.note || undefined,
     p_voucher_code: f.voucher || undefined,
     p_user_id: claims?.claims.sub,
+    p_address_id: addressId,
   });
   if (error) {
     if (!/^[A-Z_]+(:|$)/.test(error.message)) console.error("place_order failed", error);
