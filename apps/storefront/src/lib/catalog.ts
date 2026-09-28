@@ -33,6 +33,7 @@ export function toProductCard(supabase: PublicClient, p: CardRow): ProductCardDa
   const [cheapest] = (inStock.length ? inStock : p.product_variants).toSorted((a, b) => a.price - b.price);
   const image = p.product_images[0];
   return {
+    id: p.id,
     name: p.name,
     slug: p.slug,
     imageUrl: image ? supabase.storage.from("product-images").getPublicUrl(image.storage_path).data.publicUrl : null,

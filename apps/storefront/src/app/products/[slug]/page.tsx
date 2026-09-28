@@ -22,7 +22,7 @@ const getProduct = cache(async (slug: string) => {
   const { data, error } = await supabase
     .from("products")
     .select(
-      "name, description, care_instructions, size_guide, product_variants(id, color, size, price, original_price, stock), product_images(color, storage_path)",
+      "id, name, description, care_instructions, size_guide, product_variants(id, color, size, price, original_price, stock), product_images(color, storage_path)",
     )
     .eq("slug", slug)
     .order("color", { referencedTable: "product_variants" })
@@ -54,6 +54,7 @@ export default async function ProductPage({ params }: PageProps<"/products/[slug
     <div className="mx-auto w-full max-w-7xl px-4 pb-16 lg:px-6">
       <Breadcrumb items={[{ label: "Home", href: "/" }, { label: "Product", href: "/products" }, { label: product.name }]} />
       <ProductView
+        productId={product.id}
         name={product.name}
         variants={product.product_variants}
         images={product.images}

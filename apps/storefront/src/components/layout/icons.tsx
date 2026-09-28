@@ -46,6 +46,9 @@ export const MenuIcon = (p: P) => (
 export const CloseIcon = (p: P) => (
   <Icon {...p}><path d="M6 6l12 12M18 6 6 18" /></Icon>
 );
+export const HeartIcon = (p: P) => (
+  <Icon {...p}><path d="M12 20s-7-4.35-7-10a4 4 0 0 1 7-2.65A4 4 0 0 1 19 10c0 5.65-7 10-7 10Z" /></Icon>
+);
 export const ChevronDownIcon = (p: P) => (
   <Icon {...p}><path d="m6 9 6 6 6-6" /></Icon>
 );

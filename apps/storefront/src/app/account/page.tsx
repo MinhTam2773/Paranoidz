@@ -1,14 +1,17 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { createPublicClient } from "@paranoidz/db/public";
 import { createClient } from "@paranoidz/db/server";
 import { AddressBook } from "@/components/account/AddressBook";
 import { ProfileCard } from "@/components/account/ProfileCard";
+import { WishlistGrid } from "@/components/account/WishlistGrid";
 import { LogoutButton } from "@/components/auth/LogoutButton";
 import { linkClass } from "@/components/auth/styles";
 import { Breadcrumb } from "@/components/layout/Breadcrumb";
 import { OrderHistory } from "@/components/order/OrderHistory";
 import { afterLoginPath } from "@/lib/auth";
+import { productCardQuery, toProductCard } from "@/lib/catalog";
 
 export const metadata: Metadata = { title: "Account | Paranoidz", robots: { index: false } };
 
@@ -34,6 +37,20 @@ export default async function AccountPage() {
     .order("is_default", { ascending: false })
     .order("created_at", { ascending: false });
   if (addressError) throw addressError;
+  // Wishlist ids as the user (RLS), then the public card data — inactive products drop out.
+  const { data: saved, error: wishlistError } = await supabase
+    .from("wishlists")
+    .select("product_id")
+    .eq("user_id", claims.claims.sub)
+    .order("added_at", { ascending: false });
+  if (wishlistError) throw wishlistError;
+  const catalog = createPublicClient();
+  const { data: savedRows, error: savedError } = saved.length
+    ? await productCardQuery(catalog).in("id", saved.map((w) => w.product_id))
+    : { data: [], error: null };
+  if (savedError) throw savedError;
+  const order = new Map(saved.map((w, i) => [w.product_id, i]));
+  const wishlist = savedRows.toSorted((a, b) => order.get(a.id)! - order.get(b.id)!).map((p) => toProductCard(catalog, p));
   const images = supabase.storage.from("product-images");
 
   return (
@@ -84,6 +101,9 @@ export default async function AccountPage() {
             isDefault: a.is_default,
           }))}
         />
+      </div>
+      <div className="mt-12 max-w-4xl">
+        <WishlistGrid products={wishlist} />
       </div>
     </div>
   );

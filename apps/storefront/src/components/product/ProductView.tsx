@@ -5,6 +5,7 @@ import { useRef, useState, type ReactNode } from "react";
 import { formatVnd } from "@/lib/format";
 import { ProductTabs } from "./ProductTabs";
 import { PurchaseActions } from "./PurchaseActions";
+import { WishlistButton } from "./WishlistButton";
 
 export type ProductVariant = {
   id: string;
@@ -40,12 +41,14 @@ const optionClass = (selected: boolean) =>
 // Stock 0 variants are unselectable; all-zero = SOLD OUT, can't be carted (ARCHITECTURE.md §3).
 // `details` / `sizeGuide` are server-rendered tab panels; the size-guide link opens its tab.
 export function ProductView({
+  productId,
   name,
   variants,
   images,
   details,
   sizeGuide,
 }: {
+  productId: string;
   name: string;
   variants: ProductVariant[];
   images: ProductImage[];
@@ -126,7 +129,10 @@ export function ProductView({
         <div className="lg:col-span-5">
           <div className="flex flex-col gap-6 lg:sticky lg:top-36">
             <div className="flex flex-col gap-3">
-              <h1 className="text-h2 uppercase">{name}</h1>
+              <div className="flex items-start justify-between gap-2">
+                <h1 className="text-h2 uppercase">{name}</h1>
+                <WishlistButton productId={productId} className="-mr-2 shrink-0" />
+              </div>
               {shown && (
                 <p className="flex items-baseline gap-3">
                   <span className={`text-h3 font-bold ${onSale ? "text-accent" : "text-text-primary"}`}>
