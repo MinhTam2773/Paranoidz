@@ -1,3 +1,5 @@
+import { HOTLINE } from "./site";
+
 // Where to go after login / signup / an email link. Only same-site paths, or ?next= is an open
 // redirect: browsers read "//evil.com", "/\evil.com" and "/<tab>/evil.com" as another host.
 // Parsing with the URL parser catches every such spelling; the parsed path is what's returned.
@@ -14,3 +16,6 @@ export function afterLoginPath(next: string) {
 }
 
 export const PASSWORD_MIN = 8;
+
+// profiles_phone_unique (23505): one number per account (ARCHITECTURE.md §1).
+export const PHONE_TAKEN = `This number is already on another Paranoidz account. Log in with that account, or call ${HOTLINE} for help.`;

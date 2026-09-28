@@ -114,7 +114,8 @@ function AddressForm({ initial, onDone }: { initial?: SavedAddress; onDone: () =
     setMessage(undefined);
     startTransition(async () => {
       const res = await saveAddress({ id: initial?.id, ...values });
-      if (res.ok) return onDone();
+      // Wrapped again so the form closes together with the revalidated list, not before it.
+      if (res.ok) return startTransition(onDone);
       setErrors(res.fieldErrors ?? {});
       setMessage(res.message);
       const first = (["name", "phone", "address", "ward", "city"] as const).find((k) => res.fieldErrors?.[k]);
