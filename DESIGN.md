@@ -59,6 +59,8 @@
  
 ### Typography rules
 - All headings and navigation are uppercase. Body text and product names are sentence case.
+- **All UI text is Vietnamese** (CLAUDE.md §5). English labels in this file ("LOGIN / REGISTER", "Search product...", nav items) are layout placeholders from the original brief — ship the Vietnamese wording. Brand or collection names the client wants kept in English (e.g. "OUTLET 2026") are confirmed with the client, not assumed.
+- Uppercase Vietnamese keeps its diacritics ("ĐĂNG NHẬP", "GIỎ HÀNG"). Inter is loaded with the `vietnamese` subset; check stacked marks aren't clipped at the tight line-heights (H1 1.1, nav/button 1).
 - Use `Rajdhani` only for the logo wordmark. Everything else uses `Inter`.
 - Text is predominantly `--text-primary` (#111111) on light backgrounds. High contrast, easy to read.
 - Font imports: `https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Rajdhani:wght@700&display=swap`
@@ -223,6 +225,7 @@
 - Use the dark footer and occasional inverted sections to bring in the Paranoidz edge without overwhelming the shopping experience.
 - Maintain consistent vertical rhythm with the spacing scale.
 - Use uppercase for headings, nav, and buttons. Sentence case for body content.
+- Write every label, message and button in Vietnamese with full diacritics.
 - Show prices in Vietnamese Dong format: `₫` prefix, thousands separated by `.` (e.g., `₫269.000`)
 - Include lifestyle/lookbook photography in hero and collection sections.
 - Animate product image zoom on hover for visual feedback.

@@ -49,7 +49,11 @@ Session log and work queue. Read this first (CLAUDE.md §7), update it last (§5
 
 ## Next up
 
-The storefront Account feature set is complete. Pick the next one (owner's call): **Admin shell + auth gate** (first admin task — the client can't manage orders without it; needs `SUPABASE_SERVICE_ROLE_KEY` in `apps/admin/.env.local` and the owner's account promoted to `is_admin`), or **Reviews + replies** (storefront backlog).
+- [ ] **Admin shell + auth gate** (`apps/admin`, still the create-next-app page) — DASHBOARD_DESIGN.md §1, §3, §4, §8 "Shell": dark 240px sidebar (PARANOIDZ wordmark + ADMIN, nav in §4 order, active = red left border), 64px topbar (page title, "Xem cửa hàng" link, account), `#F5F5F5` content area, mobile slide-in sheet. **All UI text in Vietnamese** (CLAUDE.md §5; decided 2026-10-01). Design tokens: port DASHBOARD_DESIGN.md §2/§3 into `apps/admin/src/app/globals.css` `@theme` the same way the storefront did (no Tailwind defaults).
+  - Auth gate: admin login page (email/password through `@paranoidz/db/client`, same rules as the storefront); every admin route checks the session **and** `profiles.is_admin` server-side (proxy and/or layout) — not signed in → login, signed in but not admin → refused + signed out. Never trust a client-side flag.
+  - **Inconsistency to settle first:** ARCHITECTURE.md §2.3 says "Admin authenticates via Supabase Auth with an `admin` role claim", but the schema has `profiles.is_admin` (server-only, column grant blocks self-update; smoke-tested) and no custom JWT claim / access-token hook exists. Simplest: check the column per request and fix the ARCHITECTURE wording; a claim needs a Supabase custom access token hook. Surface the choice, don't pick silently.
+  - No admin is seeded on purpose. Promote the owner's account (`tamnguyen277353@gmail.com`) with a one-off SQL update run by the owner / service role — never a committed migration with a real id, never a seeded password.
+  - Done = non-admin and logged-out users can't reach any admin page (verified), the owner can, shell renders at 375px and 1280px, all text Vietnamese. Next after it: Orders list + detail.
 
 ---
 
@@ -57,6 +61,7 @@ The storefront Account feature set is complete. Pick the next one (owner's call)
 
 Governed by `DESIGN.md` + `design-refs/`.
 
+- [ ] **Vietnamese pass on the existing storefront** (decided 2026-10-01: Vietnamese only, CLAUDE.md §5) — do it before building more storefront pages so they're written in Vietnamese from the start. Scope: every visible string in `apps/storefront/src` (header/nav/footer, catalog, product page, cart, checkout + `lib/checkout-validation.ts` messages, order lookup + `lib/order-status.ts`, search, login/register/phone/password pages and their error messages, account sections, login modal, `lib/site.ts`), `metadata` titles, `<html lang="vi">`, date formatting (`en-GB` → `vi-VN` where it changes output). Supabase auth email templates (confirm signup, reset password) are English by default — translate them in the dashboard (Authentication → Emails). Brand/collection names to keep in English ("OUTLET 2026"?) → ask the client, don't guess. Check uppercase diacritics aren't clipped (DESIGN.md §3). Search: product names are English today, so Vietnamese queries still miss — add the synonym table from Known gaps, or that resolves itself when the client enters Vietnamese product names.
 - [ ] **Account cart sync** (needed once accounts exist): the cart is browser-only today (`src/lib/cart.ts`, localStorage), so it doesn't follow a user across devices, and the next person to log in on the same browser sees the previous person's cart. Add `cart_items` (user_id, variant_id, qty; own-rows RLS like `wishlists`). Guests keep localStorage. On login, merge the browser cart into the account cart (sum qty, cap at stock), then clear the browser copy. While logged in, `useCart`/`addToCart`/`setCartQty`/`removeFromCart` read and write the table. On logout, clear the browser cart. Low priority: §8.2 resolved to guest checkout (2026-09-26), so an account is optional and most buyers may never log in. Build only if the client asks for cross-device carts.
 - [ ] Reviews + replies (server route — `is_brand_reply` must be unforgeable)
 
@@ -64,7 +69,7 @@ Governed by `DESIGN.md` + `design-refs/`.
 
 Governed by `DASHBOARD_DESIGN.md` §6.
 
-- [ ] Admin shell + auth gate (`is_admin`)
+- [ ] Admin shell + auth gate — in Next up
 - [ ] Dashboard: stat cards, latest orders, low-stock (stock ≤ 3)
 - [ ] Orders list + detail (every transition via `transition_order_status()`)
 - [ ] Products list + edit (variant matrix, image uploader — needs `storage.objects` insert/update/delete policies for `is_admin` on `product-images`, or upload through a server route)
@@ -110,7 +115,7 @@ Surfaced during the schema review, deliberately not fixed:
 - **No admin user seeded.** Deliberately — a committed password on an `is_admin` account would be a real hole. Promote your own account when the admin shell lands.
 - **The claude.ai Supabase connector is read-only.** `execute_sql` fails on any write (`cannot execute INSERT in a read-only transaction`). Use it to inspect; write data through the CLI (`supabase db push --include-seed`).
 - **`db push --include-seed` never re-runs a seed file it has seen** — it only updates the hash. New seed data needs a new file in `sql_paths`.
-- **`admin.ts` is untested at runtime.** `SUPABASE_SERVICE_ROLE_KEY` isn't in `apps/admin/.env.local` — the read-only connector can't fetch secret keys. Add it from the dashboard (API Keys → secret) before the admin shell task.
+- **`SUPABASE_SERVICE_ROLE_KEY` is in `apps/admin/.env.local`** (and the storefront's): the smoke test and every helper script read it from there, and the storefront's checkout + order lookup use `admin.ts` at runtime. Vercel needs it in both projects' env (server-only, never `NEXT_PUBLIC_`).
 - **Env var is `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`**, not `..._ANON_KEY`: uses the modern `sb_publishable_` key (same `anon` role under RLS, rotates independently). ARCHITECTURE.md §2.1 still says "anon key" — same thing.
 - **Next 16: middleware is `src/proxy.ts`**, exporting `proxy()`, Node runtime only.
 - **`@supabase/ssr` `setAll(cookies, headers)`** — the second arg carries no-cache headers that must be put on the response, or a CDN can serve one user's session cookie to another. Any new cookie adapter must forward them.
@@ -153,6 +158,7 @@ Surfaced during the schema review, deliberately not fixed:
 - **Rate limit trusts `x-real-ip` / `x-forwarded-for`** because Vercel overwrites them. If the storefront is ever served behind another proxy/CDN (Cloudflare etc.), those headers become client-controlled — switch to that proxy's trusted header (e.g. `cf-connecting-ip`) first. Limits are passed by each caller of `hitRateLimit()` (`checkout/actions.ts`: 5/phone, 10/IP; `order-lookup/actions.ts`: 10/phone, 20/IP per hour) — no migration needed to change them.
 - **Every checkout attempt that reaches the DB counts**, including a customer's own voucher typos. A legit buyer behind a busy carrier CGNAT IP could hit the IP limit in a peak hour; the message points to the hotline. Revisit the numbers once real traffic exists.
 - **Browser checkout / lookup tests leave `rate_limits` hits** (`order:phone:<test phone>`, `order:ip:::/64` for local `::1`, same with `lookup:`). Delete them after, or the smoke test's phone-limit check fails for the rest of that hour (it assumes `order:phone:0900000001` starts at 0).
+- **Storefront copy is English** although the site is Vietnamese-only (decided 2026-10-01) — written before the decision. Tracked as the Vietnamese pass in the storefront backlog; until then every new string should already be Vietnamese.
 - **Search only knows the words in the catalog (English names).** Vietnamese queries ("áo", "quần", "nón") find nothing, and "đen" (black) prefix-matches "denim". Fix with a small synonym table if the client's real product names stay English. `simple` config = no stemming or stop words: "hoodies" doesn't match "hoodie" (the prefix works the other way), "the hoodie" finds nothing.
 - **Search has no pagination or sort** (10 products). Add both with the catalog's.
 - **Long unbroken text overflows mobile.** Any user-supplied string echoed in a flex/`items-start` layout needs `wrap-break-word` (+ `max-w-full`), or the page zooms out on phones (search's 100-char query hit 851px).

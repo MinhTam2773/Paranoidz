@@ -11,6 +11,7 @@
 - **Relationship to storefront**: Shares the Paranoidz identity — Inter, sharp 4px corners, red `#FF2D2D` accent — but utilitarian. No lifestyle photography, no hero sections.
 - **Layout DNA**: Dark fixed sidebar + light content area. The dark sidebar is the "inverted section" allowance from the brand rules and instantly distinguishes admin from storefront.
 - **Mood**: Calm, scannable, operational. The client checks this on a phone between deliveries — clarity beats density.
+- **Language**: Vietnamese only (CLAUDE.md §5) — the client runs the shop in Vietnamese. English names in this file (sidebar items, column headers, button labels, the agent prompts in §8) describe the content; the UI shows Vietnamese, uppercase where the typography table says so ("ĐƠN HÀNG", "SẢN PHẨM"). Dates `dd/mm/yyyy`, times 24h, `Asia/Ho_Chi_Minh`.
 - **Logo**: White "PARANOIDZ" wordmark (Rajdhani 700, italic, uppercase) at the top of the sidebar, with a small "ADMIN" label beneath it in `--text-muted`.
 
 ---

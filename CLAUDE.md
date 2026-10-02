@@ -45,6 +45,7 @@ Design tokens are law. Never invent colors, fonts, radii, or spacing not defined
 ## 5. Project conventions
 
 - Prices display as ₫ with dot separators: `₫269.000`.
+- **UI language: Vietnamese only — storefront AND admin** (decided 2026-10-01). Every user-facing string (labels, buttons, errors, emails, metadata titles) is written in Vietnamese with full diacritics. No i18n library and no English fallback: multi-language stays out of scope (ARCHITECTURE.md §9). Code, comments, commit messages and these docs stay in English. `<html lang="vi">`. English copy already in the storefront is debt until the Vietnamese pass (TODO.md).
 - Storefront copy: uppercase for headings/nav/buttons, sentence case for body (see DESIGN.md).
 - Order numbers: `PZ-YYYY-NNNN` from the Postgres sequence.
 - One feature per session. Update `TODO.md` at the end of every session. Commit after each green step with a conventional message (`feat:`, `fix:`, `chore:`).

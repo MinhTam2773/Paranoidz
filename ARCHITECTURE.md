@@ -20,6 +20,8 @@ Self-contained headless e-commerce for a Vietnamese streetwear brand. COD only โ
 | Notifications       | Telegram Bot (client new-order alerts) |
 | Hosting             | Vercel (sin1), two projects from one monorepo |
 
+UI language: **Vietnamese only**, storefront and admin (decided 2026-10-01; see CLAUDE.md ยง5).
+
 Auth providers: email/password, Google, Facebook. Phone number required and **unique** per account, stored normalized (`profiles_phone_normalized`). Email signup sends it as metadata (`handle_new_user()`); OAuth accounts, or a signup phone another account already has, get it at `/account/phone`, which every login passes through.
 
 ---
@@ -209,4 +211,4 @@ Order numbers: `PZ-YYYY-NNNN` from a Postgres sequence (concurrency-safe, 4+ dig
 
 ## 9. Out of Scope
 
-Payment gateways, Shopee integration, newsletter/email marketing, mobile apps, multi-language, multi-admin roles, analytics dashboards.
+Payment gateways, Shopee integration, newsletter/email marketing, mobile apps, multi-language (the site is Vietnamese-only, not bilingual), multi-admin roles, analytics dashboards.
