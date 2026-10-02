@@ -15,13 +15,16 @@ export default async function DashboardPage() {
   await requireAdmin();
   const admin = createAdminClient();
 
-  const [pending, today, delivered, customers, latest, lowStock] = await Promise.all([
+  const [pending, today, delivered, customers, lost, latest, lowStock] = await Promise.all([
     admin.from("orders").select("*", { count: "exact", head: true }).eq("status", "pending"),
     admin.from("orders").select("*", { count: "exact", head: true }).gte("created_at", vnStartOf("day")),
     // Revenue = COD actually collected: orders delivered this month (by delivery date,
     // not order date). An order reaches "delivered" once, so each counts once.
     admin.from("order_status_history").select("orders!inner(total)").eq("status", "delivered").gte("created_at", vnStartOf("month")),
     admin.from("customers").select("*", { count: "exact", head: true }),
+    // Cancelled + delivery failed this month, by when it happened. Both are final
+    // states (reached once per order), so each order counts once.
+    admin.from("order_status_history").select("status").in("status", ["cancelled", "delivery_failed"]).gte("created_at", vnStartOf("month")),
     admin.from("orders").select("id, order_number, recipient_name, total, status, created_at").order("created_at", { ascending: false }).limit(10),
     // Hidden products aren't on sale, so their stock isn't urgent.
     admin
@@ -32,19 +35,23 @@ export default async function DashboardPage() {
       .order("stock")
       .order("product_id"),
   ]);
-  for (const r of [pending, today, delivered, customers, latest, lowStock]) if (r.error) throw r.error;
+  for (const r of [pending, today, delivered, customers, lost, latest, lowStock]) if (r.error) throw r.error;
 
   const revenue = delivered.data!.reduce((sum, h) => sum + h.orders.total, 0);
+  const cancelled = lost.data!.filter((h) => h.status === "cancelled").length;
+  const failed = lost.data!.length - cancelled;
   const stats = [
     { label: "Chờ xác nhận", value: String(pending.count ?? 0), href: "/orders?status=pending" },
     { label: "Đơn hôm nay", value: String(today.count ?? 0) },
     { label: "Doanh thu tháng này", value: formatVnd(revenue), hint: "Đơn đã giao trong tháng" },
     { label: "Tổng khách hàng", value: String(customers.count ?? 0), hint: "Số điện thoại đã đặt hàng" },
+    { label: "Hủy / hoàn hàng", value: String(lost.data!.length), hint: `Tháng này: ${cancelled} đã hủy · ${failed} giao thất bại` },
   ];
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {/* 5 across from xl; the revenue column is wider so a ₫ amount in the hundreds of millions still fits at 28px. */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-[1fr_1fr_1.6fr_1fr_1fr]">
         {stats.map((s) => {
           const body = (
             <>
