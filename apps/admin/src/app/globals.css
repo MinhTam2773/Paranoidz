@@ -1,26 +1,111 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/*
+ * Design tokens — DASHBOARD_DESIGN.md (plus the DESIGN.md tokens it inherits)
+ * is the source of truth. Tailwind's default colours and shadows are removed so
+ * off-spec values produce no CSS at all.
+ */
+@theme {
+  /* DESIGN.md §2 colour palette (inherited, DASHBOARD_DESIGN.md §2) */
+  --color-*: initial;
+  --color-bg-primary: #ffffff;
+  --color-bg-secondary: #f5f5f5;
+  --color-bg-tertiary: #ebebeb;
+  --color-bg-dark: #111111;
+  --color-text-primary: #111111;
+  --color-text-secondary: #666666;
+  --color-text-muted: #999999;
+  --color-text-on-dark: #ffffff;
+  --color-accent: #ff2d2d;
+  --color-accent-hover: #e01f1f;
+  --color-accent-soft: #ff2d2d10;
+  --color-border: #e0e0e0;
+  --color-border-hover: #cccccc;
+  --color-success: #00c853;
+  --color-warning: #ffd600;
+
+  /* DASHBOARD_DESIGN.md §2 admin additions */
+  --color-sidebar-bg: #111111;
+  --color-sidebar-text: #ffffff;
+  --color-sidebar-active: #ff2d2d;
+  --color-content-bg: #f5f5f5;
+  --color-surface: #ffffff;
+
+  /* §2 order status badges — badges only, never fills */
+  --color-status-pending: #b45309;
+  --color-status-pending-bg: #fef3c7;
+  --color-status-confirmed: #1d4ed8;
+  --color-status-confirmed-bg: #dbeafe;
+  --color-status-shipped: #6d28d9;
+  --color-status-shipped-bg: #ede9fe;
+  --color-status-delivered: #047857;
+  --color-status-delivered-bg: #d1fae5;
+  --color-status-cancelled: #6b7280;
+  --color-status-cancelled-bg: #f3f4f6;
+  --color-status-delivery-failed: #b91c1c;
+  --color-status-delivery-failed-bg: #fee2e2;
+
+  /* §3 Typography — Inter everywhere, Rajdhani for the sidebar wordmark only */
+  --font-*: initial;
+  --font-sans: var(--font-inter), sans-serif;
+  --font-logo: var(--font-rajdhani), sans-serif;
+
+  --text-page-title: 24px;
+  --text-page-title--line-height: 1.2;
+  --text-page-title--font-weight: 700;
+  --text-card-title: 16px;
+  --text-card-title--line-height: 1.3;
+  --text-card-title--font-weight: 600;
+  --text-th: 12px;
+  --text-th--line-height: 1.4;
+  --text-th--letter-spacing: 0.05em;
+  --text-th--font-weight: 600;
+  --text-cell: 14px;
+  --text-cell--line-height: 1.5;
+  --text-cell--font-weight: 400;
+  --text-label: 13px;
+  --text-label--line-height: 1.4;
+  --text-label--font-weight: 500;
+  --text-input: 14px;
+  --text-input--line-height: 1.5;
+  --text-input--font-weight: 400;
+  --text-badge: 12px;
+  --text-badge--line-height: 1;
+  --text-badge--font-weight: 600;
+  --text-sidebar-link: 14px;
+  --text-sidebar-link--line-height: 1;
+  --text-sidebar-link--letter-spacing: 0.04em;
+  --text-sidebar-link--font-weight: 500;
+  --text-stat: 28px;
+  --text-stat--line-height: 1.1;
+  --text-stat--font-weight: 700;
+  --text-stat-label: 12px;
+  --text-stat-label--line-height: 1.4;
+  --text-stat-label--font-weight: 400;
+  /* DESIGN.md §3 button, shared with the storefront */
+  --text-button: 14px;
+  --text-button--line-height: 1;
+  --text-button--letter-spacing: 0.04em;
+  --text-button--font-weight: 600;
+
+  /* Radius — 4px standard, 8px hard maximum */
+  --radius-*: initial;
+  --radius-sm: 4px;
+  --radius-lg: 8px;
+
+  /* DESIGN.md §6 elevation levels 1–3 */
+  --shadow-*: initial;
+  --shadow-1: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-2: 0 4px 12px rgba(0, 0, 0, 0.1);
+  --shadow-3: 0 8px 32px rgba(0, 0, 0, 0.15);
+
+  /* §4 Layout: sidebar 240px = w-60, topbar 64px = h-16, content padding 24px = p-6,
+     max-width 1200px. Mobile breakpoint <768px = Tailwind's default md. */
+  --container-content: 1200px;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  body {
+    @apply bg-content-bg font-sans text-cell text-text-primary;
   }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
 }

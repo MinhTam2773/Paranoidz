@@ -68,7 +68,7 @@ Auth providers: email/password, Google, Facebook. Phone number required and **un
 | reviews, review_replies | SELECT visible rows | Server route |
 | vouchers, voucher_uses, loyalty_gifts, loyalty_awards, rate_limits | No direct access | Server only |
 
-Admin authenticates via Supabase Auth with an `admin` role claim; all admin mutations go through server routes using the admin client.
+Admin authenticates via Supabase Auth; admin status is `profiles.is_admin`, read server-side on every admin request (`apps/admin/src/proxy.ts`, plus `requireAdmin()` before any service_role use) — no JWT claim, so revoking it takes effect on the next request (decided 2026-10-01). All admin mutations go through server routes using the admin client.
 
 ### 2.4 Identity: account vs customer (decided 2026-09-26)
 
