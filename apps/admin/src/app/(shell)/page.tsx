@@ -29,7 +29,7 @@ export default async function DashboardPage() {
     // Hidden products aren't on sale, so their stock isn't urgent.
     admin
       .from("product_variants")
-      .select("id, color, size, stock, products!inner(name, is_active)")
+      .select("id, product_id, color, size, stock, products!inner(name, is_active)")
       .lte("stock", LOW_STOCK)
       .eq("products.is_active", true)
       .order("stock")
@@ -108,16 +108,18 @@ export default async function DashboardPage() {
           // -mb-px tucks the last row's bottom border under the card's.
           <ul className="-mb-px grid sm:grid-cols-2 xl:grid-cols-3">
             {lowStock.data!.map((v) => (
-              <li key={v.id} className="flex min-h-14 items-center justify-between gap-4 border-b border-border px-5 py-3">
-                <span className="flex min-w-0 flex-col">
-                  <span className="wrap-break-word">{v.products.name}</span>
-                  <span className="text-stat-label uppercase text-text-secondary">{v.color} / {v.size}</span>
-                </span>
-                {v.stock === 0 ? (
-                  <span className="shrink-0 rounded-sm bg-accent px-2.5 py-1 text-badge uppercase text-text-on-dark">Hết hàng</span>
-                ) : (
-                  <span className="shrink-0 font-semibold">Còn {v.stock}</span>
-                )}
+              <li key={v.id} className="border-b border-border">
+                <Link href={`/products/${v.product_id}`} className="flex min-h-14 items-center justify-between gap-4 px-5 py-3 hover:bg-bg-secondary">
+                  <span className="flex min-w-0 flex-col">
+                    <span className="wrap-break-word">{v.products.name}</span>
+                    <span className="text-stat-label uppercase text-text-secondary">{v.color} / {v.size}</span>
+                  </span>
+                  {v.stock === 0 ? (
+                    <span className="shrink-0 rounded-sm bg-accent px-2.5 py-1 text-badge uppercase text-text-on-dark">Hết hàng</span>
+                  ) : (
+                    <span className="shrink-0 font-semibold">Còn {v.stock}</span>
+                  )}
+                </Link>
               </li>
             ))}
           </ul>
