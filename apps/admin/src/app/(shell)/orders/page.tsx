@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createAdminClient } from "@paranoidz/db/admin";
 import { OrdersIcon } from "@/components/icons";
+import { Pagination } from "@/components/Pagination";
 import { StatusBadge } from "@/components/StatusBadge";
 import { requireAdmin } from "@/lib/auth";
 import { formatDateTime, formatPhone, formatVnd } from "@/lib/format";
@@ -165,32 +166,7 @@ export default async function OrdersPage({ searchParams }: PageProps<"/orders">)
         </>
       )}
 
-      {pages > 1 && (
-        <nav aria-label="Phân trang" className="flex justify-end gap-1">
-          {page > 1 && <PageLink href={href(status, q, page - 1)} label="Trang trước">‹</PageLink>}
-          {Array.from({ length: pages }, (_, i) => i + 1)
-            .filter((p) => Math.abs(p - page) <= 2 || p === 1 || p === pages)
-            .map((p) => (
-              <PageLink key={p} href={href(status, q, p)} current={p === page}>{p}</PageLink>
-            ))}
-          {page < pages && <PageLink href={href(status, q, page + 1)} label="Trang sau">›</PageLink>}
-        </nav>
-      )}
+      <Pagination page={page} pages={pages} href={(p) => href(status, q, p)} />
     </div>
-  );
-}
-
-function PageLink({ href, current, label, children }: { href: string; current?: boolean; label?: string; children: React.ReactNode }) {
-  return (
-    <Link
-      href={href}
-      aria-label={label}
-      aria-current={current ? "page" : undefined}
-      className={`flex size-10 items-center justify-center rounded-sm border ${
-        current ? "border-text-primary bg-text-primary text-text-on-dark" : "border-border bg-surface hover:border-border-hover"
-      }`}
-    >
-      {children}
-    </Link>
   );
 }

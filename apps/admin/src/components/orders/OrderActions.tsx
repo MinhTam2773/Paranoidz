@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import { transitionOrder } from "@/app/(shell)/orders/[number]/actions";
 import { ORDER_ACTIONS, STATUS_LABEL, type OrderAction, type OrderStatus } from "@/lib/order-status";
+import { Toast, type ToastMessage } from "../Toast";
 
 const button = "h-10 w-full rounded-sm px-4 text-button uppercase transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-50";
 const primaryClass = `${button} bg-accent text-text-on-dark enabled:hover:bg-accent-hover`;
@@ -15,14 +16,8 @@ export function OrderActions({ orderId, orderNumber, status }: { orderId: string
   const { primary, secondary } = ORDER_ACTIONS[status];
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [action, setAction] = useState<OrderAction | null>(null);
-  const [toast, setToast] = useState<{ ok: boolean; text: string } | null>(null);
+  const [toast, setToast] = useState<ToastMessage | null>(null);
   const [pending, startTransition] = useTransition();
-
-  useEffect(() => {
-    if (!toast) return;
-    const timer = setTimeout(() => setToast(null), 3000);
-    return () => clearTimeout(timer);
-  }, [toast]);
 
   // Closed from state, not inside the transition callback: close() there runs at
   // once, before the revalidated page (with the new status) has arrived.
@@ -82,12 +77,7 @@ export function OrderActions({ orderId, orderNumber, status }: { orderId: string
         )}
       </dialog>
 
-      {toast && (
-        <div role="status" className="fixed right-4 bottom-4 z-50 flex max-w-[calc(100%-2rem)] gap-2 rounded-sm bg-bg-dark px-4 py-3 text-text-on-dark shadow-2">
-          <span aria-hidden="true" className={toast.ok ? "text-success" : "text-accent"}>{toast.ok ? "✓" : "✕"}</span>
-          {toast.text}
-        </div>
-      )}
+      <Toast toast={toast} setToast={setToast} />
     </>
   );
 }
