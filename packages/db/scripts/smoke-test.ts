@@ -290,6 +290,36 @@ async function main() {
   check("p_address_id: other user's → INVALID_ADDRESS, guest → INVALID_ADDRESS, owner → linked",
     stolen.error?.message === "INVALID_ADDRESS" && guestLink.error?.message === "INVALID_ADDRESS" && linked?.address_id === c1Address,
     `${stolen.error?.message} ${guestLink.error?.message} ${linked?.address_id}`);
+
+  // 11. Admin stock edit: compare-and-set, all or nothing ------------------
+  const [sa, sb] = [await variant(pool[2].id), await variant(pool[3].id)];
+  const stale = await admin.rpc("set_variant_stocks", { p_changes: [
+    { variant_id: sa.id, expected: sa.stock, stock: sa.stock + 5 },
+    { variant_id: sb.id, expected: sb.stock + 1, stock: 0 },
+  ] });
+  const afterStale = [(await variant(sa.id)).stock, (await variant(sb.id)).stock];
+  check("set_variant_stocks: one stale expected → STOCK_CHANGED, nothing applied",
+    stale.error?.message === "STOCK_CHANGED" && afterStale[0] === sa.stock && afterStale[1] === sb.stock,
+    `${stale.error?.message} ${afterStale.join("/")}`);
+  const ok = await admin.rpc("set_variant_stocks", { p_changes: [
+    { variant_id: sa.id, expected: sa.stock, stock: sa.stock + 5 },
+    { variant_id: sb.id, expected: sb.stock, stock: sb.stock + 1 },
+  ] });
+  const afterOk = [(await variant(sa.id)).stock, (await variant(sb.id)).stock];
+  await admin.rpc("set_variant_stocks", { p_changes: [
+    { variant_id: sa.id, expected: sa.stock + 5, stock: sa.stock },
+    { variant_id: sb.id, expected: sb.stock + 1, stock: sb.stock },
+  ] });
+  check("set_variant_stocks: matching expected → applied", !ok.error && afterOk[0] === sa.stock + 5 && afterOk[1] === sb.stock + 1,
+    `${ok.error?.message} ${afterOk.join("/")}`);
+  const negative = await admin.rpc("set_variant_stocks", { p_changes: [{ variant_id: sa.id, expected: sa.stock, stock: -1 }] });
+  const asCustomer = await c1.rpc("set_variant_stocks", { p_changes: [{ variant_id: sa.id, expected: sa.stock, stock: 99 }] });
+  const asAnon = await createClient<Database>(url, publishable, noPersist)
+    .rpc("set_variant_stocks", { p_changes: [{ variant_id: sa.id, expected: sa.stock, stock: 99 }] });
+  check("set_variant_stocks: negative → INVALID_STOCK, customer → FORBIDDEN, anon denied",
+    negative.error?.message === "INVALID_STOCK" && asCustomer.error?.message === "FORBIDDEN" && !!asAnon.error
+      && (await variant(sa.id)).stock === sa.stock,
+    `${negative.error?.message} ${asCustomer.error?.message} ${asAnon.error?.message}`);
 }
 
 async function cleanup() {

@@ -910,6 +910,7 @@ export type Database = {
           rank: number
         }[]
       }
+      set_variant_stocks: { Args: { p_changes: Json }; Returns: undefined }
       transition_order_status: {
         Args: {
           p_new_status: Database["public"]["Enums"]["order_status"]
