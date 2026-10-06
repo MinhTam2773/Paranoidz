@@ -52,7 +52,12 @@ export default async function OrderDetailPage({ params }: PageProps<"/orders/[nu
       <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
         <div className="flex min-w-0 flex-col gap-6">
           <section className={card}>
-            <h3 className={cardTitle}>Khách hàng</h3>
+            <div className="mb-4 flex items-center justify-between gap-4">
+              <h3 className="text-card-title uppercase">Khách hàng</h3>
+              {customer && (
+                <Link href={`/customers/${order.phone}`} className="text-label uppercase text-text-secondary hover:text-text-primary">Xem khách hàng ›</Link>
+              )}
+            </div>
             {customer?.is_blacklisted && (
               <p className="mb-4 inline-block rounded-sm bg-accent px-2.5 py-1 text-badge uppercase text-text-on-dark">Danh sách đen</p>
             )}
