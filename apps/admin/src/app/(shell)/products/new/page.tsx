@@ -12,6 +12,7 @@ export default async function NewProductPage() {
       <div className="flex flex-col gap-2">
         <Link href="/products" className="text-label uppercase text-text-secondary hover:text-text-primary">‹ Sản phẩm</Link>
         <h2 className="text-page-title">Sản phẩm mới</h2>
+        <p className="text-text-secondary">Tạo sản phẩm trước, sau đó thêm ảnh ở trang chỉnh sửa.</p>
       </div>
       <ProductEditor
         version="new"
