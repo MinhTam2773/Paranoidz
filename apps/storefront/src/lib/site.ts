@@ -6,8 +6,9 @@ export const HOTLINE = "0972 926 956";
 // DESIGN.md §4, Row 2 — order matters.
 export const NAV_LINKS = [
   { label: "Home", href: "/" },
-  { label: "Outlet 2026", href: "/outlet" },
-  { label: "New collection", href: "/new-collection" },
+  // Collections managed in the admin; these slugs must exist there (admin → Bộ sưu tập).
+  { label: "Outlet 2026", href: "/collections/outlet-2026" },
+  { label: "New collection", href: "/collections/new-collection" },
   { label: "Product", href: "/products" },
   { label: "Customer feedback", href: "/feedback" },
   { label: "Branding", href: "/branding" },
