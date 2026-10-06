@@ -3,9 +3,10 @@ import Link from "next/link";
 import { createAdminClient } from "@paranoidz/db/admin";
 import { ProductsIcon } from "@/components/icons";
 import { Pagination } from "@/components/Pagination";
-import { ActiveToggle } from "@/components/products/ActiveToggle";
+import { ActiveToggle } from "@/components/ActiveToggle";
 import { requireAdmin } from "@/lib/auth";
 import { formatDateTime, formatVnd } from "@/lib/format";
+import { setProductActive } from "./actions";
 
 const PAGE_SIZE = 20;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -121,7 +122,7 @@ export default async function ProductsPage({ searchParams }: PageProps<"/product
                   <td className="px-4 text-text-secondary">{p.categories?.name ?? "—"}</td>
                   <td className="whitespace-nowrap px-4 text-right">{p.priceRange}</td>
                   <td className="px-4 text-right">{p.stock}</td>
-                  <td className="px-4"><ActiveToggle id={p.id} name={p.name} active={p.is_active} /></td>
+                  <td className="px-4"><ActiveToggle name={p.name} active={p.is_active} label="Đang bán" setActive={setProductActive.bind(null, p.id)} /></td>
                   <td className="whitespace-nowrap px-4 text-text-secondary">{formatDateTime(p.updated_at)}</td>
                 </tr>
               ))}
@@ -138,7 +139,7 @@ export default async function ProductsPage({ searchParams }: PageProps<"/product
                   <span className="text-text-secondary">{p.categories?.name ?? "—"} · {p.priceRange}</span>
                   <span className="text-text-secondary">Tồn kho {p.stock}</span>
                 </div>
-                <ActiveToggle id={p.id} name={p.name} active={p.is_active} />
+                <ActiveToggle name={p.name} active={p.is_active} label="Đang bán" setActive={setProductActive.bind(null, p.id)} />
               </li>
             ))}
           </ul>

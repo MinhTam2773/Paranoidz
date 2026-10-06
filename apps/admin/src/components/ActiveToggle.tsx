@@ -1,19 +1,24 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { setProductActive } from "@/app/(shell)/products/actions";
-import { Toast, type ToastMessage } from "../Toast";
+import { Toast, type ToastMessage } from "./Toast";
 
-// Inline on/off for products.is_active (DASHBOARD_DESIGN.md §6.3). Sits above the
-// row's stretched link (relative z-10) so it doesn't open the product.
-export function ActiveToggle({ id, name, active }: { id: string; name: string; active: boolean }) {
+// Inline on/off for an is_active column (products §6.3, collections §6.6).
+// `setActive` is a server action bound to the row's id. Sits above the row's
+// stretched link (relative z-10) so it doesn't open the row.
+export function ActiveToggle({ name, active, label, setActive }: {
+  name: string;
+  active: boolean;
+  label: string; // what "on" means, e.g. "Đang bán"
+  setActive: (active: boolean) => Promise<{ error?: string }>;
+}) {
   const [pending, startTransition] = useTransition();
   const [toast, setToast] = useState<ToastMessage | null>(null);
 
   function toggle() {
     startTransition(async () => {
-      const { error } = await setProductActive(id, !active);
-      startTransition(() => setToast(error ? { ok: false, text: error } : { ok: true, text: `${name}: ${active ? "đã ẩn" : "đang bán"}` }));
+      const { error } = await setActive(!active);
+      startTransition(() => setToast(error ? { ok: false, text: error } : { ok: true, text: `${name}: ${active ? "đã ẩn" : label.toLowerCase()}` }));
     });
   }
 
@@ -23,7 +28,7 @@ export function ActiveToggle({ id, name, active }: { id: string; name: string; a
         type="button"
         role="switch"
         aria-checked={active}
-        aria-label={`Đang bán: ${name}`}
+        aria-label={`${label}: ${name}`}
         onClick={toggle}
         disabled={pending}
         className="relative z-10 flex h-11 items-center disabled:opacity-50"
