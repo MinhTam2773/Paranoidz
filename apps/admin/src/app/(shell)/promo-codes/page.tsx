@@ -76,7 +76,7 @@ export default async function PromoCodesPage({ searchParams }: PageProps<"/promo
                   <td className="whitespace-nowrap px-4 text-right">{v.cap}</td>
                   <td className="whitespace-nowrap px-4 text-right">{v.uses}{v.exhausted && note("Hết lượt")}</td>
                   <td className="whitespace-nowrap px-4">{v.expires}{v.expired && note("Đã hết hạn")}</td>
-                  <td className="px-4"><ActiveToggle name={v.code} active={v.is_active} label="Đang bật" setActive={setPromoActive.bind(null, v.id)} /></td>
+                  <td className="px-4"><ActiveToggle offLabel="đã tắt" name={v.code} active={v.is_active} label="Đang bật" setActive={setPromoActive.bind(null, v.id)} /></td>
                 </tr>
               ))}
             </tbody>
@@ -93,7 +93,7 @@ export default async function PromoCodesPage({ searchParams }: PageProps<"/promo
                     Đã dùng {v.uses}{v.exhausted && " (hết lượt)"} · {v.expires_at ? `Hết hạn ${v.expires}` : v.expires}{v.expired && " (đã qua)"}
                   </span>
                 </div>
-                <ActiveToggle name={v.code} active={v.is_active} label="Đang bật" setActive={setPromoActive.bind(null, v.id)} />
+                <ActiveToggle offLabel="đã tắt" name={v.code} active={v.is_active} label="Đang bật" setActive={setPromoActive.bind(null, v.id)} />
               </li>
             ))}
           </ul>

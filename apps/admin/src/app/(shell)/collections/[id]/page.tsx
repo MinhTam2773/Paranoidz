@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { createAdminClient } from "@paranoidz/db/admin";
 import { CollectionForm } from "@/components/collections/CollectionForm";
 import { requireAdmin } from "@/lib/auth";
-import { pickerProducts } from "../_products";
+import { pickerProducts } from "@/lib/picker-products";
 
 export default async function EditCollectionPage({ params }: PageProps<"/collections/[id]">) {
   await requireAdmin();

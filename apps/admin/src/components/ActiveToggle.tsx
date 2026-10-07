@@ -6,10 +6,11 @@ import { Toast, type ToastMessage } from "./Toast";
 // Inline on/off for an is_active column (products §6.3, collections §6.6).
 // `setActive` is a server action bound to the row's id. Sits above the row's
 // stretched link (relative z-10) so it doesn't open the row.
-export function ActiveToggle({ name, active, label, setActive }: {
+export function ActiveToggle({ name, active, label, offLabel = "đã ẩn", setActive }: {
   name: string;
   active: boolean;
   label: string; // what "on" means, e.g. "Đang bán"
+  offLabel?: string; // toast after switching off
   setActive: (active: boolean) => Promise<{ error?: string }>;
 }) {
   const [pending, startTransition] = useTransition();
@@ -18,7 +19,7 @@ export function ActiveToggle({ name, active, label, setActive }: {
   function toggle() {
     startTransition(async () => {
       const { error } = await setActive(!active);
-      startTransition(() => setToast(error ? { ok: false, text: error } : { ok: true, text: `${name}: ${active ? "đã ẩn" : label.toLowerCase()}` }));
+      startTransition(() => setToast(error ? { ok: false, text: error } : { ok: true, text: `${name}: ${active ? offLabel : label.toLowerCase()}` }));
     });
   }
 

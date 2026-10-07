@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { CollectionForm } from "@/components/collections/CollectionForm";
 import { requireAdmin } from "@/lib/auth";
-import { pickerProducts } from "../_products";
+import { pickerProducts } from "@/lib/picker-products";
 
 export default async function NewCollectionPage() {
   await requireAdmin();

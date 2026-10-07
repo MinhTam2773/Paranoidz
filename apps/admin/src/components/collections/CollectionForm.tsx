@@ -5,10 +5,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition, type FormEvent } from "react";
 import { saveCollection } from "@/app/(shell)/collections/actions";
+import type { PickerProduct } from "@/lib/picker-products";
 import { slugify } from "@/lib/product";
 import { Toast, type ToastMessage } from "../Toast";
-
-export type PickerProduct = { id: string; name: string; isActive: boolean; thumbUrl: string | null };
 
 const input =
   "h-10 w-full rounded-sm border bg-surface px-3 text-base md:text-input focus:border-text-primary focus:shadow-[0_0_0_2px_var(--color-accent-soft)] focus:outline-none disabled:bg-bg-secondary disabled:text-text-secondary";

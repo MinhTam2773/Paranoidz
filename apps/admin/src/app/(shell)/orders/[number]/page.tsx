@@ -19,7 +19,7 @@ export default async function OrderDetailPage({ params }: PageProps<"/orders/[nu
     .from("orders")
     // One literal: supabase-js infers the row type from it.
     .select(
-      "id, order_number, status, created_at, recipient_name, phone, secondary_phone, email, address, ward, district, city, note, subtotal, discount, total, order_items(id, name_snapshot, color_snapshot, size_snapshot, price_snapshot, image_snapshot, qty), order_status_history(id, status, note, created_at), voucher_uses(vouchers(code))",
+      "id, order_number, status, created_at, recipient_name, phone, secondary_phone, email, address, ward, district, city, note, subtotal, discount, total, applied_bundles, order_items(id, name_snapshot, color_snapshot, size_snapshot, price_snapshot, image_snapshot, qty), order_status_history(id, status, note, created_at), voucher_uses(vouchers(code))",
     )
     .eq("order_number", number)
     .order("created_at", { referencedTable: "order_status_history" })
@@ -36,6 +36,9 @@ export default async function OrderDetailPage({ params }: PageProps<"/orders/[nu
 
   const images = admin.storage.from("product-images");
   const voucherCode = order.voucher_uses?.vouchers?.code;
+  // Snapshot from place_order() when a bundle discount priced the order (ARCHITECTURE.md §5).
+  const bundles = (order.applied_bundles ?? []) as { name: string; sets: number }[];
+  const discountSource = voucherCode ?? (bundles.length ? `Combo: ${bundles.map((b) => (b.sets > 1 ? `${b.name} ×${b.sets}` : b.name)).join(", ")}` : null);
   const fullAddress = [order.address, order.ward, order.district, order.city].filter(Boolean).join(", ");
 
   return (
@@ -108,7 +111,7 @@ export default async function OrderDetailPage({ params }: PageProps<"/orders/[nu
               <div className="flex justify-between gap-4"><dt className="text-text-secondary">Tạm tính</dt><dd>{formatVnd(order.subtotal)}</dd></div>
               {order.discount > 0 && (
                 <div className="flex justify-between gap-4">
-                  <dt className="text-text-secondary">Giảm giá{voucherCode && ` (${voucherCode})`}</dt>
+                  <dt className="text-text-secondary">Giảm giá{discountSource && ` (${discountSource})`}</dt>
                   <dd>−{formatVnd(order.discount)}</dd>
                 </div>
               )}
