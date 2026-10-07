@@ -19,6 +19,15 @@ export function formatDateTime(iso: string) {
 
 // Vietnam is UTC+7 all year (no DST), so local midnight / month start are fixed offsets.
 const VN_OFFSET_MS = 7 * 60 * 60 * 1000;
+
+// Vietnam calendar date as "yyyy-mm-dd" (the value of an <input type="date">).
+export function vnDate(iso: string | Date = new Date()) {
+  return new Date(new Date(iso).getTime() + VN_OFFSET_MS).toISOString().slice(0, 10);
+}
+// "yyyy-mm-dd" → dd/mm/yyyy.
+export function formatDate(ymd: string) {
+  return ymd.split("-").reverse().join("/");
+}
 export function vnStartOf(unit: "day" | "month", now = new Date()) {
   const vn = new Date(now.getTime() + VN_OFFSET_MS);
   const start = Date.UTC(vn.getUTCFullYear(), vn.getUTCMonth(), unit === "day" ? vn.getUTCDate() : 1);
