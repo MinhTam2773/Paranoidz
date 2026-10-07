@@ -407,6 +407,7 @@ export type Database = {
         Row: {
           address: string
           address_id: string | null
+          applied_bundles: Json | null
           city: string
           created_at: string
           discount: number
@@ -427,6 +428,7 @@ export type Database = {
         Insert: {
           address: string
           address_id?: string | null
+          applied_bundles?: Json | null
           city: string
           created_at?: string
           discount?: number
@@ -447,6 +449,7 @@ export type Database = {
         Update: {
           address?: string
           address_id?: string | null
+          applied_bundles?: Json | null
           city?: string
           created_at?: string
           discount?: number
@@ -873,6 +876,11 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      best_bundles: { Args: { p_counts: Json }; Returns: Json }
+      best_bundles_search: {
+        Args: { p_bundles: Json; p_counts: Json; p_i: number }
+        Returns: Json
+      }
       hit_rate_limit: {
         Args: {
           p_ip: string

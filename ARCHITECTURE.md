@@ -145,6 +145,13 @@ Order numbers: `PZ-YYYY-NNNN` from a Postgres sequence (concurrency-safe, 4+ dig
 - Promo codes are redeemable ONCE per customer (enforced by a partial unique index on `voucher_uses`); a released slot frees the code again. `auto_first5` is exempt — it applies to all 5 qualifying orders.
 - Discount cap: PENDING client decision.
 
+### Bundles (combo) — decided 2026-10-07
+- A bundle = a set of products + a flat ₫ `discount_amount`. Any variant (size/colour) of each product counts.
+- Applies **per complete set**: 2 tees + 2 caps in a tee+cap bundle = discount ×2.
+- **Each unit counts toward one bundle only.** When bundles overlap, `place_order()` picks the combination of sets that saves the most (`best_bundles()`, exhaustive search — cheap because orders are capped at 20 units).
+- **No stacking with vouchers**: the order gets the better of (bundle total) vs (first-5 / promo). A tie goes to the bundle, so the customer keeps their promo use. When the bundle wins, no `voucher_uses` row is written.
+- The bundle total is capped at the subtotal. `orders.applied_bundles` snapshots what was applied (`[{bundle_id, name, discount_amount, sets}]`), NULL when no bundle discount priced the order.
+
 ### Loyalty program
 - Counter = lifetime `customers.delivered_count` for the order's **phone**. Never resets.
 - Gift triggered at every multiple of 10 (10, 20, 30, …) → row in `loyalty_awards`.
@@ -174,14 +181,14 @@ Order numbers: `PZ-YYYY-NNNN` from a Postgres sequence (concurrency-safe, 4+ dig
 | profiles | id (FK auth.users), full_name, phone UNIQUE (normalized, NULL until the phone step), is_admin | Optional — guests have none |
 | customers | phone PK (normalized), delivered_count, refusal_count, is_blacklisted | One row per phone, created on first order. Identity for all per-customer rules |
 | addresses | user_id, name, phone, address, ward, district, city, is_default, label | |
-| orders | order_number (PZ-YYYY-NNNN, sequence), user_id (NULL = guest), phone (normalized), address snapshot fields, status enum, subtotal, discount, total, note, timestamps | Address is SNAPSHOTTED, not FK-only |
+| orders | order_number (PZ-YYYY-NNNN, sequence), user_id (NULL = guest), phone (normalized), address snapshot fields, status enum, subtotal, discount, total, applied_bundles (jsonb, §5), note, timestamps | Address is SNAPSHOTTED, not FK-only |
 | order_items | order_id, product_id, variant_id, name_snapshot, price_snapshot, qty, image_snapshot | Frozen at order time |
 | reviews | user_id, product_id, rating 1–5, content, is_visible | No pre-moderation |
 | review_replies | review_id, user_id, content, is_brand_reply | Brand flag server-enforced |
 | wishlists | user_id, product_id, added_at | |
 | vouchers | code, type (auto_first5 / promo), discount_pct, cap_amount, max_uses, used_count, is_active, expires_at | |
 | voucher_uses | voucher_id, phone, order_id, voucher_type, released_at (nullable) | Slot released on cancel/refusal. `voucher_type` is denormalised from `vouchers.type` so the one-promo-per-phone partial unique index can exist |
-| bundles | name, discount_amount, is_active | |
+| bundles | name, discount_amount, is_active | Pricing rules in §5 |
 | bundle_items | bundle_id, product_id | |
 | collections | name, slug, sort_order, is_active | |
 | collection_items | collection_id, product_id, sort_order | |

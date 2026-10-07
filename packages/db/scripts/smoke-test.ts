@@ -22,6 +22,8 @@ const admin: Db = createClient<Database>(url, secret, noPersist);
 
 const CUSTOMERS = ["customer1@paranoidz.test", "customer3@paranoidz.test"];
 const VOUCHER = "SMOKE-TEST";
+const BUNDLE_VOUCHER = "SMOKE-TEST-BUNDLE";
+const BUNDLE_PREFIX = "SMOKE-BUNDLE"; // assumes no other active bundle holds the products picked in case 12
 const PHONES = Array.from({ length: 9 }, (_, i) => `090000000${i + 1}`);
 const AUTH_EMAILS = [1, 2, 3].map((i) => `smoke-auth-${i}@paranoidz.test`);
 
@@ -320,6 +322,64 @@ async function main() {
     negative.error?.message === "INVALID_STOCK" && asCustomer.error?.message === "FORBIDDEN" && !!asAnon.error
       && (await variant(sa.id)).stock === sa.stock,
     `${negative.error?.message} ${asCustomer.error?.message} ${asAnon.error?.message}`);
+
+  // 12. Bundle pricing (ARCHITECTURE.md §5) --------------------------------
+  // Four products, ≥ ₫150.000 each, so any 2-product set is worth more than its discount.
+  const { data: bv } = await admin.from("product_variants")
+    .select("id, product_id, price, products!inner(is_active)").eq("products.is_active", true)
+    .gte("stock", 5).gte("price", 150000).order("price");
+  const firstPerProduct = new Map((bv ?? []).toReversed().map((v) => [v.product_id, v]));
+  const [p1, p2, p3, p4] = [...firstPerProduct.values()];
+  if (!p4) throw new Error("need 4 active products with a variant priced >= 150000 and stock >= 5");
+  const bundle = async (name: string, amount: number, products: string[]) => {
+    const { data, error } = await admin.from("bundles").insert({ name: `${BUNDLE_PREFIX} ${name}`, discount_amount: amount }).select("id").single();
+    if (error) throw error;
+    const { error: itemsErr } = await admin.from("bundle_items").insert(products.map((product_id) => ({ bundle_id: data.id, product_id })));
+    if (itemsErr) throw itemsErr;
+  };
+  await bundle("A", 300000, [p1.product_id, p2.product_id]);
+  await bundle("B", 200000, [p1.product_id, p3.product_id]);
+  await bundle("C", 200000, [p2.product_id, p4.product_id]);
+  const applied = async (orderId: string) => {
+    const [{ data: o }, { count }] = await Promise.all([
+      admin.from("orders").select("discount, applied_bundles").eq("id", orderId).single(),
+      admin.from("voucher_uses").select("*", { count: "exact", head: true }).eq("order_id", orderId),
+    ]);
+    const sets = ((o?.applied_bundles ?? []) as { name: string; sets: number }[]).map((b) => `${b.name.slice(BUNDLE_PREFIX.length + 1)}×${b.sets}`).sort().join(",");
+    return { discount: o?.discount, sets, voucherUses: count };
+  };
+
+  // One of each: greedy would take A (300k) and strand p3/p4; B + C = 400k is better. Beats first-5 10%.
+  const all = await placeOrder([p1, p2, p3, p4].map((v) => ({ variant_id: v.id, qty: 1 })), { phone: PHONES[4] });
+  if (all.error) throw all.error;
+  const allRes = await applied(all.data!.order_id);
+  check("bundles: overlap resolves to the best combination (B+C, not A), no voucher use",
+    allRes.discount === 400000 && allRes.sets === "B×1,C×1" && allRes.voucherUses === 0, JSON.stringify(allRes));
+
+  // Two complete B sets → discount ×2.
+  const twice = await placeOrder([{ variant_id: p1.id, qty: 2 }, { variant_id: p3.id, qty: 2 }], { phone: PHONES[4] });
+  if (twice.error) throw twice.error;
+  const twiceRes = await applied(twice.data!.order_id);
+  check("bundles: per complete set (2 × B = 400k)", twiceRes.discount === 400000 && twiceRes.sets === "B×2", JSON.stringify(twiceRes));
+
+  // Better of bundle vs promo: a 100% promo beats B; capped at ₫1.000 it loses and isn't consumed.
+  await admin.from("vouchers").delete().eq("code", BUNDLE_VOUCHER);
+  const { data: bVoucher, error: bvErr } = await admin.from("vouchers")
+    .insert({ code: BUNDLE_VOUCHER, type: "promo", discount_pct: 100 }).select("id").single();
+  if (bvErr) throw bvErr;
+  const pair = [{ variant_id: p1.id, qty: 1 }, { variant_id: p3.id, qty: 1 }];
+  const promoWins = await placeOrder(pair, { phone: PHONES[5], voucher: BUNDLE_VOUCHER });
+  if (promoWins.error) throw promoWins.error;
+  const promoRes = await applied(promoWins.data!.order_id);
+  await admin.from("vouchers").update({ cap_amount: 1000 }).eq("id", bVoucher.id);
+  const bundleWins = await placeOrder(pair, { phone: PHONES[6], voucher: BUNDLE_VOUCHER.toLowerCase() });
+  if (bundleWins.error) throw bundleWins.error;
+  const bundleRes = await applied(bundleWins.data!.order_id);
+  const { data: bvAfter } = await admin.from("vouchers").select("used_count").eq("id", bVoucher.id).single();
+  check("bundles vs promo: better wins, no stacking; losing promo not consumed",
+    promoRes.discount === promoWins.data!.subtotal && promoRes.sets === "" && promoRes.voucherUses === 1
+      && bundleRes.discount === 200000 && bundleRes.sets === "B×1" && bundleRes.voucherUses === 0 && bvAfter?.used_count === 1,
+    `promo ${JSON.stringify(promoRes)} bundle ${JSON.stringify(bundleRes)} used_count=${bvAfter?.used_count}`);
 }
 
 async function cleanup() {
@@ -339,7 +399,8 @@ async function cleanup() {
   await admin.from("customers").delete().in("phone", PHONES);
   await admin.from("rate_limits").delete().in("bucket", PHONES.flatMap((p) => [`order:phone:${p}`, `lookup:phone:${p}`]));
   await admin.from("rate_limits").delete().or("bucket.like.order:ip:192.0.2.%,bucket.like.order:ip:2001:db8:%");
-  await admin.from("vouchers").delete().eq("code", VOUCHER);
+  await admin.from("vouchers").delete().in("code", [VOUCHER, BUNDLE_VOUCHER]);
+  await admin.from("bundles").delete().like("name", `${BUNDLE_PREFIX}%`);
   for (const id of createdUsers) await admin.auth.admin.deleteUser(id);
   // The delivered test order kept its AUTO-FIRST5 use; put the counter back.
   if (autoUsedBefore !== null) await admin.from("vouchers").update({ used_count: autoUsedBefore }).eq("type", "auto_first5");
