@@ -881,6 +881,12 @@ export type Database = {
         Args: { p_bundles: Json; p_counts: Json; p_i: number }
         Returns: Json
       }
+      best_seller_ids: {
+        Args: { p_limit: number }
+        Returns: {
+          product_id: string
+        }[]
+      }
       hit_rate_limit: {
         Args: {
           p_ip: string
