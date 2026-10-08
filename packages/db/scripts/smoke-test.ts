@@ -56,6 +56,7 @@ const createdOrders: string[] = [];
 const createdUsers: string[] = [];
 const deliveredItems: { variant_id: string; qty: number }[] = [];
 let autoUsedBefore: number | null = null;
+const cartUsers: string[] = [];
 
 async function placeOrder(
   items: { variant_id: string; qty: number }[],
@@ -380,6 +381,39 @@ async function main() {
     promoRes.discount === promoWins.data!.subtotal && promoRes.sets === "" && promoRes.voucherUses === 1
       && bundleRes.discount === 200000 && bundleRes.sets === "B×1" && bundleRes.voucherUses === 0 && bvAfter?.used_count === 1,
     `promo ${JSON.stringify(promoRes)} bundle ${JSON.stringify(bundleRes)} used_count=${bvAfter?.used_count}`);
+
+  // 13. Account cart: merge sums + caps at stock, own rows only ------------
+  cartUsers.push(c1Id, c3Id);
+  await admin.from("cart_items").delete().in("user_id", cartUsers);
+  const cartVariant = await variant(pool[0].id); // current stock — case 11 changed it
+  const merged = await c1.rpc("merge_cart", {
+    p_lines: [
+      { variant_id: cartVariant.id, qty: 2 },
+      { variant_id: cartVariant.id, qty: 1 },
+      { variant_id: "not-a-uuid", qty: 1 },
+      { variant_id: crypto.randomUUID(), qty: 1 },
+    ],
+  });
+  const { data: afterMerge } = await c1.from("cart_items").select("variant_id, qty");
+  check("cart: merge sums duplicates, skips malformed / unknown ids",
+    !merged.error && afterMerge?.length === 1 && afterMerge[0].qty === 3, JSON.stringify(merged.error ?? afterMerge));
+  await c1.rpc("merge_cart", { p_lines: [{ variant_id: cartVariant.id, qty: cartVariant.stock }] });
+  const { data: capped } = await c1.from("cart_items").select("qty").eq("variant_id", cartVariant.id).single();
+  check("cart: merge into an existing row caps at stock", capped?.qty === cartVariant.stock, `${capped?.qty} / ${cartVariant.stock}`);
+
+  const anonDb = createClient<Database>(url, publishable, noPersist);
+  const [otherRead, otherInsert, otherUpdate, anonRead, anonMerge] = await Promise.all([
+    c3.from("cart_items").select("qty"),
+    c3.from("cart_items").insert({ user_id: c1Id, variant_id: pool[1].id, qty: 1 }),
+    c3.from("cart_items").update({ qty: 1 }).eq("user_id", c1Id).select(),
+    anonDb.from("cart_items").select("qty"),
+    anonDb.rpc("merge_cart", { p_lines: [{ variant_id: cartVariant.id, qty: 1 }] }),
+  ]);
+  const { data: untouched } = await admin.from("cart_items").select("qty").eq("user_id", c1Id);
+  check("cart: another user / anon can't read or write it",
+    otherRead.data?.length === 0 && !!otherInsert.error && otherUpdate.data?.length === 0
+      && anonRead.data?.length === 0 && !!anonMerge.error && untouched?.length === 1 && untouched[0].qty === cartVariant.stock,
+    `read=${otherRead.data?.length} insert=${otherInsert.error?.code} update=${otherUpdate.data?.length} anonRead=${anonRead.data?.length} anonMerge=${anonMerge.error?.code}`);
 }
 
 async function cleanup() {
@@ -401,6 +435,7 @@ async function cleanup() {
   await admin.from("rate_limits").delete().or("bucket.like.order:ip:192.0.2.%,bucket.like.order:ip:2001:db8:%");
   await admin.from("vouchers").delete().in("code", [VOUCHER, BUNDLE_VOUCHER]);
   await admin.from("bundles").delete().like("name", `${BUNDLE_PREFIX}%`);
+  if (cartUsers.length) await admin.from("cart_items").delete().in("user_id", cartUsers);
   for (const id of createdUsers) await admin.auth.admin.deleteUser(id);
   // The delivered test order kept its AUTO-FIRST5 use; put the counter back.
   if (autoUsedBefore !== null) await admin.from("vouchers").update({ used_count: autoUsedBefore }).eq("type", "auto_first5");

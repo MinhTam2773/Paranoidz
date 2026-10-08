@@ -124,6 +124,42 @@ export type Database = {
         }
         Relationships: []
       }
+      cart_items: {
+        Row: {
+          created_at: string
+          qty: number
+          user_id: string
+          variant_id: string
+        }
+        Insert: {
+          created_at?: string
+          qty: number
+          user_id: string
+          variant_id: string
+        }
+        Update: {
+          created_at?: string
+          qty?: number
+          user_id?: string
+          variant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cart_items_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cart_items_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "product_variants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       categories: {
         Row: {
           created_at: string
@@ -898,6 +934,7 @@ export type Database = {
         Returns: boolean
       }
       immutable_unaccent: { Args: { "": string }; Returns: string }
+      merge_cart: { Args: { p_lines: Json }; Returns: undefined }
       normalize_vn_phone: { Args: { p: string }; Returns: string }
       place_order: {
         Args: {
