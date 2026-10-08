@@ -26,7 +26,7 @@ export function ProductTabs({
 
   return (
     <section ref={ref} className="mt-16 scroll-mt-36">
-      <div role="tablist" aria-label="Product information" onKeyDown={onKeyDown} className="flex border-b border-border">
+      <div role="tablist" aria-label="Thông tin sản phẩm" onKeyDown={onKeyDown} className="flex border-b border-border">
         {tabs.map((t) => (
           <button
             key={t.id}

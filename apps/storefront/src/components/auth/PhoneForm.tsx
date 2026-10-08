@@ -14,7 +14,7 @@ export function PhoneForm({ next }: { next: string }) {
     e.preventDefault();
     const phone = String(new FormData(e.currentTarget).get("phone") ?? "");
     if (!normalizePhone(phone)) {
-      setError("Enter a Vietnamese mobile number: 10 digits starting with 03, 05, 07, 08 or 09.");
+      setError("Nhập số di động Việt Nam: 10 chữ số, bắt đầu bằng 03, 05, 07, 08 hoặc 09.");
       return document.getElementById("phone")?.focus();
     }
     startTransition(async () => {
@@ -27,7 +27,7 @@ export function PhoneForm({ next }: { next: string }) {
     <form onSubmit={submit} noValidate className="flex max-w-md flex-col gap-6">
       <Field
         id="phone"
-        label="Phone number"
+        label="Số điện thoại"
         error={error}
         type="tel"
         inputMode="tel"
@@ -37,7 +37,7 @@ export function PhoneForm({ next }: { next: string }) {
         autoFocus
       />
       <button type="submit" disabled={pending} className={primaryClass}>
-        {pending ? "Saving…" : "Save and continue"}
+        {pending ? "Đang lưu…" : "Lưu và tiếp tục"}
       </button>
     </form>
   );

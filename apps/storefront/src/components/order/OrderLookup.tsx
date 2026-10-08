@@ -28,8 +28,8 @@ export function OrderLookup({ defaultOrderNumber }: { defaultOrderNumber: string
     const input = { orderNumber: String(form.get("orderNumber") ?? ""), phone: String(form.get("phone") ?? "") };
     // Same checks as the server, so a typo doesn't spend a rate-limited lookup.
     const errs: Errors = {};
-    if (!parseOrderNumber(input.orderNumber)) errs.orderNumber = "Enter your order number, e.g. PZ-2026-0123.";
-    if (!normalizePhone(input.phone)) errs.phone = "Enter the phone number you ordered with: 10 digits starting with 03, 05, 07, 08 or 09.";
+    if (!parseOrderNumber(input.orderNumber)) errs.orderNumber = "Nhập mã đơn hàng, ví dụ PZ-2026-0123.";
+    if (!normalizePhone(input.phone)) errs.phone = "Nhập số điện thoại đã dùng khi đặt hàng: 10 chữ số, bắt đầu bằng 03, 05, 07, 08 hoặc 09.";
     setErrors(errs);
     setMessage(undefined);
     if (errs.orderNumber || errs.phone) {
@@ -50,7 +50,7 @@ export function OrderLookup({ defaultOrderNumber }: { defaultOrderNumber: string
       <div role="status" className="flex max-w-xl flex-col gap-6">
         <div className="flex flex-col gap-2">
           <p className="text-caption text-text-secondary">
-            Order <strong className="text-text-primary">{order.orderNumber}</strong> · Placed {placedOn.format(new Date(order.createdAt))}
+            Đơn <strong className="text-text-primary">{order.orderNumber}</strong> · Đặt ngày {placedOn.format(new Date(order.createdAt))}
           </p>
           <h2 className="text-h3 uppercase">{status.label}</h2>
           <p className="text-text-secondary">{status.detail}</p>
@@ -58,12 +58,12 @@ export function OrderLookup({ defaultOrderNumber }: { defaultOrderNumber: string
 
         <OrderSummary items={order.items} subtotal={order.subtotal} discount={order.discount} total={order.total}>
           <p className="text-caption text-text-muted">
-            Delivering to {[order.ward, order.city].filter(Boolean).join(", ")}. To change anything, call {HOTLINE}.
+            Giao đến {[order.ward, order.city].filter(Boolean).join(", ")}. Cần thay đổi thông tin, vui lòng gọi {HOTLINE}.
           </p>
         </OrderSummary>
 
         <button type="button" onClick={() => setOrder(null)} className={`${secondaryClass} max-w-xs`}>
-          Look up another order
+          Tra cứu đơn khác
         </button>
       </div>
     );
@@ -71,9 +71,9 @@ export function OrderLookup({ defaultOrderNumber }: { defaultOrderNumber: string
 
   return (
     <form onSubmit={submit} noValidate className="flex max-w-md flex-col gap-6">
-      <p className="text-text-secondary">Enter the order number from your confirmation and the phone number you ordered with.</p>
+      <p className="text-text-secondary">Nhập mã đơn hàng trong xác nhận đặt hàng và số điện thoại bạn đã dùng khi đặt.</p>
       <div className="flex flex-col gap-2">
-        <label htmlFor="lookup-orderNumber" className="text-nav uppercase text-text-secondary">Order number</label>
+        <label htmlFor="lookup-orderNumber" className="text-nav uppercase text-text-secondary">Mã đơn hàng</label>
         <input
           id="lookup-orderNumber"
           name="orderNumber"
@@ -88,7 +88,7 @@ export function OrderLookup({ defaultOrderNumber }: { defaultOrderNumber: string
         {errors.orderNumber && <p id="lookup-orderNumber-error" className="text-caption text-accent">{errors.orderNumber}</p>}
       </div>
       <div className="flex flex-col gap-2">
-        <label htmlFor="lookup-phone" className="text-nav uppercase text-text-secondary">Phone number</label>
+        <label htmlFor="lookup-phone" className="text-nav uppercase text-text-secondary">Số điện thoại</label>
         <input
           id="lookup-phone"
           name="phone"
@@ -109,7 +109,7 @@ export function OrderLookup({ defaultOrderNumber }: { defaultOrderNumber: string
         disabled={pending}
         className="h-12 w-full rounded-sm bg-accent text-button uppercase text-text-on-dark transition-all duration-200 enabled:hover:-translate-y-px enabled:hover:bg-accent-hover enabled:hover:shadow-accent disabled:cursor-not-allowed disabled:bg-bg-tertiary disabled:text-text-muted"
       >
-        {pending ? "Looking up…" : "Look up order"}
+        {pending ? "Đang tra cứu…" : "Tra cứu đơn hàng"}
       </button>
     </form>
   );

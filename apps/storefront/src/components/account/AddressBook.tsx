@@ -18,16 +18,16 @@ export function AddressBook({ addresses }: { addresses: SavedAddress[] }) {
   return (
     <section aria-labelledby="addresses" className="flex flex-col gap-4">
       <div className="flex items-center justify-between gap-4">
-        <h2 id="addresses" className="text-h3 uppercase">Delivery addresses</h2>
+        <h2 id="addresses" className="text-h3 uppercase">Địa chỉ giao hàng</h2>
         {editing === null && addresses.length < 10 && (
           <button type="button" onClick={() => setEditing("new")} className={`${actionClass} text-text-primary underline underline-offset-4 hover:text-accent`}>
-            Add new
+            Thêm mới
           </button>
         )}
       </div>
       {editing === "new" && <AddressForm onDone={() => setEditing(null)} />}
       {addresses.length === 0 && editing !== "new" && (
-        <p className="text-text-secondary">No saved addresses yet. Save one to fill in checkout faster.</p>
+        <p className="text-text-secondary">Chưa có địa chỉ nào được lưu. Lưu địa chỉ để đặt hàng nhanh hơn.</p>
       )}
       <ul className="grid gap-4 lg:grid-cols-2">
         {addresses.map((a) =>
@@ -51,7 +51,7 @@ function AddressCard({ address: a, canEdit, onEdit }: { address: SavedAddress; c
     setError(undefined);
     startTransition(async () => {
       const res = await action();
-      if (!res.ok) setError(res.message ?? "Couldn't update that. Try again.");
+      if (!res.ok) setError(res.message ?? "Không thể cập nhật. Vui lòng thử lại.");
     });
   }
 
@@ -59,7 +59,7 @@ function AddressCard({ address: a, canEdit, onEdit }: { address: SavedAddress; c
     <li className={`flex flex-col gap-3 rounded-sm border p-5 ${a.isDefault ? "border-text-primary" : "border-border"}`}>
       <div className="flex items-start justify-between gap-3">
         <span className="wrap-break-word text-product-name font-bold">{a.name}</span>
-        {a.isDefault && <span className="shrink-0 rounded-sm border border-text-primary px-2 py-0.5 text-caption uppercase">Default</span>}
+        {a.isDefault && <span className="shrink-0 rounded-sm border border-text-primary px-2 py-0.5 text-caption uppercase">Mặc định</span>}
       </div>
       <div className="flex flex-col gap-1 text-text-secondary">
         <span>{formatPhone(a.phone)}</span>
@@ -68,19 +68,19 @@ function AddressCard({ address: a, canEdit, onEdit }: { address: SavedAddress; c
       <div className="mt-auto flex flex-wrap items-center gap-x-5 border-t border-border pt-2">
         {confirming ? (
           <>
-            <span className="text-caption text-text-secondary">Delete this address?</span>
+            <span className="text-caption text-text-secondary">Xóa địa chỉ này?</span>
             <button type="button" disabled={pending} onClick={() => run(() => deleteAddress(a.id))} className={`${actionClass} text-accent`}>
-              {pending ? "Deleting…" : "Delete"}
+              {pending ? "Đang xóa…" : "Xóa"}
             </button>
             <button type="button" disabled={pending} onClick={() => setConfirming(false)} className={`${actionClass} text-text-secondary`}>
-              Keep
+              Giữ lại
             </button>
           </>
         ) : (
           <>
-            <button type="button" disabled={!canEdit || pending} onClick={onEdit} className={`${actionClass} text-text-primary`}>Edit</button>
+            <button type="button" disabled={!canEdit || pending} onClick={onEdit} className={`${actionClass} text-text-primary`}>Sửa</button>
             <button type="button" disabled={!canEdit || pending} onClick={() => setConfirming(true)} className={`${actionClass} text-text-secondary`}>
-              Delete
+              Xóa
             </button>
             {!a.isDefault && (
               <button
@@ -89,7 +89,7 @@ function AddressCard({ address: a, canEdit, onEdit }: { address: SavedAddress; c
                 onClick={() => run(() => setDefaultAddress(a.id))}
                 className={`${actionClass} ml-auto text-text-primary underline underline-offset-4`}
               >
-                Set default
+                Đặt mặc định
               </button>
             )}
           </>
@@ -125,12 +125,12 @@ function AddressForm({ initial, onDone }: { initial?: SavedAddress; onDone: () =
 
   return (
     <form onSubmit={submit} noValidate className="flex flex-col gap-5 rounded-sm border border-text-primary p-5">
-      <h3 className="text-nav uppercase">{initial ? "Edit address" : "New address"}</h3>
+      <h3 className="text-nav uppercase">{initial ? "Sửa địa chỉ" : "Địa chỉ mới"}</h3>
       <div className="grid gap-5 sm:grid-cols-2">
-        <Field id="addr-name" label="Full name" error={errors.name} defaultValue={initial?.name} autoComplete="name" maxLength={100} />
+        <Field id="addr-name" label="Họ tên" error={errors.name} defaultValue={initial?.name} autoComplete="name" maxLength={100} />
         <Field
           id="addr-phone"
-          label="Phone number"
+          label="Số điện thoại"
           error={errors.phone}
           defaultValue={initial ? formatPhone(initial.phone) : undefined}
           type="tel"
@@ -142,17 +142,17 @@ function AddressForm({ initial, onDone }: { initial?: SavedAddress; onDone: () =
         <div className="sm:col-span-2">
           <Field
             id="addr-address"
-            label="Street address"
+            label="Địa chỉ"
             error={errors.address}
             defaultValue={initial?.address}
             autoComplete="street-address"
-            placeholder="House number, street"
+            placeholder="Số nhà, tên đường"
             maxLength={200}
           />
         </div>
-        <Field id="addr-ward" label="Ward / commune" error={errors.ward} defaultValue={initial?.ward} placeholder="e.g. Phường Bến Thành" maxLength={100} />
+        <Field id="addr-ward" label="Phường / xã" error={errors.ward} defaultValue={initial?.ward} placeholder="Ví dụ: Phường Bến Thành" maxLength={100} />
         <div className="flex flex-col gap-2">
-          <label htmlFor="addr-city" className={labelClass}>City / province</label>
+          <label htmlFor="addr-city" className={labelClass}>Tỉnh / thành phố</label>
           <ProvinceSelect
             id="addr-city"
             name="addr-city"
@@ -166,8 +166,8 @@ function AddressForm({ initial, onDone }: { initial?: SavedAddress; onDone: () =
       </div>
       {message && <p role="alert" className={errorClass}>{message}</p>}
       <div className="flex flex-col gap-3 sm:flex-row">
-        <button type="submit" disabled={pending} className={`${primaryClass} sm:w-48`}>{pending ? "Saving…" : "Save address"}</button>
-        <button type="button" disabled={pending} onClick={onDone} className={`${secondaryClass} sm:w-48`}>Cancel</button>
+        <button type="submit" disabled={pending} className={`${primaryClass} sm:w-48`}>{pending ? "Đang lưu…" : "Lưu địa chỉ"}</button>
+        <button type="button" disabled={pending} onClick={onDone} className={`${secondaryClass} sm:w-48`}>Hủy</button>
       </div>
     </form>
   );

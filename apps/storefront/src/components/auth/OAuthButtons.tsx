@@ -5,8 +5,8 @@ import { createClient } from "@paranoidz/db/client";
 import { secondaryClass } from "./styles";
 
 const PROVIDERS = [
-  { id: "google", label: "Continue with Google" },
-  { id: "facebook", label: "Continue with Facebook" },
+  { id: "google", label: "Tiếp tục với Google" },
+  { id: "facebook", label: "Tiếp tục với Facebook" },
 ] as const;
 
 // Leaves the site for the provider; /auth/callback exchanges the code and sends the user
@@ -24,7 +24,7 @@ export function OAuthButtons({ next }: { next: string }) {
     });
     // Success navigates away; only a failure to start comes back here.
     if (error) {
-      setError("Couldn't start that sign-in. Try again, or use your email.");
+      setError("Không thể bắt đầu đăng nhập. Vui lòng thử lại, hoặc dùng email.");
       setBusy(false);
     }
   }
@@ -32,7 +32,7 @@ export function OAuthButtons({ next }: { next: string }) {
   return (
     <div className="flex flex-col gap-3">
       <p className="mb-3 flex items-center gap-3 text-caption uppercase text-text-muted before:h-px before:flex-1 before:bg-border after:h-px after:flex-1 after:bg-border">
-        or
+        hoặc
       </p>
       {PROVIDERS.map(({ id, label }) => (
         <button key={id} type="button" disabled={busy} onClick={() => signIn(id)} className={secondaryClass}>

@@ -15,10 +15,10 @@ type Errors = Partial<Record<FieldName | "form", string>>;
 
 function validate(v: Record<FieldName, string>): Errors {
   const errs: Errors = {};
-  if (v.fullName.trim().length < 2) errs.fullName = "Enter your full name.";
-  if (!normalizePhone(v.phone)) errs.phone = "Enter a Vietnamese mobile number: 10 digits starting with 03, 05, 07, 08 or 09.";
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.email.trim())) errs.email = "Enter a valid email, e.g. name@gmail.com.";
-  if (v.password.length < PASSWORD_MIN) errs.password = `Use at least ${PASSWORD_MIN} characters.`;
+  if (v.fullName.trim().length < 2) errs.fullName = "Nhập họ tên của bạn.";
+  if (!normalizePhone(v.phone)) errs.phone = "Nhập số di động Việt Nam: 10 chữ số, bắt đầu bằng 03, 05, 07, 08 hoặc 09.";
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.email.trim())) errs.email = "Nhập email hợp lệ, ví dụ ten@gmail.com.";
+  if (v.password.length < PASSWORD_MIN) errs.password = `Dùng ít nhất ${PASSWORD_MIN} ký tự.`;
   return errs;
 }
 
@@ -53,16 +53,16 @@ export function RegisterForm({ next }: { next: string }) {
     });
     setPending(false);
     if (error) {
-      if (error.code === "weak_password") return setErrors({ password: "That password is too easy to guess. Try a longer one." });
+      if (error.code === "weak_password") return setErrors({ password: "Mật khẩu này quá dễ đoán. Hãy dùng mật khẩu dài hơn." });
       if (error.code === "email_address_invalid")
-        return setErrors({ email: "This address can't receive email. Check it for typos, or use another one." });
+        return setErrors({ email: "Địa chỉ này không nhận được email. Hãy kiểm tra lỗi chính tả hoặc dùng email khác." });
       if (error.code === "user_already_exists" || error.code === "email_exists")
-        return setErrors({ email: "This email already has an account. Log in instead." });
+        return setErrors({ email: "Email này đã có tài khoản. Hãy đăng nhập." });
       // Project-wide cap on auth emails, not this visitor's fault.
       if (error.code === "over_email_send_rate_limit")
-        return setErrors({ form: "We can't send sign-up emails right now. Try again in an hour, or order as a guest meanwhile." });
-      if (error.status === 429) return setErrors({ form: "Too many attempts. Wait a few minutes and try again." });
-      return setErrors({ form: "Couldn't create your account. Try again." });
+        return setErrors({ form: "Hiện chưa thể gửi email đăng ký. Vui lòng thử lại sau một giờ, trong lúc đó bạn vẫn có thể đặt hàng không cần tài khoản." });
+      if (error.status === 429) return setErrors({ form: "Thử quá nhiều lần. Vui lòng đợi vài phút rồi thử lại." });
+      return setErrors({ form: "Không thể tạo tài khoản. Vui lòng thử lại." });
     }
     // Email confirmation on → no session yet. Also the answer for an already-registered email,
     // so the form can't be used to find out who has an account.
@@ -73,11 +73,11 @@ export function RegisterForm({ next }: { next: string }) {
   if (sentTo) {
     return (
       <div role="status" className="flex max-w-md flex-col gap-4">
-        <h2 className="text-h3 uppercase">Check your email</h2>
+        <h2 className="text-h3 uppercase">Kiểm tra email của bạn</h2>
         <p className="text-text-secondary">
-          We sent a link to <strong className="wrap-break-word text-text-primary">{sentTo}</strong>. Open it to finish creating your account.
+          Chúng tôi đã gửi liên kết đến <strong className="wrap-break-word text-text-primary">{sentTo}</strong>. Hãy mở liên kết để hoàn tất tạo tài khoản.
         </p>
-        <p className="text-caption text-text-muted">No email after a few minutes? Check your spam folder, or try again.</p>
+        <p className="text-caption text-text-muted">Chưa nhận được email sau vài phút? Hãy kiểm tra thư mục spam, hoặc thử lại.</p>
       </div>
     );
   }
@@ -87,10 +87,10 @@ export function RegisterForm({ next }: { next: string }) {
   return (
     <div className="flex max-w-md flex-col gap-6">
       <form onSubmit={submit} noValidate className="flex flex-col gap-6">
-        <Field id="fullName" label="Full name" error={errors.fullName} autoComplete="name" maxLength={100} />
+        <Field id="fullName" label="Họ tên" error={errors.fullName} autoComplete="name" maxLength={100} />
         <Field
           id="phone"
-          label="Phone number"
+          label="Số điện thoại"
           error={errors.phone}
           type="tel"
           inputMode="tel"
@@ -101,21 +101,21 @@ export function RegisterForm({ next }: { next: string }) {
         <Field id="email" label="Email" error={errors.email} type="email" autoComplete="email" maxLength={200} />
         <Field
           id="password"
-          label="Password"
+          label="Mật khẩu"
           error={errors.password}
           type="password"
           autoComplete="new-password"
           maxLength={72}
-          placeholder={`At least ${PASSWORD_MIN} characters`}
+          placeholder={`Ít nhất ${PASSWORD_MIN} ký tự`}
         />
         {errors.form && <p role="alert" className="text-caption text-accent">{errors.form}</p>}
         <button type="submit" disabled={pending} className={primaryClass}>
-          {pending ? "Creating account…" : "Create account"}
+          {pending ? "Đang tạo tài khoản…" : "Tạo tài khoản"}
         </button>
       </form>
       <OAuthButtons next={next} />
       <p className="text-text-secondary">
-        Already have an account? <Link href={loginHref} className={linkClass}>Log in</Link>
+        Đã có tài khoản? <Link href={loginHref} className={linkClass}>Đăng nhập</Link>
       </p>
     </div>
   );

@@ -17,8 +17,8 @@ export function Footer() {
           </Link>
         </div>
 
-        <nav aria-label="Policy" className="flex flex-col gap-4">
-          <h2 className={heading}>Policy</h2>
+        <nav aria-label="Chính sách" className="flex flex-col gap-4">
+          <h2 className={heading}>Chính sách</h2>
           {POLICY_LINKS.map(({ label, href }) => (
             <Link key={href} href={href} className={`${muted} hover:text-text-on-dark`}>
               {label}
@@ -27,7 +27,7 @@ export function Footer() {
         </nav>
 
         <div className="flex flex-col gap-4">
-          <h2 className={heading}>Store info</h2>
+          <h2 className={heading}>Thông tin cửa hàng</h2>
           {STORE_ADDRESSES.map(({ name, address }) => (
             <p key={name} className={muted}>
               {name}
@@ -55,7 +55,7 @@ export function Footer() {
 
       <div className="border-t border-text-on-dark/10">
         <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-6 sm:flex-row sm:items-center sm:justify-between lg:px-6">
-          <p className={muted}>© 2026 Paranoidz. All rights reserved.</p>
+          <p className={muted}>© 2026 Paranoidz. Bảo lưu mọi quyền.</p>
           <span className="w-fit rounded-sm border border-text-on-dark/30 px-2 py-1 text-caption font-semibold uppercase">
             COD
           </span>

@@ -5,7 +5,7 @@ import { PhoneForm } from "@/components/auth/PhoneForm";
 import { Breadcrumb } from "@/components/layout/Breadcrumb";
 import { safeNext } from "@/lib/auth";
 
-export const metadata: Metadata = { title: "Add your phone | Paranoidz", robots: { index: false } };
+export const metadata: Metadata = { title: "Thêm số điện thoại | Paranoidz", robots: { index: false } };
 
 // Every login passes through here (afterLoginPath). Phone is required per account
 // (ARCHITECTURE.md §1) but OAuth signups arrive without one, and a signup phone that another
@@ -21,10 +21,10 @@ export default async function AccountPhonePage({ searchParams }: PageProps<"/acc
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 pb-16 lg:px-6">
-      <Breadcrumb items={[{ label: "Home", href: "/" }, { label: "Account" }]} />
-      <h1 className="mb-2 text-h2 uppercase">Add your phone number</h1>
+      <Breadcrumb items={[{ label: "Trang chủ", href: "/" }, { label: "Tài khoản" }]} />
+      <h1 className="mb-2 text-h2 uppercase">Thêm số điện thoại</h1>
       <p className="mb-6 max-w-md text-text-secondary">
-        Every Paranoidz account needs a Vietnamese mobile number. Each number can be on one account only.
+        Mỗi tài khoản Paranoidz cần một số di động Việt Nam. Mỗi số chỉ dùng được cho một tài khoản.
       </p>
       <PhoneForm next={next} />
     </div>

@@ -113,8 +113,8 @@ export function SearchForm({
         }}
         onFocus={() => setOpen(true)}
         onKeyDown={onKeyDown}
-        placeholder="Search product..."
-        aria-label="Search products"
+        placeholder="Tìm sản phẩm..."
+        aria-label="Tìm sản phẩm"
         aria-expanded={shown}
         aria-controls={listId}
         aria-autocomplete="list"
@@ -126,7 +126,7 @@ export function SearchForm({
         <div
           id={listId}
           role="listbox"
-          aria-label="Product suggestions"
+          aria-label="Gợi ý sản phẩm"
           aria-busy={suggestions.query !== query}
           className={`absolute inset-x-0 top-full z-20 mt-1 flex flex-col overflow-hidden rounded-sm border border-border bg-bg-primary shadow-2 transition-opacity duration-200 ${
             suggestions.query !== query ? "opacity-60" : ""
@@ -151,7 +151,7 @@ export function SearchForm({
                 </span>
                 <span className="min-w-0 flex-1 truncate text-product-name text-text-primary">{p.name}</span>
                 {p.soldOut ? (
-                  <span className="shrink-0 text-caption uppercase text-text-muted">Sold out</span>
+                  <span className="shrink-0 text-caption uppercase text-text-muted">Hết hàng</span>
                 ) : (
                   <span className={`shrink-0 text-product-name font-semibold ${onSale ? "text-accent" : "text-text-primary"}`}>
                     {formatVnd(p.price)}
@@ -171,11 +171,11 @@ export function SearchForm({
               onPointerMove={() => setActive(suggestions.products.length)}
               className={`flex h-11 items-center border-t border-border px-3 text-nav uppercase text-text-primary ${optionClass(suggestions.products.length)}`}
             >
-              View all results
+              Xem tất cả kết quả
             </Link>
           ) : (
             <p className="px-3 py-3 text-product-name wrap-break-word text-text-muted">
-              No products match &ldquo;{suggestions.query}&rdquo;.
+              Không có sản phẩm nào khớp với &ldquo;{suggestions.query}&rdquo;.
             </p>
           )}
         </div>

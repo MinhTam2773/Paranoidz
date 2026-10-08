@@ -6,7 +6,7 @@ import { createClient } from "@paranoidz/db/client";
 import { UserIcon } from "./icons";
 
 // Reads the session in the browser, so the layout stays cookie-free and ISR pages stay cached.
-// Server HTML always says LOGIN / REGISTER; a signed-in visitor sees it switch after hydration.
+// Server HTML always says ĐĂNG NHẬP / ĐĂNG KÝ; a signed-in visitor sees it switch after hydration.
 export function AccountLink({ className, icon, onClick }: { className: string; icon?: boolean; onClick?: () => void }) {
   const [signedIn, setSignedIn] = useState(false);
 
@@ -19,7 +19,7 @@ export function AccountLink({ className, icon, onClick }: { className: string; i
   return (
     <Link href={signedIn ? "/account" : "/login"} onClick={onClick} className={className}>
       {icon && <UserIcon width={20} height={20} />}
-      {signedIn ? "Account" : "Login / Register"}
+      {signedIn ? "Tài khoản" : "Đăng nhập / Đăng ký"}
     </Link>
   );
 }

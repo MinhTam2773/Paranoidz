@@ -80,15 +80,15 @@ export function LoginModal() {
             <button
               type="button"
               onClick={() => dialogRef.current?.close()}
-              aria-label="Close"
+              aria-label="Đóng"
               className="absolute right-2 flex size-11 items-center justify-center"
             >
               <CloseIcon />
             </button>
           </div>
           <div className="flex flex-col gap-2 p-6">
-            <h2 id="login-modal-title" className="text-h3 uppercase">Log in</h2>
-            <p className="mb-4 text-text-secondary">Log in to save products to your wishlist.</p>
+            <h2 id="login-modal-title" className="text-h3 uppercase">Đăng nhập</h2>
+            <p className="mb-4 text-text-secondary">Đăng nhập để lưu sản phẩm vào danh sách yêu thích.</p>
             <LoginForm next={next} onSignedIn={onSignedIn} />
           </div>
         </div>

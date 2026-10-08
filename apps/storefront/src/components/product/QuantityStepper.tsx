@@ -5,7 +5,7 @@ export function QuantityStepper({
   value,
   max,
   onChange,
-  label = "Quantity",
+  label = "Số lượng",
 }: {
   value: number;
   max: number;
@@ -19,7 +19,7 @@ export function QuantityStepper({
     <div role="group" aria-label={label} className="flex h-11 w-fit items-center rounded-sm border border-border">
       <button
         type="button"
-        aria-label="Decrease quantity"
+        aria-label="Giảm số lượng"
         disabled={value <= 1}
         onClick={() => onChange(value - 1)}
         className={buttonClass}
@@ -31,7 +31,7 @@ export function QuantityStepper({
       </span>
       <button
         type="button"
-        aria-label="Increase quantity"
+        aria-label="Tăng số lượng"
         disabled={value >= max}
         onClick={() => onChange(value + 1)}
         className={buttonClass}

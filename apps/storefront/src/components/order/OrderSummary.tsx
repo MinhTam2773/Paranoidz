@@ -24,7 +24,7 @@ export function OrderSummary({ items, subtotal, discount, total, children }: {
             <div className="flex min-w-0 flex-1 flex-col gap-1">
               <span className="text-product-name">{item.name}</span>
               <span className="text-caption uppercase text-text-secondary">
-                {[item.color, item.size].filter(Boolean).join(" / ")} · Qty {item.qty}
+                {[item.color, item.size].filter(Boolean).join(" / ")} · SL {item.qty}
               </span>
             </div>
             <span className="text-product-name">{formatVnd(item.price * item.qty)}</span>
@@ -33,12 +33,12 @@ export function OrderSummary({ items, subtotal, discount, total, children }: {
       </ul>
 
       <dl className="flex flex-col gap-3 rounded-sm border border-border p-6">
-        <div className="flex justify-between"><dt className="text-text-secondary">Subtotal</dt><dd>{formatVnd(subtotal)}</dd></div>
+        <div className="flex justify-between"><dt className="text-text-secondary">Tạm tính</dt><dd>{formatVnd(subtotal)}</dd></div>
         {discount > 0 && (
-          <div className="flex justify-between"><dt className="text-text-secondary">Discount</dt><dd className="text-accent">−{formatVnd(discount)}</dd></div>
+          <div className="flex justify-between"><dt className="text-text-secondary">Giảm giá</dt><dd className="text-accent">−{formatVnd(discount)}</dd></div>
         )}
         <div className="flex justify-between border-t border-border pt-3">
-          <dt className="text-nav uppercase">Total, cash on delivery</dt><dd className="text-price">{formatVnd(total)}</dd>
+          <dt className="text-nav uppercase">Tổng thanh toán khi nhận hàng</dt><dd className="text-price">{formatVnd(total)}</dd>
         </div>
         {children}
       </dl>

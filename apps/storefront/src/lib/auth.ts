@@ -18,4 +18,4 @@ export function afterLoginPath(next: string) {
 export const PASSWORD_MIN = 8;
 
 // profiles_phone_unique (23505): one number per account (ARCHITECTURE.md §1).
-export const PHONE_TAKEN = `This number is already on another Paranoidz account. Log in with that account, or call ${HOTLINE} for help.`;
+export const PHONE_TAKEN = `Số điện thoại này đã được dùng cho một tài khoản Paranoidz khác. Hãy đăng nhập bằng tài khoản đó, hoặc gọi ${HOTLINE} để được hỗ trợ.`;

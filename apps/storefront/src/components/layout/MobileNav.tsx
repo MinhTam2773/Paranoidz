@@ -32,7 +32,7 @@ export function MobileNav() {
       <button
         type="button"
         onClick={() => setSearchOpen((o) => !o)}
-        aria-label="Search"
+        aria-label="Tìm kiếm"
         aria-expanded={searchOpen}
         className="order-first flex size-11 items-center justify-center lg:hidden"
       >
@@ -41,7 +41,7 @@ export function MobileNav() {
       <button
         type="button"
         onClick={() => setMenuOpen(true)}
-        aria-label="Open menu"
+        aria-label="Mở menu"
         aria-expanded={menuOpen}
         className="order-last flex size-11 items-center justify-center lg:hidden"
       >
@@ -68,13 +68,13 @@ export function MobileNav() {
           <button
             type="button"
             onClick={() => setMenuOpen(false)}
-            aria-label="Close menu"
+            aria-label="Đóng menu"
             className="flex size-11 items-center justify-center"
           >
             <CloseIcon />
           </button>
         </div>
-        <nav aria-label="Mobile" className="flex flex-1 flex-col items-center justify-center gap-2">
+        <nav aria-label="Menu di động" className="flex flex-1 flex-col items-center justify-center gap-2">
           {NAV_LINKS.map(({ label, href }) => (
             <Link
               key={href}

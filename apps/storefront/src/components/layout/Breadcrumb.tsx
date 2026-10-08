@@ -3,7 +3,7 @@ import Link from "next/link";
 // Inner-page path subheader, DESIGN.md §4. The last item (no href) is the current page.
 export function Breadcrumb({ items }: { items: { label: string; href?: string }[] }) {
   return (
-    <nav aria-label="Breadcrumb" className="py-3">
+    <nav aria-label="Đường dẫn" className="py-3">
       <ol className="flex flex-wrap items-center text-nav font-normal uppercase">
         {items.map(({ label, href }, i) => (
           <li key={label} className="flex items-center">

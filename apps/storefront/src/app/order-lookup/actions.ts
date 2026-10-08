@@ -23,7 +23,7 @@ export type LookupResult =
   | { ok: true; order: LookedUpOrder }
   | { ok: false; message: string; field?: "orderNumber" | "phone" };
 
-const FAILED: LookupResult = { ok: false, message: `Something went wrong. Please try again or call ${HOTLINE}.` };
+const FAILED: LookupResult = { ok: false, message: `Đã có lỗi xảy ra. Vui lòng thử lại hoặc gọi ${HOTLINE}.` };
 
 // Guest order lookup (ARCHITECTURE.md §2.4): order number + the order's phone. Orders are
 // own-row-only under RLS and guests have no session, so this reads with the admin client and
@@ -33,14 +33,14 @@ const FAILED: LookupResult = { ok: false, message: `Something went wrong. Please
 export async function lookupOrder(input: { orderNumber: string; phone: string }): Promise<LookupResult> {
   const orderNumber = parseOrderNumber(String(input?.orderNumber ?? ""));
   const phone = normalizePhone(String(input?.phone ?? ""));
-  if (!orderNumber) return { ok: false, field: "orderNumber", message: "Enter your order number, e.g. PZ-2026-0123." };
+  if (!orderNumber) return { ok: false, field: "orderNumber", message: "Nhập mã đơn hàng, ví dụ PZ-2026-0123." };
   if (!phone) {
-    return { ok: false, field: "phone", message: "Enter the phone number you ordered with: 10 digits starting with 03, 05, 07, 08 or 09." };
+    return { ok: false, field: "phone", message: "Nhập số điện thoại đã dùng khi đặt hàng: 10 chữ số, bắt đầu bằng 03, 05, 07, 08 hoặc 09." };
   }
 
   try {
     if (!(await hitRateLimit("lookup", phone, { ip: 20, phone: 10 }))) {
-      return { ok: false, message: `Too many lookups. Please wait an hour and try again, or call ${HOTLINE}.` };
+      return { ok: false, message: `Bạn đã tra cứu quá nhiều lần. Vui lòng đợi một giờ rồi thử lại, hoặc gọi ${HOTLINE}.` };
     }
   } catch (limitError) {
     console.error("hit_rate_limit failed", limitError);
@@ -58,7 +58,7 @@ export async function lookupOrder(input: { orderNumber: string; phone: string })
     console.error("order lookup failed", error);
     return FAILED;
   }
-  if (!data) return { ok: false, message: `No order matches that order number and phone number. Check both, or call ${HOTLINE}.` };
+  if (!data) return { ok: false, message: `Không tìm thấy đơn hàng khớp với mã đơn và số điện thoại này. Hãy kiểm tra lại, hoặc gọi ${HOTLINE}.` };
 
   return {
     ok: true,

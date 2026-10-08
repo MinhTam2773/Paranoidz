@@ -65,8 +65,8 @@ export function ProductView({
   const [size, setSize] = useState(() => (color ? defaultSize(variants, color) : null));
   const [activeImage, setActiveImage] = useState(0);
   const tabs = [
-    ...(details ? [{ id: "details", label: "Product details", content: details }] : []),
-    ...(sizeGuide ? [{ id: "size-guide", label: "Size guide", content: sizeGuide }] : []),
+    ...(details ? [{ id: "details", label: "Chi tiết sản phẩm", content: details }] : []),
+    ...(sizeGuide ? [{ id: "size-guide", label: "Bảng size", content: sizeGuide }] : []),
   ];
   const [activeTab, setActiveTab] = useState(tabs[0]?.id ?? "");
   const tabsRef = useRef<HTMLElement>(null);
@@ -116,7 +116,7 @@ export function ProductView({
                   key={img.url}
                   type="button"
                   onClick={() => setActiveImage(i)}
-                  aria-label={`Show image ${i + 1} of ${gallery.length}`}
+                  aria-label={`Xem ảnh ${i + 1} / ${gallery.length}`}
                   aria-current={i === activeImage}
                   className={`relative aspect-3/4 overflow-hidden rounded-sm border bg-bg-secondary transition-colors duration-200 ${
                     i === activeImage ? "border-text-primary" : "border-transparent hover:border-border-hover"
@@ -148,7 +148,7 @@ export function ProductView({
 
             <div role="group" aria-labelledby="colour-label" className="flex flex-col gap-3">
               <p id="colour-label" className="text-nav uppercase">
-                Colour: <span className="text-text-secondary">{color}</span>
+                Màu: <span className="text-text-secondary">{color}</span>
               </p>
               <div className="flex flex-wrap gap-2">
                 {colors.map((c) => (
@@ -177,7 +177,7 @@ export function ProductView({
                     }}
                     className="text-caption text-text-secondary underline hover:text-text-primary"
                   >
-                    Size guide
+                    Bảng size
                   </button>
                 )}
               </div>
@@ -198,7 +198,7 @@ export function ProductView({
               {selected && selected.stock <= LOW_STOCK && (
                 <p className="flex items-center gap-2 text-caption text-text-secondary">
                   <span aria-hidden="true" className="size-2 rounded-full bg-warning" />
-                  Only {selected.stock} left
+                  Chỉ còn {selected.stock} sản phẩm
                 </p>
               )}
             </div>

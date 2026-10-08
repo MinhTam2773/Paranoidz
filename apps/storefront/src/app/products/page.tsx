@@ -4,7 +4,7 @@ import { Breadcrumb } from "@/components/layout/Breadcrumb";
 import { ProductCard } from "@/components/product/ProductCard";
 import { productCardQuery, toProductCard } from "@/lib/catalog";
 
-export const metadata: Metadata = { title: "All products | Paranoidz" };
+export const metadata: Metadata = { title: "Tất cả sản phẩm | Paranoidz" };
 
 // ISR (ARCHITECTURE.md §2.2): rebuilt at most once a minute. Shown stock may lag by that much —
 // display only; place_order() re-checks stock atomically.
@@ -20,8 +20,8 @@ export default async function ProductsPage() {
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 pb-16 lg:px-6">
-      <Breadcrumb items={[{ label: "Home", href: "/" }, { label: "Product" }]} />
-      <h1 className="mb-6 text-h2 uppercase">All products</h1>
+      <Breadcrumb items={[{ label: "Trang chủ", href: "/" }, { label: "Sản phẩm" }]} />
+      <h1 className="mb-6 text-h2 uppercase">Tất cả sản phẩm</h1>
       {cards.length ? (
         <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
           {cards.map((card, i) => (
@@ -29,7 +29,7 @@ export default async function ProductsPage() {
           ))}
         </div>
       ) : (
-        <p className="text-text-secondary">No products yet.</p>
+        <p className="text-text-secondary">Chưa có sản phẩm nào.</p>
       )}
     </div>
   );

@@ -57,7 +57,7 @@ function Field({
     <div className={`flex flex-col gap-2 ${className}`}>
       <label htmlFor={id} className="text-nav uppercase text-text-secondary">
         {label}
-        {required ? <span className="text-accent"> *</span> : <span className="normal-case tracking-normal text-text-muted"> (optional)</span>}
+        {required ? <span className="text-accent"> *</span> : <span className="normal-case tracking-normal text-text-muted"> (không bắt buộc)</span>}
       </label>
       {children({
         id,
@@ -187,39 +187,39 @@ export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; acc
     return (
       <div role="status" className="flex max-w-xl flex-col gap-6">
         <div className="flex flex-col gap-2">
-          <h2 className="text-h3 uppercase">Thank you — order placed</h2>
+          <h2 className="text-h3 uppercase">Cảm ơn bạn — đã đặt hàng thành công</h2>
           <p className="text-text-secondary">
-            Your order number is <strong className="text-text-primary">{placed.orderNumber}</strong>. We&apos;ll call{" "}
-            <strong className="text-text-primary">{placed.phone}</strong> to confirm it before shipping. You pay in cash on delivery.
+            Mã đơn hàng của bạn là <strong className="text-text-primary">{placed.orderNumber}</strong>. Chúng tôi sẽ gọi số{" "}
+            <strong className="text-text-primary">{placed.phone}</strong> để xác nhận trước khi giao. Bạn thanh toán bằng tiền mặt khi nhận hàng.
           </p>
           <p className="text-text-secondary">
-            Check its status anytime on{" "}
-            <Link href={`/order-lookup?order=${placed.orderNumber}`} className="text-text-primary underline">order lookup</Link>{" "}
-            with this order number and your phone.
+            Theo dõi trạng thái bất cứ lúc nào tại trang{" "}
+            <Link href={`/order-lookup?order=${placed.orderNumber}`} className="text-text-primary underline">tra cứu đơn hàng</Link>{" "}
+            bằng mã đơn và số điện thoại của bạn.
           </p>
         </div>
         <dl className="flex flex-col gap-3 rounded-sm border border-border p-6">
-          <div className="flex justify-between"><dt className="text-text-secondary">Subtotal</dt><dd>{formatVnd(placed.subtotal)}</dd></div>
+          <div className="flex justify-between"><dt className="text-text-secondary">Tạm tính</dt><dd>{formatVnd(placed.subtotal)}</dd></div>
           {placed.discount > 0 && (
-            <div className="flex justify-between"><dt className="text-text-secondary">Discount</dt><dd className="text-accent">−{formatVnd(placed.discount)}</dd></div>
+            <div className="flex justify-between"><dt className="text-text-secondary">Giảm giá</dt><dd className="text-accent">−{formatVnd(placed.discount)}</dd></div>
           )}
           <div className="flex justify-between border-t border-border pt-3">
-            <dt className="text-nav uppercase">Total to pay on delivery</dt><dd className="text-price">{formatVnd(placed.total)}</dd>
+            <dt className="text-nav uppercase">Tổng thanh toán khi nhận hàng</dt><dd className="text-price">{formatVnd(placed.total)}</dd>
           </div>
-          <p className="text-caption text-text-muted">Shipping fee, if any, is confirmed on the call.</p>
+          <p className="text-caption text-text-muted">Phí vận chuyển (nếu có) sẽ được xác nhận qua điện thoại.</p>
         </dl>
-        <Link href="/products" className={`${secondaryClass} max-w-xs`}>Continue shopping</Link>
+        <Link href="/products" className={`${secondaryClass} max-w-xs`}>Tiếp tục mua sắm</Link>
       </div>
     );
   }
 
-  if (!items) return <p className="text-text-secondary">Loading your order…</p>;
+  if (!items) return <p className="text-text-secondary">Đang tải đơn hàng…</p>;
 
   if (!lines.length) {
     return (
       <div className="flex flex-col items-start gap-6">
-        <p className="text-text-secondary">Your cart is empty.</p>
-        <Link href="/products" className={`${secondaryClass} max-w-xs`}>Continue shopping</Link>
+        <p className="text-text-secondary">Giỏ hàng của bạn đang trống.</p>
+        <Link href="/products" className={`${secondaryClass} max-w-xs`}>Tiếp tục mua sắm</Link>
       </div>
     );
   }
@@ -230,10 +230,10 @@ export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; acc
   return (
     <div onInput={onInput} onBlur={onBlur} className="grid gap-8 lg:grid-cols-12 lg:gap-12">
       <form ref={formRef} id="checkout-form" onSubmit={submit} noValidate className="flex flex-col gap-6 lg:col-span-7">
-        <h2 className="text-h3 uppercase">Delivery details</h2>
+        <h2 className="text-h3 uppercase">Thông tin giao hàng</h2>
         {!!account?.addresses.length && (
           <div className="flex flex-col gap-2">
-            <label htmlFor="checkout-saved" className="text-nav uppercase text-text-secondary">Saved addresses</label>
+            <label htmlFor="checkout-saved" className="text-nav uppercase text-text-secondary">Địa chỉ đã lưu</label>
             <select
               id="checkout-saved"
               value={addressId ?? ""}
@@ -245,15 +245,15 @@ export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; acc
                   {a.name} — {[a.address, a.ward, a.city].join(", ")}{a.isDefault ? " (default)" : ""}
                 </option>
               ))}
-              <option value="">New address</option>
+              <option value="">Địa chỉ mới</option>
             </select>
           </div>
         )}
         <div className="grid gap-6 sm:grid-cols-2">
-          <Field name="name" label="Full name" required error={errors.name}>
+          <Field name="name" label="Họ tên" required error={errors.name}>
             {(p) => <input {...p} className={`${p.className} h-11`} defaultValue={initial?.name ?? account?.name} autoComplete="name" maxLength={MAX_LENGTH.name} />}
           </Field>
-          <Field name="phone" label="Phone number" required error={errors.phone}>
+          <Field name="phone" label="Số điện thoại" required error={errors.phone}>
             {(p) => (
               <input
                 {...p}
@@ -267,13 +267,13 @@ export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; acc
               />
             )}
           </Field>
-          <Field name="address" label="Street address" required error={errors.address} className="sm:col-span-2">
-            {(p) => <input {...p} className={`${p.className} h-11`} defaultValue={initial?.address} autoComplete="street-address" placeholder="House number, street" maxLength={MAX_LENGTH.address} />}
+          <Field name="address" label="Địa chỉ" required error={errors.address} className="sm:col-span-2">
+            {(p) => <input {...p} className={`${p.className} h-11`} defaultValue={initial?.address} autoComplete="street-address" placeholder="Số nhà, tên đường" maxLength={MAX_LENGTH.address} />}
           </Field>
-          <Field name="ward" label="Ward / commune" required error={errors.ward}>
-            {(p) => <input {...p} className={`${p.className} h-11`} defaultValue={initial?.ward} autoComplete="address-level3" placeholder="e.g. Phường Bến Thành" maxLength={MAX_LENGTH.ward} />}
+          <Field name="ward" label="Phường / xã" required error={errors.ward}>
+            {(p) => <input {...p} className={`${p.className} h-11`} defaultValue={initial?.ward} autoComplete="address-level3" placeholder="Ví dụ: Phường Bến Thành" maxLength={MAX_LENGTH.ward} />}
           </Field>
-          <Field name="city" label="City / province" required error={errors.city}>
+          <Field name="city" label="Tỉnh / thành phố" required error={errors.city}>
             {(p) => (
               <ProvinceSelect
                 id={p.id}
@@ -289,21 +289,21 @@ export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; acc
               />
             )}
           </Field>
-          <Field name="secondaryPhone" label="Secondary phone" error={errors.secondaryPhone}>
-            {(p) => <input {...p} className={`${p.className} h-11`} type="tel" inputMode="tel" placeholder="Backup number" maxLength={MAX_LENGTH.secondaryPhone} />}
+          <Field name="secondaryPhone" label="Số điện thoại phụ" error={errors.secondaryPhone}>
+            {(p) => <input {...p} className={`${p.className} h-11`} type="tel" inputMode="tel" placeholder="Số dự phòng" maxLength={MAX_LENGTH.secondaryPhone} />}
           </Field>
           <Field name="email" label="Email" error={errors.email}>
-            {(p) => <input {...p} className={`${p.className} h-11`} defaultValue={account?.email} type="email" autoComplete="email" placeholder="For your order confirmation" maxLength={MAX_LENGTH.email} />}
+            {(p) => <input {...p} className={`${p.className} h-11`} defaultValue={account?.email} type="email" autoComplete="email" placeholder="Để nhận xác nhận đơn hàng" maxLength={MAX_LENGTH.email} />}
           </Field>
-          <Field name="note" label="Order note" error={errors.note} className="sm:col-span-2">
-            {(p) => <textarea {...p} className={`${p.className} py-3`} rows={3} placeholder="Delivery instructions" maxLength={MAX_LENGTH.note} />}
+          <Field name="note" label="Ghi chú đơn hàng" error={errors.note} className="sm:col-span-2">
+            {(p) => <textarea {...p} className={`${p.className} py-3`} rows={3} placeholder="Hướng dẫn giao hàng" maxLength={MAX_LENGTH.note} />}
           </Field>
         </div>
       </form>
 
       <aside className="lg:col-span-5">
         <div className="flex flex-col gap-6 rounded-sm bg-bg-secondary p-6 lg:sticky lg:top-36">
-          <h2 className="text-h3 uppercase">Order summary</h2>
+          <h2 className="text-h3 uppercase">Tóm tắt đơn hàng</h2>
           <ul className="flex flex-col gap-4">
             {rows.map(({ line, item }) => (
               <li key={line.variantId} className="flex gap-3">
@@ -311,42 +311,42 @@ export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; acc
                   {item?.imageUrl && <Image src={item.imageUrl} alt={item.name} fill sizes="64px" className="object-cover" />}
                 </div>
                 <div className="flex min-w-0 flex-1 flex-col gap-1">
-                  <span className="text-product-name">{item?.name ?? "Unavailable item"}</span>
-                  {item && <span className="text-caption uppercase text-text-secondary">{item.color} / {item.size} · Qty {line.qty}</span>}
-                  {item && line.qty > item.stock && <span className="text-caption text-accent">Only {item.stock} left</span>}
+                  <span className="text-product-name">{item?.name ?? "Sản phẩm không còn bán"}</span>
+                  {item && <span className="text-caption uppercase text-text-secondary">{item.color} / {item.size} · SL {line.qty}</span>}
+                  {item && line.qty > item.stock && <span className="text-caption text-accent">Chỉ còn {item.stock} sản phẩm</span>}
                 </div>
                 {item && <span className="text-product-name">{formatVnd(item.price * line.qty)}</span>}
               </li>
             ))}
           </ul>
 
-          <Field name="voucher" label="Voucher code" error={errors.voucher}>
+          <Field name="voucher" label="Mã giảm giá" error={errors.voucher}>
             {(p) => <input {...p} form="checkout-form" className={`${p.className} h-11 uppercase`} autoComplete="off" maxLength={MAX_LENGTH.voucher} />}
           </Field>
 
           <dl className="flex flex-col gap-3 border-t border-border pt-4">
-            <div className="flex justify-between"><dt className="text-text-secondary">Subtotal</dt><dd>{formatVnd(subtotal)}</dd></div>
+            <div className="flex justify-between"><dt className="text-text-secondary">Tạm tính</dt><dd>{formatVnd(subtotal)}</dd></div>
             <div className="flex justify-between gap-4">
-              <dt className="text-text-secondary">Discount</dt>
-              <dd className="text-right text-caption text-text-secondary">Applied when you place the order</dd>
+              <dt className="text-text-secondary">Giảm giá</dt>
+              <dd className="text-right text-caption text-text-secondary">Áp dụng khi đặt hàng</dd>
             </div>
             <div className="flex justify-between gap-4">
-              <dt className="text-text-secondary">Shipping</dt>
-              <dd className="text-right text-caption text-text-secondary">Confirmed on our call</dd>
+              <dt className="text-text-secondary">Phí vận chuyển</dt>
+              <dd className="text-right text-caption text-text-secondary">Xác nhận qua điện thoại</dd>
             </div>
           </dl>
           <BundleEstimate estimate={bundleEstimate} subtotal={subtotal} />
           <p className="text-caption text-text-secondary">
-            New customers get 10% off their first 5 orders, applied automatically. A voucher code applies instead if it saves you more.
+            Khách hàng được giảm 10% cho 5 đơn đầu tiên, tự động áp dụng. Nếu mã giảm giá có lợi hơn, mã sẽ được áp dụng thay thế.
           </p>
 
           <p className="border-l-4 border-accent bg-accent-soft px-3 py-2 text-caption font-semibold uppercase text-text-primary">
-            Cash on delivery only — pay when you receive your order.
+            Chỉ thanh toán khi nhận hàng (COD) — trả tiền khi bạn nhận được hàng.
           </p>
 
           {problem && (
             <p className="text-caption text-accent">
-              Some items are unavailable or over stock. <Link href="/cart" className="underline">Review your cart</Link>.
+              Một số sản phẩm không còn bán hoặc vượt quá tồn kho. <Link href="/cart" className="underline">Kiểm tra giỏ hàng</Link>.
             </p>
           )}
           {message && <p role="alert" className="text-caption text-accent">{message}</p>}
@@ -357,7 +357,7 @@ export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; acc
             disabled={pending || problem}
             className="h-12 w-full rounded-sm bg-accent text-button uppercase text-text-on-dark transition-all duration-200 enabled:hover:-translate-y-px enabled:hover:bg-accent-hover enabled:hover:shadow-accent disabled:cursor-not-allowed disabled:bg-bg-tertiary disabled:text-text-muted"
           >
-            {pending ? "Placing order…" : "Place order"}
+            {pending ? "Đang đặt hàng…" : "Đặt hàng"}
           </button>
         </div>
       </aside>

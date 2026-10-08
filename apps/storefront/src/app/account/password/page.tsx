@@ -4,7 +4,7 @@ import { createClient } from "@paranoidz/db/server";
 import { NewPasswordForm } from "@/components/auth/NewPasswordForm";
 import { Breadcrumb } from "@/components/layout/Breadcrumb";
 
-export const metadata: Metadata = { title: "Change password | Paranoidz", robots: { index: false } };
+export const metadata: Metadata = { title: "Đổi mật khẩu | Paranoidz", robots: { index: false } };
 
 // Also where the password-reset email lands, already signed in by /auth/callback.
 export default async function AccountPasswordPage() {
@@ -13,8 +13,8 @@ export default async function AccountPasswordPage() {
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 pb-16 lg:px-6">
-      <Breadcrumb items={[{ label: "Home", href: "/" }, { label: "Account", href: "/account" }, { label: "Change password" }]} />
-      <h1 className="mb-6 text-h2 uppercase">Change password</h1>
+      <Breadcrumb items={[{ label: "Trang chủ", href: "/" }, { label: "Tài khoản", href: "/account" }, { label: "Đổi mật khẩu" }]} />
+      <h1 className="mb-6 text-h2 uppercase">Đổi mật khẩu</h1>
       <NewPasswordForm />
     </div>
   );

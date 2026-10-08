@@ -37,7 +37,7 @@ export function ProductCard({ product, eager = false }: { product: ProductCardDa
           )}
           {soldOut ? (
             <span className="absolute left-2 top-2 rounded-sm border border-border bg-bg-primary px-2 py-1 text-caption font-semibold uppercase text-text-primary">
-              Sold out
+              Hết hàng
             </span>
           ) : (
             onSale && (

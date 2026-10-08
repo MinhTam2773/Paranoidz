@@ -45,7 +45,7 @@ export function CartLink() {
     <Link
       href="/cart"
       data-cart-icon
-      aria-label={`Cart, ${count} items`}
+      aria-label={`Giỏ hàng, ${count} sản phẩm`}
       className="relative flex size-11 items-center justify-center"
     >
       <BagIcon />

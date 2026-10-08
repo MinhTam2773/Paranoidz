@@ -16,7 +16,7 @@ export function NewPasswordForm() {
     e.preventDefault();
     const password = String(new FormData(e.currentTarget).get("password") ?? "");
     if (password.length < PASSWORD_MIN) {
-      setError(`Use at least ${PASSWORD_MIN} characters.`);
+      setError(`Dùng ít nhất ${PASSWORD_MIN} ký tự.`);
       return document.getElementById("password")?.focus();
     }
     setPending(true);
@@ -24,17 +24,17 @@ export function NewPasswordForm() {
     setPending(false);
     if (!error) return setDone(true);
     setError(
-      error.code === "same_password" ? "Choose a password different from your current one."
-      : error.code === "weak_password" ? "That password is too easy to guess. Try a longer one."
-      : error.code === "reauthentication_needed" ? "For security, log out and back in, then change your password."
-      : "Couldn't change your password. Try again.",
+      error.code === "same_password" ? "Hãy chọn mật khẩu khác với mật khẩu hiện tại."
+      : error.code === "weak_password" ? "Mật khẩu này quá dễ đoán. Hãy dùng mật khẩu dài hơn."
+      : error.code === "reauthentication_needed" ? "Để bảo mật, hãy đăng xuất và đăng nhập lại, rồi đổi mật khẩu."
+      : "Không thể đổi mật khẩu. Vui lòng thử lại.",
     );
   }
 
   if (done) {
     return (
       <p role="status" className="max-w-md text-text-secondary">
-        Password changed. <Link href="/account" className={linkClass}>Back to your account</Link>
+        Đã đổi mật khẩu. <Link href="/account" className={linkClass}>Quay lại tài khoản</Link>
       </p>
     );
   }
@@ -43,15 +43,15 @@ export function NewPasswordForm() {
     <form onSubmit={submit} noValidate className="flex max-w-md flex-col gap-6">
       <Field
         id="password"
-        label="New password"
+        label="Mật khẩu mới"
         error={error}
         type="password"
         autoComplete="new-password"
         maxLength={72}
-        placeholder={`At least ${PASSWORD_MIN} characters`}
+        placeholder={`Ít nhất ${PASSWORD_MIN} ký tự`}
       />
       <button type="submit" disabled={pending} className={primaryClass}>
-        {pending ? "Saving…" : "Change password"}
+        {pending ? "Đang lưu…" : "Đổi mật khẩu"}
       </button>
     </form>
   );

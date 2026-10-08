@@ -18,7 +18,7 @@ export function LogoutButton() {
 
   return (
     <button type="button" onClick={logout} disabled={pending} className={secondaryClass}>
-      {pending ? "Logging out…" : "Log out"}
+      {pending ? "Đang đăng xuất…" : "Đăng xuất"}
     </button>
   );
 }

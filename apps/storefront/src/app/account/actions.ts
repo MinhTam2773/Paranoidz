@@ -13,8 +13,8 @@ export type ActionResult = { ok: true } | { ok: false; message?: string; fieldEr
 const FIELDS = ["name", "phone", "address", "ward", "city"] as const;
 const MAX_ADDRESSES = 10;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const EXPIRED: ActionResult = { ok: false, message: "Your session has expired. Log in again." };
-const FAILED: ActionResult = { ok: false, message: "Couldn't save that. Try again." };
+const EXPIRED: ActionResult = { ok: false, message: "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại." };
+const FAILED: ActionResult = { ok: false, message: "Không thể lưu. Vui lòng thử lại." };
 
 async function session() {
   const supabase = await createClient();
@@ -40,7 +40,7 @@ export async function saveAddress(input: { id?: string } & AddressFields): Promi
     if (error || !data.length) return FAILED;
   } else {
     const { count } = await s.supabase.from("addresses").select("id", { count: "exact", head: true }).eq("user_id", s.userId);
-    if ((count ?? 0) >= MAX_ADDRESSES) return { ok: false, message: `You can save up to ${MAX_ADDRESSES} addresses. Delete one first.` };
+    if ((count ?? 0) >= MAX_ADDRESSES) return { ok: false, message: `Bạn có thể lưu tối đa ${MAX_ADDRESSES} địa chỉ. Hãy xóa bớt một địa chỉ trước.` };
     // The first address becomes the default, so checkout always has one to pre-fill.
     const { error } = await s.supabase.from("addresses").insert({ ...row, user_id: s.userId, is_default: !count });
     if (error) return FAILED;
@@ -84,8 +84,8 @@ export async function updateProfile(input: { name: string; phone: string }): Pro
   const name = typeof input?.name === "string" ? input.name.trim() : "";
   const phone = typeof input?.phone === "string" ? input.phone.trim() : "";
   const fieldErrors: FieldErrors = {};
-  const nameError = name ? validateField("name", name) : "Enter your full name.";
-  const phoneError = phone ? validateField("phone", phone) : "Enter your phone number.";
+  const nameError = name ? validateField("name", name) : "Nhập họ tên của bạn.";
+  const phoneError = phone ? validateField("phone", phone) : "Nhập số điện thoại của bạn.";
   if (nameError) fieldErrors.name = nameError;
   if (phoneError) fieldErrors.phone = phoneError;
   if (nameError || phoneError) return { ok: false, fieldErrors };

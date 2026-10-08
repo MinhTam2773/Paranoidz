@@ -43,7 +43,7 @@ const getProduct = cache(async (slug: string) => {
 
 export async function generateMetadata({ params }: PageProps<"/products/[slug]">): Promise<Metadata> {
   const product = await getProduct((await params).slug);
-  return { title: product ? `${product.name} | Paranoidz` : "Not found | Paranoidz" };
+  return { title: product ? `${product.name} | Paranoidz` : "Không tìm thấy | Paranoidz" };
 }
 
 export default async function ProductPage({ params }: PageProps<"/products/[slug]">) {
@@ -54,7 +54,7 @@ export default async function ProductPage({ params }: PageProps<"/products/[slug
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 pb-16 lg:px-6">
-      <Breadcrumb items={[{ label: "Home", href: "/" }, { label: "Product", href: "/products" }, { label: product.name }]} />
+      <Breadcrumb items={[{ label: "Trang chủ", href: "/" }, { label: "Sản phẩm", href: "/products" }, { label: product.name }]} />
       <ProductView
         productId={product.id}
         name={product.name}
@@ -65,13 +65,13 @@ export default async function ProductPage({ params }: PageProps<"/products/[slug
             <div className="flex flex-col gap-8">
               {product.description && (
                 <div className="flex flex-col gap-4">
-                  <h2 className="text-nav font-bold uppercase">Description</h2>
+                  <h2 className="text-nav font-bold uppercase">Mô tả</h2>
                   <p className="text-text-secondary">{product.description}</p>
                 </div>
               )}
               {product.care_instructions && (
                 <div className="flex flex-col gap-4">
-                  <h2 className="text-nav font-bold uppercase">Care instructions</h2>
+                  <h2 className="text-nav font-bold uppercase">Hướng dẫn bảo quản</h2>
                   <p className="text-text-secondary">{product.care_instructions}</p>
                 </div>
               )}

@@ -38,36 +38,36 @@ export const ALLOWED_CHARS: Partial<Record<CheckoutField, RegExp>> = {
 
 const NAME = /^[\p{L}][\p{L} .'-]*$/u;
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-const PHONE_HELP = "Enter a Vietnamese mobile number: 10 digits starting with 03, 05, 07, 08 or 09.";
+const PHONE_HELP = "Nhập số di động Việt Nam: 10 chữ số, bắt đầu bằng 03, 05, 07, 08 hoặc 09.";
 
 export function validateField(field: CheckoutField, raw: string, all: Partial<CheckoutValues> = {}): string | undefined {
   const v = raw.trim();
-  if (v.length > MAX_LENGTH[field]) return `Keep this under ${MAX_LENGTH[field]} characters.`;
+  if (v.length > MAX_LENGTH[field]) return `Tối đa ${MAX_LENGTH[field]} ký tự.`;
   switch (field) {
     case "name":
-      if (!v) return "Enter the recipient's full name.";
-      if (v.length < 2 || !NAME.test(v)) return "Use letters only (no numbers or symbols).";
+      if (!v) return "Nhập họ tên người nhận.";
+      if (v.length < 2 || !NAME.test(v)) return "Chỉ dùng chữ cái (không có số hoặc ký hiệu).";
       return;
     case "phone":
-      if (!v) return "Enter a phone number so we can confirm your order.";
+      if (!v) return "Nhập số điện thoại để chúng tôi xác nhận đơn hàng.";
       return normalizePhone(v) ? undefined : PHONE_HELP;
     case "secondaryPhone":
       if (!v) return;
       if (!normalizePhone(v)) return PHONE_HELP;
-      if (normalizePhone(v) === normalizePhone(all.phone ?? "")) return "Use a different number from the main one.";
+      if (normalizePhone(v) === normalizePhone(all.phone ?? "")) return "Nhập số khác với số điện thoại chính.";
       return;
     case "address":
-      if (!v) return "Enter the house number and street.";
-      return v.length < 5 ? "This address looks too short." : undefined;
+      if (!v) return "Nhập số nhà và tên đường.";
+      return v.length < 5 ? "Địa chỉ có vẻ quá ngắn." : undefined;
     case "ward":
-      return v ? undefined : "Enter the ward or commune.";
+      return v ? undefined : "Nhập phường hoặc xã.";
     case "city":
-      if (!v) return "Choose your city or province.";
-      return PROVINCE_NAMES.has(v) ? undefined : "Choose a city or province from the list.";
+      if (!v) return "Chọn tỉnh / thành phố.";
+      return PROVINCE_NAMES.has(v) ? undefined : "Chọn tỉnh / thành phố trong danh sách.";
     case "email":
-      return !v || EMAIL.test(v) ? undefined : "Enter a valid email, e.g. name@gmail.com.";
+      return !v || EMAIL.test(v) ? undefined : "Nhập email hợp lệ, ví dụ ten@gmail.com.";
     case "voucher":
-      return !v || /^[A-Za-z0-9-]+$/.test(v) ? undefined : "Codes use letters, numbers and dashes only.";
+      return !v || /^[A-Za-z0-9-]+$/.test(v) ? undefined : "Mã chỉ gồm chữ, số và dấu gạch ngang.";
     case "note":
       return;
   }

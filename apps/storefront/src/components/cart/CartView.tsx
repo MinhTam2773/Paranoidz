@@ -33,14 +33,14 @@ export function CartView() {
     };
   }, [idsKey]);
 
-  if (!items) return <p className="text-text-secondary">Loading your cart…</p>;
+  if (!items) return <p className="text-text-secondary">Đang tải giỏ hàng…</p>;
 
   if (!lines.length) {
     return (
       <div className="flex flex-col items-start gap-6">
-        <p className="text-text-secondary">Your cart is empty.</p>
+        <p className="text-text-secondary">Giỏ hàng của bạn đang trống.</p>
         <Link href="/products" className={`${secondaryClass} max-w-xs`}>
-          Continue shopping
+          Tiếp tục mua sắm
         </Link>
       </div>
     );
@@ -49,11 +49,11 @@ export function CartView() {
   const rows = lines.map((line) => {
     const item = items.get(line.variantId);
     const issue = !item
-      ? "This item is no longer available."
+      ? "Sản phẩm này không còn bán."
       : item.stock === 0
-        ? "Sold out — remove it to check out."
+        ? "Hết hàng — hãy xóa khỏi giỏ để đặt hàng."
         : line.qty > item.stock
-          ? `Only ${item.stock} left — reduce the quantity to check out.`
+          ? `Chỉ còn ${item.stock} sản phẩm — hãy giảm số lượng để đặt hàng.`
           : null;
     return { line, item, issue };
   });
@@ -82,7 +82,7 @@ export function CartView() {
                         {item.name}
                       </Link>
                     ) : (
-                      <span className="text-product-name text-text-muted">Unavailable item</span>
+                      <span className="text-product-name text-text-muted">Sản phẩm không còn bán</span>
                     )}
                     {item && (
                       <span className="text-caption uppercase text-text-secondary">
@@ -93,7 +93,7 @@ export function CartView() {
                   <button
                     type="button"
                     onClick={() => removeFromCart(line.variantId)}
-                    aria-label={item ? `Remove ${item.name} (${item.color} / ${item.size})` : "Remove unavailable item"}
+                    aria-label={item ? `Xóa ${item.name} (${item.color} / ${item.size})` : "Xóa sản phẩm không còn bán"}
                     className="-mr-3 -mt-3 flex size-11 shrink-0 items-center justify-center text-text-muted transition-colors duration-200 hover:text-accent"
                   >
                     <TrashIcon width={20} height={20} />
@@ -106,7 +106,7 @@ export function CartView() {
                       value={line.qty}
                       max={Math.max(item.stock, 1)}
                       onChange={(qty) => setCartQty(line.variantId, qty)}
-                      label={`Quantity of ${item.name}`}
+                      label={`Số lượng ${item.name}`}
                     />
                     <p className="flex flex-col items-end gap-1">
                       <span className={`text-price ${onSale ? "text-accent" : "text-text-primary"}`}>
@@ -124,13 +124,13 @@ export function CartView() {
 
       <aside className="lg:col-span-4">
         <div className="flex flex-col gap-6 rounded-sm border border-border p-6 lg:sticky lg:top-36">
-          <h2 className="text-h3 uppercase">Order summary</h2>
+          <h2 className="text-h3 uppercase">Tóm tắt đơn hàng</h2>
           <div className="flex items-baseline justify-between">
-            <span className="text-nav uppercase text-text-secondary">Subtotal ({count})</span>
+            <span className="text-nav uppercase text-text-secondary">Tạm tính ({count})</span>
             <span className="text-price">{formatVnd(subtotal)}</span>
           </div>
           <BundleEstimate estimate={bundleEstimate} subtotal={subtotal} />
-          <p className="text-caption text-text-muted">Shipping and vouchers are calculated at checkout.</p>
+          <p className="text-caption text-text-muted">Phí vận chuyển và mã giảm giá được tính khi đặt hàng.</p>
           <div className="flex flex-col gap-3">
             {blocked ? (
               <>
@@ -139,17 +139,17 @@ export function CartView() {
                   disabled
                   className="h-12 w-full cursor-not-allowed rounded-sm bg-bg-tertiary text-button uppercase text-text-muted"
                 >
-                  Checkout
+                  Thanh toán
                 </button>
-                <p className="text-caption text-accent">Fix the items marked above to check out.</p>
+                <p className="text-caption text-accent">Hãy xử lý các sản phẩm được đánh dấu ở trên để đặt hàng.</p>
               </>
             ) : (
               <Link href="/checkout" className={primaryClass}>
-                Checkout
+                Thanh toán
               </Link>
             )}
             <Link href="/products" className={secondaryClass}>
-              Continue shopping
+              Tiếp tục mua sắm
             </Link>
           </div>
         </div>

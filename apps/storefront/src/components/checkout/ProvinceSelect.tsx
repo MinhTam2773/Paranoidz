@@ -106,7 +106,7 @@ export function ProvinceSelect({
           invalid ? "border-accent" : "border-border"
         } ${value ? "text-text-primary" : "text-text-muted"}`}
       >
-        <span>{value || "Choose…"}</span>
+        <span>{value || "Chọn…"}</span>
         <svg viewBox="0 0 24 24" width={16} height={16} aria-hidden="true" className={`text-text-secondary transition-transform duration-200 ${open ? "rotate-180" : ""}`}>
           <path d="m6 9 6 6 6-6" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" />
         </svg>
@@ -119,7 +119,7 @@ export function ProvinceSelect({
             <input
               autoFocus
               role="combobox"
-              aria-label="Search city or province"
+              aria-label="Tìm tỉnh / thành phố"
               aria-expanded
               aria-controls={listId}
               aria-autocomplete="list"
@@ -130,11 +130,11 @@ export function ProvinceSelect({
                 setActive(0);
               }}
               onKeyDown={onSearchKey}
-              placeholder="Search, e.g. Hồ Chí Minh"
+              placeholder="Tìm, ví dụ Hồ Chí Minh"
               className="h-10 w-full rounded-sm border border-border bg-bg-secondary pl-9 pr-3 text-base text-text-primary placeholder:text-text-muted focus:border-text-primary focus:outline-none lg:text-product-name"
             />
           </div>
-          <ul id={listId} role="listbox" aria-label="Cities and provinces" className="max-h-64 overflow-y-auto py-1">
+          <ul id={listId} role="listbox" aria-label="Tỉnh / thành phố" className="max-h-64 overflow-y-auto py-1">
             {matches.map((p, i) => {
               // Matched via a merged pre-2025 province: say so (aliases like "Sài Gòn" need no hint).
               const via = q && !p.keys[0].includes(q) ? p.formerly?.find((n) => searchKey(n).includes(q)) : null;
@@ -155,7 +155,7 @@ export function ProvinceSelect({
                 </li>
               );
             })}
-            {!matches.length && <li className="px-3 py-3 text-product-name text-text-muted">No city or province matches “{query}”.</li>}
+            {!matches.length && <li className="px-3 py-3 text-product-name text-text-muted">Không có tỉnh / thành phố nào khớp với “{query}”.</li>}
           </ul>
         </div>
       )}

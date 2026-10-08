@@ -13,7 +13,7 @@ import { OrderHistory } from "@/components/order/OrderHistory";
 import { afterLoginPath } from "@/lib/auth";
 import { productCardQuery, toProductCard } from "@/lib/catalog";
 
-export const metadata: Metadata = { title: "Account | Paranoidz", robots: { index: false } };
+export const metadata: Metadata = { title: "Tài khoản | Paranoidz", robots: { index: false } };
 
 export default async function AccountPage() {
   const supabase = await createClient();
@@ -55,11 +55,11 @@ export default async function AccountPage() {
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 pb-16 lg:px-6">
-      <Breadcrumb items={[{ label: "Home", href: "/" }, { label: "Account" }]} />
-      <h1 className="mb-6 text-h2 uppercase">Account</h1>
+      <Breadcrumb items={[{ label: "Trang chủ", href: "/" }, { label: "Tài khoản" }]} />
+      <h1 className="mb-6 text-h2 uppercase">Tài khoản</h1>
       <div className="flex max-w-md flex-col gap-6">
         <ProfileCard name={profile.full_name} email={claims.claims.email ?? ""} phone={profile.phone} />
-        <Link href="/account/password" className={`flex min-h-11 items-center self-start ${linkClass}`}>Change password</Link>
+        <Link href="/account/password" className={`flex min-h-11 items-center self-start ${linkClass}`}>Đổi mật khẩu</Link>
         <LogoutButton />
       </div>
       <div className="mt-12 max-w-4xl">

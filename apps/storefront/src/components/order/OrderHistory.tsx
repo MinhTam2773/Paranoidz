@@ -38,16 +38,16 @@ const DOT: Record<OrderStatus, string> = {
 export function OrderHistory({ orders }: { orders: AccountOrder[] }) {
   return (
     <section aria-labelledby="order-history" className="flex flex-col gap-4">
-      <h2 id="order-history" className="text-h3 uppercase">Order history</h2>
+      <h2 id="order-history" className="text-h3 uppercase">Lịch sử đơn hàng</h2>
       {orders.length === 0 ? (
         <p className="text-text-secondary">
-          No orders yet. Orders you place while logged in show up here.{" "}
-          <Link href="/products" className="text-text-primary underline underline-offset-4 hover:text-accent">Shop now</Link>
+          Chưa có đơn hàng nào. Đơn bạn đặt khi đã đăng nhập sẽ hiển thị ở đây.{" "}
+          <Link href="/products" className="text-text-primary underline underline-offset-4 hover:text-accent">Mua sắm ngay</Link>
         </p>
       ) : (
         <div>
           <div className="hidden gap-4 border-b border-text-primary pb-3 pr-9 text-nav uppercase lg:grid lg:grid-cols-4">
-            <span>Order</span><span>Date</span><span>Total</span><span>Status</span>
+            <span>Đơn hàng</span><span>Ngày đặt</span><span>Tổng tiền</span><span>Trạng thái</span>
           </div>
           <ul>
             {orders.map((order) => (
@@ -73,14 +73,14 @@ export function OrderHistory({ orders }: { orders: AccountOrder[] }) {
                     <p className="text-text-secondary">{STATUS[order.status].detail}</p>
                     <OrderSummary items={order.items} subtotal={order.subtotal} discount={order.discount} total={order.total}>
                       <div className="flex flex-col gap-1 border-t border-border pt-3 text-caption text-text-secondary">
-                        <span className="text-nav uppercase text-text-primary">Delivery</span>
+                        <span className="text-nav uppercase text-text-primary">Giao hàng</span>
                         <span>
                           {order.recipientName} · {formatPhone(order.phone)}
                           {order.secondaryPhone && ` / ${formatPhone(order.secondaryPhone)}`}
                         </span>
                         <span className="wrap-break-word">{[order.address, order.ward, order.city].filter(Boolean).join(", ")}</span>
-                        {order.note && <span className="wrap-break-word">Note: {order.note}</span>}
-                        <span className="text-text-muted">To change anything, call {HOTLINE}.</span>
+                        {order.note && <span className="wrap-break-word">Ghi chú: {order.note}</span>}
+                        <span className="text-text-muted">Cần thay đổi thông tin, vui lòng gọi {HOTLINE}.</span>
                       </div>
                     </OrderSummary>
                   </div>
@@ -91,8 +91,8 @@ export function OrderHistory({ orders }: { orders: AccountOrder[] }) {
         </div>
       )}
       <p className="text-caption text-text-muted">
-        Ordered as a guest? Guest orders aren&apos;t linked to accounts.{" "}
-        <Link href="/order-lookup" className="text-text-primary underline underline-offset-4 hover:text-accent">Look up an order</Link>
+        Đặt hàng không đăng nhập? Các đơn đó không gắn với tài khoản.{" "}
+        <Link href="/order-lookup" className="text-text-primary underline underline-offset-4 hover:text-accent">Tra cứu đơn hàng</Link>
       </p>
     </section>
   );

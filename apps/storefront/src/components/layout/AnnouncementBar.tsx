@@ -12,12 +12,13 @@ export function AnnouncementBar() {
   return (
     <div className="relative bg-accent text-text-on-dark">
       <p className="mx-auto max-w-7xl px-12 py-2 text-center text-caption uppercase">
-        Cash on delivery · Hotline: {HOTLINE}
+        {/* "COD": the full "Thanh toán khi nhận hàng" wraps to two lines at 375px. */}
+        Thanh toán COD · Hotline: {HOTLINE}
       </p>
       <button
         type="button"
         onClick={() => setOpen(false)}
-        aria-label="Dismiss announcement"
+        aria-label="Đóng thông báo"
         className="absolute right-0 top-0 flex h-full min-h-11 w-11 items-center justify-center"
       >
         <CloseIcon width={16} height={16} />

@@ -13,7 +13,7 @@ export function NavLinks() {
   const pathname = usePathname();
 
   return (
-    <nav aria-label="Main" className="hidden h-12 items-center justify-center gap-10 border-b border-border lg:flex">
+    <nav aria-label="Menu chính" className="hidden h-12 items-center justify-center gap-10 border-b border-border lg:flex">
       {NAV_LINKS.map(({ label, href }) => {
         const active = isActive(pathname, href);
         return (

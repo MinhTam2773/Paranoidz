@@ -14,7 +14,7 @@ export function ForgotPasswordForm() {
     e.preventDefault();
     const email = String(new FormData(e.currentTarget).get("email") ?? "").trim();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
-      setError("Enter the email you signed up with.");
+      setError("Nhập email bạn đã dùng để đăng ký.");
       return document.getElementById("email")?.focus();
     }
     setPending(true);
@@ -23,9 +23,9 @@ export function ForgotPasswordForm() {
       redirectTo: `${location.origin}/auth/callback?next=${encodeURIComponent("/account/password")}`,
     });
     setPending(false);
-    if (error?.code === "over_email_send_rate_limit") return setError("We can't send emails right now. Try again in an hour.");
-    if (error?.status === 429) return setError("Too many requests. Wait a few minutes and try again.");
-    if (error) return setError("Couldn't send the email. Try again.");
+    if (error?.code === "over_email_send_rate_limit") return setError("Hiện chưa thể gửi email. Vui lòng thử lại sau một giờ.");
+    if (error?.status === 429) return setError("Quá nhiều yêu cầu. Vui lòng đợi vài phút rồi thử lại.");
+    if (error) return setError("Không thể gửi email. Vui lòng thử lại.");
     setSentTo(email);
   }
 
@@ -33,8 +33,8 @@ export function ForgotPasswordForm() {
     // Same answer whether or not the email has an account.
     return (
       <p role="status" className="max-w-md text-text-secondary">
-        If <strong className="wrap-break-word text-text-primary">{sentTo}</strong> has a Paranoidz account, we&apos;ve sent it a link
-        to choose a new password. Open it in this browser.
+        Nếu <strong className="wrap-break-word text-text-primary">{sentTo}</strong> có tài khoản Paranoidz, chúng tôi đã gửi liên kết
+        để đặt mật khẩu mới. Hãy mở liên kết trên trình duyệt này.
       </p>
     );
   }
@@ -43,7 +43,7 @@ export function ForgotPasswordForm() {
     <form onSubmit={submit} noValidate className="flex max-w-md flex-col gap-6">
       <Field id="email" label="Email" error={error} type="email" autoComplete="email" maxLength={200} />
       <button type="submit" disabled={pending} className={primaryClass}>
-        {pending ? "Sending…" : "Send reset link"}
+        {pending ? "Đang gửi…" : "Gửi liên kết đặt lại"}
       </button>
     </form>
   );

@@ -15,27 +15,27 @@ export type CheckoutResult =
   | { ok: false; message?: string; fieldErrors?: FieldErrors };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const PHONE_HELP = "Enter a Vietnamese mobile number: 10 digits starting with 03, 05, 07, 08 or 09.";
+const PHONE_HELP = "Nhập số di động Việt Nam: 10 chữ số, bắt đầu bằng 03, 05, 07, 08 hoặc 09.";
 
 // place_order() error codes → what the customer sees (and which field it belongs to).
 function explain(code: string): CheckoutResult {
   if (code === "INVALID_PHONE") return { ok: false, fieldErrors: { phone: PHONE_HELP } };
   if (code === "INVALID_SECONDARY_PHONE") return { ok: false, fieldErrors: { secondaryPhone: PHONE_HELP } };
-  if (code === "INVALID_VOUCHER") return { ok: false, fieldErrors: { voucher: "This code is invalid or has expired." } };
-  if (code === "VOUCHER_EXHAUSTED") return { ok: false, fieldErrors: { voucher: "This code has been fully redeemed." } };
+  if (code === "INVALID_VOUCHER") return { ok: false, fieldErrors: { voucher: "Mã không hợp lệ hoặc đã hết hạn." } };
+  if (code === "VOUCHER_EXHAUSTED") return { ok: false, fieldErrors: { voucher: "Mã đã hết lượt sử dụng." } };
   if (code === "VOUCHER_ALREADY_USED")
-    return { ok: false, fieldErrors: { voucher: "This code has already been used with this phone number." } };
+    return { ok: false, fieldErrors: { voucher: "Số điện thoại này đã dùng mã này rồi." } };
   if (code.startsWith("OUT_OF_STOCK") || code.startsWith("PRODUCT_INACTIVE"))
-    return { ok: false, message: "Some items just sold out or are no longer available. Please review your cart." };
+    return { ok: false, message: "Một số sản phẩm vừa hết hàng hoặc không còn bán. Vui lòng kiểm tra lại giỏ hàng." };
   if (code === "INVALID_ADDRESS")
-    return { ok: false, message: "That saved address is no longer available. Pick another one or type the address." };
+    return { ok: false, message: "Địa chỉ đã lưu này không còn. Hãy chọn địa chỉ khác hoặc nhập địa chỉ mới." };
   if (code === "TOO_MANY_ITEMS")
-    return { ok: false, message: `Orders are limited to 20 items. For larger orders, call ${HOTLINE}.` };
+    return { ok: false, message: `Mỗi đơn tối đa 20 sản phẩm. Đặt số lượng lớn hơn, vui lòng gọi ${HOTLINE}.` };
   if (code === "TOO_MANY_PENDING")
-    return { ok: false, message: `This phone number already has 3 orders waiting for our confirmation call. We'll call you soon, or call ${HOTLINE}.` };
+    return { ok: false, message: `Số điện thoại này đã có 3 đơn đang chờ gọi xác nhận. Chúng tôi sẽ sớm gọi cho bạn, hoặc bạn gọi ${HOTLINE}.` };
   if (code === "BLACKLISTED")
-    return { ok: false, message: `We can't take online orders for this phone number. Please call ${HOTLINE}.` };
-  return { ok: false, message: `Something went wrong placing your order. Please try again or call ${HOTLINE}.` };
+    return { ok: false, message: `Chúng tôi không thể nhận đơn online cho số điện thoại này. Vui lòng gọi ${HOTLINE}.` };
+  return { ok: false, message: `Đã có lỗi khi đặt hàng. Vui lòng thử lại hoặc gọi ${HOTLINE}.` };
 }
 
 // COD order submission (ARCHITECTURE.md §2.2, §4). Guests welcome (§8.2); the session user, if any,
@@ -49,7 +49,7 @@ export async function placeOrder(input: CheckoutInput): Promise<CheckoutResult> 
     !items.length || items.length > 20 ||
     !items.every((i) => typeof i?.variantId === "string" && UUID.test(i.variantId) && Number.isInteger(i.qty) && i.qty >= 1 && i.qty <= 20)
   ) {
-    return { ok: false, message: "Your order is empty or invalid. Please review your cart." };
+    return { ok: false, message: "Đơn hàng trống hoặc không hợp lệ. Vui lòng kiểm tra lại giỏ hàng." };
   }
 
   // Same rules as the form (lib/checkout-validation), re-run here because the browser is untrusted.
@@ -71,7 +71,7 @@ export async function placeOrder(input: CheckoutInput): Promise<CheckoutResult> 
     console.error("hit_rate_limit failed", limitError);
     return explain("");
   }
-  if (!allowed) return { ok: false, message: `Too many order attempts. Please wait an hour and try again, or call ${HOTLINE}.` };
+  if (!allowed) return { ok: false, message: `Bạn đã thử đặt hàng quá nhiều lần. Vui lòng đợi một giờ rồi thử lại, hoặc gọi ${HOTLINE}.` };
 
   const { data, error } = await admin.rpc("place_order", {
     p_items: items.map((i) => ({ variant_id: i.variantId, qty: i.qty })),

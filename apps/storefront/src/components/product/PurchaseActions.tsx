@@ -58,10 +58,10 @@ export function PurchaseActions({
       added: added > 0,
       text:
         added === qty
-          ? "Added to cart"
+          ? "Đã thêm vào giỏ"
           : added > 0
-            ? `Added ${added} — only ${variant.stock} in stock`
-            : `All ${variant.stock} in stock are already in your cart`,
+            ? `Đã thêm ${added} — chỉ còn ${variant.stock} sản phẩm`
+            : `Cả ${variant.stock} sản phẩm còn lại đã có trong giỏ của bạn`,
     });
   }
 
@@ -76,7 +76,7 @@ export function PurchaseActions({
         <>
           {" · "}
           <Link href="/cart" className="text-text-primary underline">
-            View cart
+            Xem giỏ hàng
           </Link>
         </>
       )}
@@ -86,7 +86,7 @@ export function PurchaseActions({
   if (soldOut) {
     return (
       <button type="button" disabled className="h-12 w-full rounded-sm bg-bg-tertiary text-button uppercase text-text-muted">
-        Sold out
+        Hết hàng
       </button>
     );
   }
@@ -101,7 +101,7 @@ export function PurchaseActions({
             onChange={(n) => variant && setQtyState({ id: variant.id, qty: n })}
           />
           <button type="button" disabled={!variant} onClick={add} className={`flex-1 ${primaryClass}`}>
-            {variant ? "Add to cart" : "Select a size"}
+            {variant ? "Thêm vào giỏ" : "Chọn size"}
           </button>
         </div>
         <button
@@ -110,7 +110,7 @@ export function PurchaseActions({
           onClick={buyNow}
           className="h-12 w-full rounded-sm border border-text-primary text-button uppercase text-text-primary transition-colors duration-200 enabled:hover:bg-text-primary enabled:hover:text-text-on-dark disabled:cursor-not-allowed disabled:border-border disabled:text-text-muted"
         >
-          Buy it now
+          Mua ngay
         </button>
         {status}
       </div>
@@ -126,7 +126,7 @@ export function PurchaseActions({
           <span className="flex-1 text-price">{price}</span>
           {/* No size yet: jump to the size picker instead of a dead disabled button. */}
           <button type="button" onClick={variant ? add : onNeedSize} className={`flex-1 ${primaryClass}`}>
-            {variant ? "Add to cart" : "Select a size"}
+            {variant ? "Thêm vào giỏ" : "Chọn size"}
           </button>
         </div>
       </div>

@@ -37,11 +37,11 @@ export function ProfileCard({ name, email, phone }: { name: string; email: strin
   if (editing) {
     return (
       <form onSubmit={submit} noValidate className="flex flex-col gap-5 rounded-sm border border-text-primary p-6">
-        <h2 className="text-nav uppercase">Edit profile</h2>
-        <Field id="profile-name" label="Full name" error={errors.name} defaultValue={name} autoComplete="name" maxLength={100} autoFocus />
+        <h2 className="text-nav uppercase">Sửa thông tin</h2>
+        <Field id="profile-name" label="Họ tên" error={errors.name} defaultValue={name} autoComplete="name" maxLength={100} autoFocus />
         <Field
           id="profile-phone"
-          label="Phone number"
+          label="Số điện thoại"
           error={errors.phone}
           defaultValue={formatPhone(phone)}
           type="tel"
@@ -50,10 +50,10 @@ export function ProfileCard({ name, email, phone }: { name: string; email: strin
           placeholder="0901 234 567"
           maxLength={15}
         />
-        <p className="text-caption text-text-muted">Your email can&apos;t be changed here.</p>
+        <p className="text-caption text-text-muted">Không thể đổi email tại đây.</p>
         {message && <p role="alert" className={errorClass}>{message}</p>}
         <div className="flex flex-col gap-3 sm:flex-row">
-          <button type="submit" disabled={pending} className={`${primaryClass} sm:flex-1`}>{pending ? "Saving…" : "Save"}</button>
+          <button type="submit" disabled={pending} className={`${primaryClass} sm:flex-1`}>{pending ? "Đang lưu…" : "Lưu"}</button>
           <button
             type="button"
             disabled={pending}
@@ -63,7 +63,7 @@ export function ProfileCard({ name, email, phone }: { name: string; email: strin
             }}
             className={`${secondaryClass} sm:flex-1`}
           >
-            Cancel
+            Hủy
           </button>
         </div>
       </form>
@@ -71,9 +71,9 @@ export function ProfileCard({ name, email, phone }: { name: string; email: strin
   }
 
   const rows = [
-    { label: "Name", value: name || "—" },
+    { label: "Họ tên", value: name || "—" },
     { label: "Email", value: email || "—" },
-    { label: "Phone", value: formatPhone(phone) },
+    { label: "Số điện thoại", value: formatPhone(phone) },
   ];
   return (
     <div className="flex flex-col gap-5 rounded-sm border border-border p-6">
@@ -85,7 +85,7 @@ export function ProfileCard({ name, email, phone }: { name: string; email: strin
           </div>
         ))}
       </dl>
-      <button type="button" onClick={() => setEditing(true)} className={secondaryClass}>Edit profile</button>
+      <button type="button" onClick={() => setEditing(true)} className={secondaryClass}>Sửa thông tin</button>
     </div>
   );
 }

@@ -13,7 +13,7 @@ export function WishlistGrid({ products }: { products: ProductCardData[] }) {
 
   return (
     <section aria-labelledby="wishlist" className="flex flex-col gap-4">
-      <h2 id="wishlist" className="text-h3 uppercase">Wishlist</h2>
+      <h2 id="wishlist" className="text-h3 uppercase">Danh sách yêu thích</h2>
       {/* Same grid as /products. Each <li> is a grid cell so the card fills the column width and
           the row height — as a flex row it shrank to its content (name length set the width). */}
       {shown.length ? (
@@ -24,8 +24,8 @@ export function WishlistGrid({ products }: { products: ProductCardData[] }) {
         </ul>
       ) : (
         <p className="text-text-secondary">
-          Nothing saved yet. Tap the heart on any product to keep it here.{" "}
-          <Link href="/products" className="text-text-primary underline underline-offset-4 hover:text-accent">Browse products</Link>
+          Chưa có sản phẩm nào. Nhấn vào biểu tượng trái tim trên sản phẩm để lưu tại đây.{" "}
+          <Link href="/products" className="text-text-primary underline underline-offset-4 hover:text-accent">Xem sản phẩm</Link>
         </p>
       )}
     </section>
