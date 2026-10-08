@@ -7,7 +7,7 @@ import { getCartItems, type CartItem } from "@/app/cart/actions";
 import { TrashIcon } from "@/components/layout/icons";
 import { QuantityStepper } from "@/components/product/QuantityStepper";
 import { BundleEstimate, useBundleEstimate } from "./BundleEstimate";
-import { removeFromCart, setCartQty, useCart } from "@/lib/cart";
+import { removeFromCart, setCartQty, useCart, useCartReady } from "@/lib/cart";
 import { formatVnd } from "@/lib/format";
 
 const primaryClass =
@@ -15,10 +15,11 @@ const primaryClass =
 const secondaryClass =
   "flex h-12 w-full items-center justify-center rounded-sm border border-text-primary text-button uppercase text-text-primary transition-colors duration-200 hover:bg-text-primary hover:text-text-on-dark";
 
-// Cart lines come from localStorage; name/price/stock are re-read from the DB on every change of
+// Cart lines come from lib/cart (browser or account cart); name/price/stock are re-read from the DB on every change of
 // the id set. Totals are display only — the order route recomputes them (ARCHITECTURE.md §2.2).
 export function CartView() {
   const lines = useCart();
+  const ready = useCartReady();
   const [items, setItems] = useState<Map<string, CartItem> | null>(null);
   const bundleEstimate = useBundleEstimate(lines);
   const idsKey = lines.map((l) => l.variantId).toSorted().join(",");
@@ -33,7 +34,7 @@ export function CartView() {
     };
   }, [idsKey]);
 
-  if (!items) return <p className="text-text-secondary">Đang tải giỏ hàng…</p>;
+  if (!items || !ready) return <p className="text-text-secondary">Đang tải giỏ hàng…</p>;
 
   if (!lines.length) {
     return (

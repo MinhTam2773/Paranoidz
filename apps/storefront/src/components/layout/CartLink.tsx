@@ -6,7 +6,7 @@ import { cartItemCount, useCart } from "@/lib/cart";
 import { CART_FLY_END, CART_FLY_START } from "@/lib/fly-to-cart";
 import { BagIcon } from "./icons";
 
-// Header cart icon + red count badge (DESIGN.md §4). Client-side: the cart lives in localStorage.
+// Header cart icon + red count badge (DESIGN.md §4). Client-side: the cart lives in lib/cart (browser or account).
 // While a fly-to-cart thumbnail is in the air the old count stays up; on landing it updates and pops.
 export function CartLink() {
   const count = useCart().reduce((sum, l) => sum + l.qty, 0);

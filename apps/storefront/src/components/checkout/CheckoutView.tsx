@@ -7,7 +7,7 @@ import { getCartItems, type CartItem } from "@/app/cart/actions";
 import { placeOrder, type CheckoutResult } from "@/app/checkout/actions";
 import type { SavedAddress } from "@/components/account/AddressBook";
 import { BundleEstimate, useBundleEstimate } from "@/components/cart/BundleEstimate";
-import { clearCart, useCart, type CartLine } from "@/lib/cart";
+import { clearCart, useCart, useCartReady, type CartLine } from "@/lib/cart";
 import {
   ALLOWED_CHARS,
   CHECKOUT_FIELDS,
@@ -80,6 +80,7 @@ function Field({
 // the order itself is priced and validated server-side by placeOrder → place_order().
 export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; account: CheckoutAccount }) {
   const cart = useCart();
+  const cartReady = useCartReady();
   const lines = buyNow ? [buyNow] : cart;
   const [items, setItems] = useState<Map<string, CartItem> | null>(null);
   const bundleEstimate = useBundleEstimate(lines);
@@ -213,7 +214,7 @@ export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; acc
     );
   }
 
-  if (!items) return <p className="text-text-secondary">Đang tải đơn hàng…</p>;
+  if (!items || (!buyNow && !cartReady)) return <p className="text-text-secondary">Đang tải đơn hàng…</p>;
 
   if (!lines.length) {
     return (
