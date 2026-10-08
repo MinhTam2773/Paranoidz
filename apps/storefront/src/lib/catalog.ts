@@ -8,7 +8,7 @@ type PublicClient = ReturnType<typeof createPublicClient>;
 export function productCardQuery(supabase: PublicClient) {
   return supabase
     .from("products")
-    .select("id, name, slug, product_variants(price, original_price, stock), product_images(storage_path)")
+    .select("id, name, slug, category_id, product_variants(price, original_price, stock), product_images(storage_path)")
     .order("sort_order", { referencedTable: "product_images" })
     .limit(1, { referencedTable: "product_images" });
 }
