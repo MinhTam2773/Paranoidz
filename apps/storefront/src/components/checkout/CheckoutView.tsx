@@ -6,6 +6,7 @@ import { useEffect, useRef, useState, useTransition, type FocusEvent, type FormE
 import { getCartItems, type CartItem } from "@/app/cart/actions";
 import { placeOrder, type CheckoutResult } from "@/app/checkout/actions";
 import type { SavedAddress } from "@/components/account/AddressBook";
+import { BundleEstimate, useBundleEstimate } from "@/components/cart/BundleEstimate";
 import { clearCart, useCart, type CartLine } from "@/lib/cart";
 import {
   ALLOWED_CHARS,
@@ -81,6 +82,7 @@ export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; acc
   const cart = useCart();
   const lines = buyNow ? [buyNow] : cart;
   const [items, setItems] = useState<Map<string, CartItem> | null>(null);
+  const bundleEstimate = useBundleEstimate(lines);
   const [message, setMessage] = useState<string | undefined>();
   const [errors, setErrors] = useState<FieldErrors>({});
   const initial = account?.addresses[0];
@@ -333,6 +335,7 @@ export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; acc
               <dd className="text-right text-caption text-text-secondary">Confirmed on our call</dd>
             </div>
           </dl>
+          <BundleEstimate estimate={bundleEstimate} subtotal={subtotal} />
           <p className="text-caption text-text-secondary">
             New customers get 10% off their first 5 orders, applied automatically. A voucher code applies instead if it saves you more.
           </p>

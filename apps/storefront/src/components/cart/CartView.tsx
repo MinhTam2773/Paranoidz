@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { getCartItems, type CartItem } from "@/app/cart/actions";
 import { TrashIcon } from "@/components/layout/icons";
 import { QuantityStepper } from "@/components/product/QuantityStepper";
+import { BundleEstimate, useBundleEstimate } from "./BundleEstimate";
 import { removeFromCart, setCartQty, useCart } from "@/lib/cart";
 import { formatVnd } from "@/lib/format";
 
@@ -19,6 +20,7 @@ const secondaryClass =
 export function CartView() {
   const lines = useCart();
   const [items, setItems] = useState<Map<string, CartItem> | null>(null);
+  const bundleEstimate = useBundleEstimate(lines);
   const idsKey = lines.map((l) => l.variantId).toSorted().join(",");
 
   useEffect(() => {
@@ -127,6 +129,7 @@ export function CartView() {
             <span className="text-nav uppercase text-text-secondary">Subtotal ({count})</span>
             <span className="text-price">{formatVnd(subtotal)}</span>
           </div>
+          <BundleEstimate estimate={bundleEstimate} subtotal={subtotal} />
           <p className="text-caption text-text-muted">Shipping and vouchers are calculated at checkout.</p>
           <div className="flex flex-col gap-3">
             {blocked ? (

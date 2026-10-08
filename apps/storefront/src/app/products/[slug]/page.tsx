@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { cache } from "react";
 import { createPublicClient } from "@paranoidz/db/public";
 import { Breadcrumb } from "@/components/layout/Breadcrumb";
+import { BundleOffers, getBundleOffers } from "@/components/product/BundleOffers";
 import { ProductView } from "@/components/product/ProductView";
 import { SizeGuide, isSizeGuide } from "@/components/product/SizeGuide";
 
@@ -49,6 +50,7 @@ export default async function ProductPage({ params }: PageProps<"/products/[slug
   const product = await getProduct((await params).slug);
   if (!product) notFound();
   const sizeGuide = isSizeGuide(product.size_guide) ? product.size_guide : null;
+  const offers = await getBundleOffers(product.id);
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 pb-16 lg:px-6">
@@ -77,6 +79,7 @@ export default async function ProductPage({ params }: PageProps<"/products/[slug
           )
         }
         sizeGuide={sizeGuide && <SizeGuide guide={sizeGuide} />}
+        bundles={<BundleOffers offers={offers} />}
       />
     </div>
   );

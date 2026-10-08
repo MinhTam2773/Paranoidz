@@ -40,6 +40,7 @@ const optionClass = (selected: boolean) =>
 // Gallery + colour/size selection share one state: the colourway drives both.
 // Stock 0 variants are unselectable; all-zero = SOLD OUT, can't be carted (ARCHITECTURE.md §3).
 // `details` / `sizeGuide` are server-rendered tab panels; the size-guide link opens its tab.
+// `bundles` (server-rendered) sits between the purchase grid and the tabs.
 export function ProductView({
   productId,
   name,
@@ -47,6 +48,7 @@ export function ProductView({
   images,
   details,
   sizeGuide,
+  bundles,
 }: {
   productId: string;
   name: string;
@@ -54,6 +56,7 @@ export function ProductView({
   images: ProductImage[];
   details: ReactNode;
   sizeGuide: ReactNode;
+  bundles: ReactNode;
 }) {
   const colors = [...new Set(variants.map((v) => v.color))];
   const soldOut = variants.every((v) => v.stock === 0);
@@ -214,6 +217,7 @@ export function ProductView({
         </div>
       </div>
 
+      {bundles}
       {tabs.length > 0 && <ProductTabs ref={tabsRef} tabs={tabs} active={activeTab} onChange={setActiveTab} />}
     </>
   );
