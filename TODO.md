@@ -75,6 +75,14 @@ Session log and work queue. Read this first (CLAUDE.md §7), update it last (§5
 
 ## Next up
 
+- [ ] **Storefront — Homepage** (`apps/storefront/src/app/page.tsx`, still the create-next-app placeholder). Spec: DESIGN.md §4 (hero banner, collection cards, NEW GOODS / BEST SELLER tabs, product card, promotion section, category section) + §5 "Page structure" (items 5–10) + §8 mobile (hero 16:9, H1 32px) + §9 "Homepage" prompt. Stitch refs (project `16943126164010481608`): "PARANOIDZ Landing Page - Nested Nav", "Landing Page - Refined Search" (desktop), "Landing Page - Mobile" — read their HTML for layout only, tokens come from DESIGN.md (see Known gaps on Stitch). No breadcrumb on the homepage. All copy Vietnamese ("bạn"), uppercase headings. ISR like `/products` (revalidate 60), public client under RLS, reuse `ProductCard` / `productCardQuery` / `toProductCard` (`lib/catalog.ts`). Done = replaces the placeholder, 1280px + 375px verified on the prod build, scrollWidth 375, LCP hero image `preload`.
+  **Ask the owner before building** (each one blocks part of the page):
+  1. **Hero content** — no CMS yet (ARCHITECTURE.md §8.6 Sanity vs `site_content` still pending): hardcode one hero (image + title + CTA link) in code for now? Which photo (client's lookbook, or a dev Unsplash placeholder like the product photos)? Title / subtitle / CTA target (e.g. NEW COLLECTION → `/collections/new-collection`)?
+  2. **Collection cards** — `collections` has no image or year column. Options: use each collection's first product photo, or add `collections.image_path` + an uploader in the admin collections editor (migration + admin work). Which 4 collections, and in which order (admin `sort_order`, first 4 active)?
+  3. **BEST SELLER tab** — nothing stores sales counts. Options: sum `order_items.qty` over delivered (or non-cancelled) orders in a SQL view / RPC readable by anon (order rows are private, so it must expose only product ids + counts), or drop the tab and show NEW GOODS only. NEW GOODS = newest active products (`created_at desc`).
+  4. **Promotion + category sections** — promotion = products with a variant where `original_price > price` (data exists); category rows = one row per `categories` entry (4 in the dev seed). Scrollable rows with dot pagination (DESIGN.md) vs plain grids?
+  5. **Newsletter signup** — DESIGN.md lists it, but ARCHITECTURE.md §9 puts newsletter/email marketing out of scope → leave it out unless the owner says otherwise (ARCHITECTURE wins).
+  After building: remove the Known-gaps lines about the placeholder homepage, its English text and the nested `<main>`.
 
 ---
 
