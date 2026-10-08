@@ -84,7 +84,7 @@ Session log and work queue. Read this first (CLAUDE.md §7), update it last (§5
 
 Governed by `DESIGN.md` + `design-refs/`.
 
-- [x] ~~Vietnamese pass on the existing storefront~~ — done 2026-10-08 (see Done). Left: Supabase auth email templates (owner, dashboard) and the placeholder homepage.
+- [x] ~~Vietnamese pass on the existing storefront~~ — done 2026-10-08 (see Done). Left: Supabase auth email templates (owner, dashboard). Homepage done 2026-10-08.
 - [ ] **Account cart sync** (needed once accounts exist): the cart is browser-only today (`src/lib/cart.ts`, localStorage), so it doesn't follow a user across devices, and the next person to log in on the same browser sees the previous person's cart. Add `cart_items` (user_id, variant_id, qty; own-rows RLS like `wishlists`). Guests keep localStorage. On login, merge the browser cart into the account cart (sum qty, cap at stock), then clear the browser copy. While logged in, `useCart`/`addToCart`/`setCartQty`/`removeFromCart` read and write the table. On logout, clear the browser cart. Low priority: §8.2 resolved to guest checkout (2026-09-26), so an account is optional and most buyers may never log in. Build only if the client asks for cross-device carts.
 - [ ] Reviews + replies (server route — `is_brand_reply` must be unforgeable)
 
