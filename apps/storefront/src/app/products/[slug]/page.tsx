@@ -5,6 +5,7 @@ import { createPublicClient } from "@paranoidz/db/public";
 import { Breadcrumb } from "@/components/layout/Breadcrumb";
 import { BundleOffers, getBundleOffers } from "@/components/product/BundleOffers";
 import { ProductView } from "@/components/product/ProductView";
+import { ReviewSection, type ReviewData } from "@/components/product/ReviewSection";
 import { SizeGuide, isSizeGuide } from "@/components/product/SizeGuide";
 
 // ISR (ARCHITECTURE.md §2.2): every active product is prebuilt at deploy, then rebuilt at most once a
@@ -41,6 +42,33 @@ const getProduct = cache(async (slug: string) => {
   };
 });
 
+// Visible reviews + visible replies only (RLS), newest review first, replies oldest first.
+async function getReviews(productId: string): Promise<ReviewData[]> {
+  const { data, error } = await createPublicClient()
+    .from("reviews")
+    .select("id, user_id, rating, content, author_name, created_at, review_replies(id, user_id, content, author_name, is_brand_reply, created_at)")
+    .eq("product_id", productId)
+    .order("created_at", { ascending: false })
+    .order("created_at", { referencedTable: "review_replies" });
+  if (error) throw error;
+  return data.map((r) => ({
+    id: r.id,
+    userId: r.user_id,
+    rating: r.rating,
+    content: r.content,
+    authorName: r.author_name,
+    createdAt: r.created_at,
+    replies: r.review_replies.map((p) => ({
+      id: p.id,
+      userId: p.user_id,
+      content: p.content,
+      authorName: p.author_name,
+      isBrand: p.is_brand_reply,
+      createdAt: p.created_at,
+    })),
+  }));
+}
+
 export async function generateMetadata({ params }: PageProps<"/products/[slug]">): Promise<Metadata> {
   const product = await getProduct((await params).slug);
   return { title: product ? `${product.name} | Paranoidz` : "Không tìm thấy | Paranoidz" };
@@ -50,7 +78,8 @@ export default async function ProductPage({ params }: PageProps<"/products/[slug
   const product = await getProduct((await params).slug);
   if (!product) notFound();
   const sizeGuide = isSizeGuide(product.size_guide) ? product.size_guide : null;
-  const offers = await getBundleOffers(product.id);
+  const [offers, reviews] = await Promise.all([getBundleOffers(product.id), getReviews(product.id)]);
+  const { slug } = await params;
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 pb-16 lg:px-6">
@@ -80,6 +109,8 @@ export default async function ProductPage({ params }: PageProps<"/products/[slug
         }
         sizeGuide={sizeGuide && <SizeGuide guide={sizeGuide} />}
         bundles={<BundleOffers offers={offers} />}
+        reviews={<ReviewSection productId={product.id} slug={slug} reviews={reviews} />}
+        reviewCount={reviews.length}
       />
     </div>
   );

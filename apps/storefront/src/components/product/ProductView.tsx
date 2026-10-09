@@ -40,7 +40,7 @@ const optionClass = (selected: boolean) =>
 // Gallery + colour/size selection share one state: the colourway drives both.
 // Stock 0 variants are unselectable; all-zero = SOLD OUT, can't be carted (ARCHITECTURE.md §3).
 // `details` / `sizeGuide` are server-rendered tab panels; the size-guide link opens its tab.
-// `bundles` (server-rendered) sits between the purchase grid and the tabs.
+// `bundles` (server-rendered) sits between the purchase grid and the tabs. `reviews` is always a tab.
 export function ProductView({
   productId,
   name,
@@ -49,6 +49,8 @@ export function ProductView({
   details,
   sizeGuide,
   bundles,
+  reviews,
+  reviewCount,
 }: {
   productId: string;
   name: string;
@@ -57,6 +59,8 @@ export function ProductView({
   details: ReactNode;
   sizeGuide: ReactNode;
   bundles: ReactNode;
+  reviews: ReactNode;
+  reviewCount: number;
 }) {
   const colors = [...new Set(variants.map((v) => v.color))];
   const soldOut = variants.every((v) => v.stock === 0);
@@ -67,6 +71,7 @@ export function ProductView({
   const tabs = [
     ...(details ? [{ id: "details", label: "Chi tiết sản phẩm", content: details }] : []),
     ...(sizeGuide ? [{ id: "size-guide", label: "Bảng size", content: sizeGuide }] : []),
+    { id: "reviews", label: `Đánh giá (${reviewCount})`, content: reviews },
   ];
   const [activeTab, setActiveTab] = useState(tabs[0]?.id ?? "");
   const tabsRef = useRef<HTMLElement>(null);
