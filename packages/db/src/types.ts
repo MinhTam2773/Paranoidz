@@ -699,26 +699,32 @@ export type Database = {
       }
       review_replies: {
         Row: {
+          author_name: string
           content: string
           created_at: string
           id: string
           is_brand_reply: boolean
+          is_visible: boolean
           review_id: string
           user_id: string
         }
         Insert: {
+          author_name?: string
           content: string
           created_at?: string
           id?: string
           is_brand_reply?: boolean
+          is_visible?: boolean
           review_id: string
           user_id: string
         }
         Update: {
+          author_name?: string
           content?: string
           created_at?: string
           id?: string
           is_brand_reply?: boolean
+          is_visible?: boolean
           review_id?: string
           user_id?: string
         }
@@ -741,6 +747,7 @@ export type Database = {
       }
       reviews: {
         Row: {
+          author_name: string
           content: string
           created_at: string
           id: string
@@ -750,6 +757,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          author_name?: string
           content: string
           created_at?: string
           id?: string
@@ -759,6 +767,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          author_name?: string
           content?: string
           created_at?: string
           id?: string
@@ -923,6 +932,10 @@ export type Database = {
           product_id: string
         }[]
       }
+      has_delivered_product: {
+        Args: { p_product_id: string }
+        Returns: boolean
+      }
       hit_rate_limit: {
         Args: {
           p_ip: string
@@ -962,6 +975,7 @@ export type Database = {
         }[]
       }
       set_variant_stocks: { Args: { p_changes: Json }; Returns: undefined }
+      short_author_name: { Args: { p_name: string }; Returns: string }
       transition_order_status: {
         Args: {
           p_new_status: Database["public"]["Enums"]["order_status"]

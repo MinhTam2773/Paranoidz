@@ -57,6 +57,7 @@ const createdUsers: string[] = [];
 const deliveredItems: { variant_id: string; qty: number }[] = [];
 let autoUsedBefore: number | null = null;
 const cartUsers: string[] = [];
+const reviewUsers: string[] = [];
 
 async function placeOrder(
   items: { variant_id: string; qty: number }[],
@@ -414,6 +415,80 @@ async function main() {
     otherRead.data?.length === 0 && !!otherInsert.error && otherUpdate.data?.length === 0
       && anonRead.data?.length === 0 && !!anonMerge.error && untouched?.length === 1 && untouched[0].qty === cartVariant.stock,
     `read=${otherRead.data?.length} insert=${otherInsert.error?.code} update=${otherUpdate.data?.length} anonRead=${anonRead.data?.length} anonMerge=${anonMerge.error?.code}`);
+
+  // 14. Reviews: delivered buyers only, unforgeable author / brand flag ------
+  reviewUsers.push(c1Id, c3Id);
+  await admin.from("reviews").delete().in("user_id", reviewUsers);
+  const { data: ownItem } = await admin.from("order_items").select("variant_id, qty, product_id").eq("order_id", own.data!.order_id).single();
+  const product = ownItem!.product_id!;
+  const early = await c1.from("reviews").insert({ product_id: product, user_id: c1Id, rating: 5, content: "Smoke review" });
+  await transition(own.data!.order_id, "confirmed", "shipped", "delivered");
+  deliveredItems.push({ variant_id: ownItem!.variant_id!, qty: ownItem!.qty });
+  const posted = await c1.from("reviews").insert({ product_id: product, user_id: c1Id, rating: 5, content: "Smoke review" }).select("id, author_name, is_visible").single();
+  const { data: c1Profile } = await admin.from("profiles").select("full_name").eq("id", c1Id).single();
+  const { data: expectedName } = await admin.rpc("short_author_name", { p_name: c1Profile!.full_name });
+  check("reviews: only after delivery; author snapshot set server-side",
+    !!early.error && !posted.error && posted.data?.author_name === expectedName && posted.data?.is_visible === true,
+    `early=${early.error?.code} posted=${posted.error?.message ?? posted.data?.author_name} expected=${expectedName}`);
+  const reviewId = posted.data!.id;
+
+  const { data: names } = await admin.rpc("short_author_name", { p_name: "  Nguyễn  Văn An " });
+  const { data: single } = await admin.rpc("short_author_name", { p_name: "An" });
+  const { data: none } = await admin.rpc("short_author_name", { p_name: null as unknown as string });
+  check("reviews: short name 'Nguyễn Văn An' → 'An N. V.', one word kept, none → Khách hàng",
+    names === "An N. V." && single === "An" && none === "Khách hàng", `${names} | ${single} | ${none}`);
+
+  const [forgedName, forgedDate, selfUnhide, edit, strangerReview, strangerEdit] = await Promise.all([
+    c1.from("reviews").update({ author_name: "Admin" } as never).eq("id", reviewId),
+    c3.from("reviews").insert({ product_id: product, user_id: c3Id, rating: 5, content: "x", created_at: "2020-01-01" } as never),
+    c1.from("reviews").update({ is_visible: false } as never).eq("id", reviewId),
+    c1.from("reviews").update({ rating: 4, content: "Edited" }).eq("id", reviewId).select("rating"),
+    c3.from("reviews").insert({ product_id: product, user_id: c3Id, rating: 1, content: "Not a buyer" }),
+    c3.from("reviews").update({ content: "Hijack" }).eq("id", reviewId).select("id"),
+  ]);
+  check("reviews: own edit of rating/content only; author_name / is_visible / created_at / other users blocked",
+    !!forgedName.error && !!forgedDate.error && !!selfUnhide.error && edit.data?.[0]?.rating === 4
+      && !!strangerReview.error && strangerEdit.data?.length === 0,
+    `name=${forgedName.error?.code} date=${forgedDate.error?.code} vis=${selfUnhide.error?.code} edit=${edit.data?.[0]?.rating} stranger=${strangerReview.error?.code} hijack=${strangerEdit.data?.length}`);
+
+  // Phone path: a guest delivered order (case 11, PHONES[4]) counts for a profile with that phone.
+  const { data: guestItem } = await admin.from("order_items").select("product_id").eq("order_id", d.data!.order_id).single();
+  await admin.from("profiles").update({ phone: PHONES[4] }).eq("id", twoId);
+  const { data: byPhone } = await two.rpc("has_delivered_product", { p_product_id: guestItem!.product_id! });
+  const { data: notBought } = await c3.rpc("has_delivered_product", { p_product_id: guestItem!.product_id! });
+  const anonCheck = await createClient<Database>(url, publishable, noPersist).rpc("has_delivered_product", { p_product_id: product });
+  check("reviews: guest order matched by profile phone; non-buyer false; anon can't ask",
+    byPhone === true && notBought === false && !!anonCheck.error, `${byPhone} ${notBought} ${anonCheck.error?.code}`);
+
+  const reply = await c3.from("review_replies").insert({ review_id: reviewId, user_id: c3Id, content: "Smoke reply" }).select("id, author_name, is_brand_reply").single();
+  const [fakeBrand, replyEdit] = await Promise.all([
+    c3.from("review_replies").insert({ review_id: reviewId, user_id: c3Id, content: "Fake brand", is_brand_reply: true } as never),
+    c3.from("review_replies").update({ content: "Edited" } as never).eq("id", reply.data?.id ?? ""),
+  ]);
+  const brand = await admin.from("review_replies").insert({ review_id: reviewId, user_id: c1Id, content: "Cảm ơn bạn!", is_brand_reply: true }).select("id, author_name").single();
+  const brandDelete = await c1.from("review_replies").delete().eq("id", brand.data?.id ?? "").select("id");
+  check("replies: any customer can reply; brand flag only via service role ('PARANOIDZ'); no edits; brand reply not deletable",
+    !reply.error && reply.data?.is_brand_reply === false && reply.data?.author_name !== "PARANOIDZ" && !!fakeBrand.error && !!replyEdit.error
+      && brand.data?.author_name === "PARANOIDZ" && brandDelete.data?.length === 0,
+    `reply=${reply.error?.message ?? reply.data?.author_name} fake=${fakeBrand.error?.code} edit=${replyEdit.error?.code} brand=${brand.data?.author_name} del=${brandDelete.data?.length}`);
+
+  const anonDb2 = createClient<Database>(url, publishable, noPersist);
+  await admin.from("review_replies").update({ is_visible: false }).eq("id", reply.data!.id);
+  const { data: anonReplies } = await anonDb2.from("review_replies").select("id").eq("review_id", reviewId);
+  const { data: ownHiddenReply } = await c3.from("review_replies").select("id").eq("id", reply.data!.id);
+  await admin.from("reviews").update({ is_visible: false }).eq("id", reviewId);
+  const [{ data: anonHidden }, { data: ownHidden }, replyToHidden] = await Promise.all([
+    anonDb2.from("reviews").select("id").eq("id", reviewId),
+    c1.from("reviews").select("id").eq("id", reviewId),
+    c3.from("review_replies").insert({ review_id: reviewId, user_id: c3Id, content: "Late reply" }),
+  ]);
+  check("moderation: hidden reply/review gone for the public, still visible to its author; no replies to a hidden review",
+    anonReplies?.length === 1 && ownHiddenReply?.length === 1 && anonHidden?.length === 0 && ownHidden?.length === 1 && !!replyToHidden.error,
+    `anonReplies=${anonReplies?.length} ownReply=${ownHiddenReply?.length} anonReview=${anonHidden?.length} own=${ownHidden?.length} late=${replyToHidden.error?.code}`);
+
+  const deleted = await c1.from("reviews").delete().eq("id", reviewId).select("id");
+  const { count: repliesLeft } = await admin.from("review_replies").select("*", { count: "exact", head: true }).eq("review_id", reviewId);
+  check("reviews: author deletes own review, its replies go with it", deleted.data?.length === 1 && repliesLeft === 0, `${deleted.data?.length} ${repliesLeft}`);
 }
 
 async function cleanup() {
@@ -436,6 +511,7 @@ async function cleanup() {
   await admin.from("vouchers").delete().in("code", [VOUCHER, BUNDLE_VOUCHER]);
   await admin.from("bundles").delete().like("name", `${BUNDLE_PREFIX}%`);
   if (cartUsers.length) await admin.from("cart_items").delete().in("user_id", cartUsers);
+  if (reviewUsers.length) await admin.from("reviews").delete().in("user_id", reviewUsers);
   for (const id of createdUsers) await admin.auth.admin.deleteUser(id);
   // The delivered test order kept its AUTO-FIRST5 use; put the counter back.
   if (autoUsedBefore !== null) await admin.from("vouchers").update({ used_count: autoUsedBefore }).eq("type", "auto_first5");
