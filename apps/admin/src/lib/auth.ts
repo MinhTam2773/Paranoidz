@@ -13,5 +13,5 @@ export async function requireAdmin() {
   const { data: profile } = await supabase.from("profiles").select("is_admin").eq("id", claims.sub).maybeSingle();
   if (!profile?.is_admin) redirect("/login?notice=forbidden");
 
-  return { email: claims.email ?? "" };
+  return { id: claims.sub, email: claims.email ?? "" };
 }
