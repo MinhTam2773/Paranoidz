@@ -10,7 +10,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../src/types.ts";
 
 type Db = SupabaseClient<Database>;
-type Placed = { order_id: string; order_number: string; subtotal: number; discount: number; total: number };
+type Placed = { order_id: string; order_number: string; subtotal: number; discount: number; shipping_fee: number; total: number };
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const publishable = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!;
@@ -61,14 +61,14 @@ const reviewUsers: string[] = [];
 
 async function placeOrder(
   items: { variant_id: string; qty: number }[],
-  opts: { phone?: string; voucher?: string; userId?: string; db?: Db } = {},
+  opts: { phone?: string; voucher?: string; userId?: string; db?: Db; city?: string } = {},
 ) {
   const res = await (opts.db ?? admin).rpc("place_order", {
     p_items: items,
     p_recipient_name: "Smoke Test",
     p_phone: opts.phone ?? PHONES[0],
     p_address: "1 Test St",
-    p_city: "TP. Hồ Chí Minh",
+    p_city: opts.city ?? "TP. Hồ Chí Minh",
     p_voucher_code: opts.voucher,
     p_user_id: opts.userId,
   });
@@ -526,6 +526,34 @@ async function main() {
     bucket?.public === true && bucket.file_size_limit === 5242880
       && [...(bucket.allowed_mime_types ?? [])].sort().join() === "image/jpeg,image/png,image/webp",
     JSON.stringify({ public: bucket?.public, limit: bucket?.file_size_limit, types: bucket?.allowed_mime_types }));
+
+  // 16. Shipping fee: SPX rates by zone × 300 g per unit, in the order total ----------
+  // Expected values are SPX estimator quotes from HCMC (2026-10-09).
+  const quotes: [string, number, number][] = [
+    ["TP. Hồ Chí Minh", 1, 18000], ["TP. Hồ Chí Minh", 3, 18000], ["TP. Hồ Chí Minh", 4, 20500], ["TP. Hồ Chí Minh", 20, 43000],
+    ["Cần Thơ", 3, 22000], ["Cần Thơ", 5, 24500], ["Cần Thơ", 20, 47000],
+    ["Hà Nội", 1, 22000], ["Hà Nội", 4, 27000], ["Hà Nội", 6, 30000], ["Hà Nội", 7, 35000], ["Hà Nội", 20, 70000],
+  ];
+  const fees = await Promise.all(quotes.map(([p_city, p_units]) => admin.rpc("shipping_fee", { p_city, p_units })));
+  const wrong = quotes.filter((q, i) => fees[i].data !== q[2]).map((q, i) => `${q[0]}×${q[1]}=${fees[i].data ?? fees[i].error?.message}`);
+  check("shipping: fee table matches SPX quotes (3 zones, 300 g/unit)", wrong.length === 0, wrong.join(" | "));
+
+  const [unknownCity, anonFee] = await Promise.all([
+    admin.rpc("shipping_fee", { p_city: "Atlantis", p_units: 1 }),
+    anon.rpc("shipping_fee", { p_city: "Hà Nội", p_units: 1 }),
+  ]);
+  check("shipping: unknown city → SHIPPING_UNAVAILABLE; anon can't call shipping_fee",
+    unknownCity.error?.message === "SHIPPING_UNAVAILABLE" && !!anonFee.error, `unknown=${unknownCity.error?.message} anon=${anonFee.error?.message}`);
+
+  const shipVariant = await variant(pool[3].id);
+  const shipped = await placeOrder([{ variant_id: shipVariant.id, qty: 2 }], { phone: PHONES[2], city: "Hà Nội" });
+  const { data: shipRow } = await admin.from("orders").select("subtotal, discount, shipping_fee, total").eq("id", shipped.data?.order_id ?? "").maybeSingle();
+  const badCity = await placeOrder([{ variant_id: shipVariant.id, qty: 1 }], { phone: PHONES[2], city: "Atlantis" });
+  check("shipping: order stores the fee, total = subtotal − discount + shipping; unknown city refused before stock",
+    !shipped.error && shipRow?.shipping_fee === 22000 && shipped.data?.shipping_fee === 22000
+      && shipRow.total === shipRow.subtotal - shipRow.discount + 22000 && shipped.data?.total === shipRow.total
+      && badCity.error?.message === "SHIPPING_UNAVAILABLE" && (await variant(pool[3].id)).stock === shipVariant.stock - 2,
+    `err=${shipped.error?.message} row=${JSON.stringify(shipRow)} badCity=${badCity.error?.message}`);
 }
 
 async function cleanup() {

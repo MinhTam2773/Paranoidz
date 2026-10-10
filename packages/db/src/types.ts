@@ -455,6 +455,7 @@ export type Database = {
           phone: string
           recipient_name: string
           secondary_phone: string | null
+          shipping_fee: number
           status: Database["public"]["Enums"]["order_status"]
           subtotal: number
           total: number
@@ -476,6 +477,7 @@ export type Database = {
           phone: string
           recipient_name: string
           secondary_phone?: string | null
+          shipping_fee?: number
           status?: Database["public"]["Enums"]["order_status"]
           subtotal: number
           total: number
@@ -497,6 +499,7 @@ export type Database = {
           phone?: string
           recipient_name?: string
           secondary_phone?: string | null
+          shipping_fee?: number
           status?: Database["public"]["Enums"]["order_status"]
           subtotal?: number
           total?: number
@@ -838,6 +841,39 @@ export type Database = {
           },
         ]
       }
+      shipping_provinces: {
+        Row: {
+          city: string
+          zone: string
+        }
+        Insert: {
+          city: string
+          zone: string
+        }
+        Update: {
+          city?: string
+          zone?: string
+        }
+        Relationships: []
+      }
+      shipping_rates: {
+        Row: {
+          fee: number
+          max_grams: number
+          zone: string
+        }
+        Insert: {
+          fee: number
+          max_grams: number
+          zone: string
+        }
+        Update: {
+          fee?: number
+          max_grams?: number
+          zone?: string
+        }
+        Relationships: []
+      }
       voucher_uses: {
         Row: {
           created_at: string
@@ -1020,6 +1056,10 @@ export type Database = {
         }[]
       }
       set_variant_stocks: { Args: { p_changes: Json }; Returns: undefined }
+      shipping_fee: {
+        Args: { p_city: string; p_units: number }
+        Returns: number
+      }
       short_author_name: { Args: { p_name: string }; Returns: string }
       transition_order_status: {
         Args: {
