@@ -81,6 +81,8 @@ Session log and work queue. Read this first (CLAUDE.md §7), update it last (§5
 
 - [x] **Review photos** (2026-10-09) — owner: up to 4 per review, JPEG/PNG/WebP, 5 MB, admin hides each photo. Migration `20261009000001_review_images.sql` (pushed): public bucket `review-images` (5 MB, 3 types), `review_images` (review → cascade, user, `storage_path` unique, sort_order, is_visible); customers get **no** write grant — rows are written by server actions with the service role after the ownership checks; RLS read: visible photos of visible reviews + own; a trigger locks the review row and raises `REVIEW_IMAGE_NOT_AUTHOR` / `REVIEW_IMAGE_LIMIT`. Storefront (`review-actions.ts`): `createReviewImageUpload` (own review must exist, < 4, signed upload URL for `<user>/<review>/<uuid>.<ext>`), browser `uploadToSignedUrl`, `addReviewImage` (path in the caller's folder for that review, object exists, insert; file removed on failure), `deleteReviewImage`, `deleteReview` removes the files too; `getReviewViewer` returns own photos incl. hidden. `ReviewSection`: picker with previews + limits, photos uploaded after `saveReview` (partial failures reported), saved photos removable while editing, thumbnails → full-screen viewer (`<dialog>`, photo `object-contain` in a 100vw × 100dvh − 32px box; click / ✕ / Esc closes). Smoke case 15 (3 checks) — all 48 pass. Built by two parallel subagents (storefront / admin) on the coordinator's migration. **Fixed during verification:** the viewer took its size from the image's intrinsic size (208px wide at 375px) and couldn't reopen the same photo after ✕ (the `onClose` state reset didn't fire, so the same `setOpen(url)` re-rendered nothing) → fixed box + `showModal()` called from the click.
 
+- [x] **Shipping fee at SPX rates** (2026-10-09) — resolves ARCHITECTURE.md §8.1: no free shipping, the customer pays SPX Express's rate (client: "lấy giá theo spx tính"), nationwide; fulfilment stays manual on spx.vn. Research: SPX has no public API (FAQ points API requests to a sales lead form, `spx.vn/dangky-dichvu-vanchuyen`); its public estimator (`spx.vn/esf-tool`) was replayed for all 34 provinces × 1–20 units (2 wards each, identical) → 3 zones (ARCHITECTURE.md §5 table). Migration `20261009000002_shipping_fee.sql` (pushed): `shipping_provinces` (city → zone), `shipping_rates` (zone, max_grams, fee; 500 g steps to 6 kg), `shipping_fee(city, units)` (300 g/unit, service role, `SHIPPING_UNAVAILABLE`), `orders.shipping_fee` (old orders 0), `orders_total_math` → `total = subtotal − discount + shipping_fee`, `place_order()` computes it before any lock and returns it. Storefront: `quoteShipping` server action; checkout summary shows "Chọn tỉnh / thành phố" → "Đang tính…" → the fee + "Tổng trước giảm giá"; `SHIPPING_UNAVAILABLE` → city field error; confirmation, order lookup and order history (`OrderSummary`) show "Phí vận chuyển" (hidden when 0 = pre-shipping orders). Admin order detail: "Phí vận chuyển", "Tổng thu hộ (COD)", "Khối lượng gói hàng: X kg (N sản phẩm)" for filling the SPX form. Smoke case 16 (3 checks: 12 fee quotes vs SPX, unknown city + anon denied, order row math + unknown city refused before stock) — all 51 pass. Browser (dev): 4 tees → Hà Nội ₫27.000, HCMC ₫20.500; placed PZ-2026-0464 → confirmation ₫1.156.000 − ₫115.600 + ₫20.500 = ₫1.060.900, DB row matches, lookup shows the same; 375px: Cần Thơ 2 units ₫22.000, scrollWidth 375. Test order cancelled + deleted (stock 8 → 12), customer + rate rows removed. Both apps build + lint. **Not browser-verified: the admin order detail** (signing in needs a temporary admin account; making seed customer2 admin was blocked by the permission classifier this session).
+
 ---
 
 ## Next up
@@ -106,7 +108,12 @@ Governed by `DASHBOARD_DESIGN.md` §6.
 - [x] ~~Bundles~~ — pricing + admin page done 2026-10-07, storefront 2026-10-08
 - [x] ~~Promo codes~~ — done 2026-10-07
 - [ ] Gift pool (+ empty-pool banner for pending awards)
+- [ ] Shipping rates editor (`shipping_rates` / `shipping_provinces`) — only if SPX changes prices often; until then update the rows by migration.
 - [x] ~~Reviews moderation~~ — done 2026-10-09 (+ review photos)
+
+## Backlog — later (client: "thôi làm sau")
+
+- [ ] Grab delivery option for HCMC orders (client, 2026-10-09). Needs: how the fee is priced (Grab quotes per trip), a delivery-method choice at checkout, and `place_order()` taking the method.
 
 ## Backlog — infra
 
@@ -120,7 +127,7 @@ Governed by `DASHBOARD_DESIGN.md` §6.
 
 Do NOT implement (ARCHITECTURE.md §8). Each one has a concrete cost if guessed wrong:
 
-1. **Free shipping** — all orders vs over ₫1.000.000. `orders` has no shipping column and `orders_total_math` currently asserts `total = subtotal - discount`; adding shipping means altering that constraint.
+1. ~~Free shipping~~ — **resolved 2026-10-09: customer pays SPX-rate shipping** (see Done).
 2. ~~Guest checkout vs account required~~ — **resolved 2026-09-26: guest checkout allowed.** Work moved to the Order form task.
 3. **Voucher discount cap** — `AUTO-FIRST5` is seeded uncapped (`cap_amount = null`) in `supabase/seed.sql`. Change there, no migration needed.
 4. Loyalty gift notification + fulfilment method.
@@ -172,7 +179,7 @@ Surfaced during the schema review, deliberately not fixed:
 - **Deleted routes leave stale types in `.next/dev/types`**, and `next build` then fails type-check (`Cannot find module .../zz-check/route.js`). `rm -rf apps/<app>/.next` after deleting a route.
 - **Browser pane "mobile" preset can report a wider viewport** if content forces a min-width (mobile Chrome zooms out to fit). Check `innerWidth === 375` before trusting a mobile measurement.
 - **Footer content is placeholder — client to supply:** `STORE_ADDRESSES` is empty (Store info shows hotline only) and `SOCIAL_LINKS` hrefs are `#`, both in `apps/storefront/src/lib/site.ts`.
-- **Announcement bar says "Cash on delivery · Hotline"**, not a free-shipping message — shipping threshold is pending (§8.1). Swap once decided.
+- **Announcement bar says "Thanh toán COD · Hotline"** — stays: there is no free-shipping offer (§8.1 resolved 2026-10-09).
 - **Layout shell deviations from Stitch (DESIGN.md followed):** no PRODUCT mega-dropdown (build it from `categories` when the catalog lands, if wanted), no mobile bottom tab bar, mobile menu is full-screen from the right (not a left drawer), footer payment badge is COD only (Stitch showed VISA/MASTER — wrong for a COD-only shop).
 - **Nav routes 404 until built:** `/feedback`, `/branding`, `/policy`. OUTLET 2026 / NEW COLLECTION 404 until collections with slugs `outlet-2026` / `new-collection` exist in the admin.
 - **Tailwind v4 moves elements with the `translate` CSS property, not `transform`.** Check `getComputedStyle(el).translate` when verifying slide-ins.
@@ -190,7 +197,11 @@ Surfaced during the schema review, deliberately not fixed:
 - **Catalog stock is up to 60s stale** (ISR). Display only — `place_order()` re-checks atomically and `/cart` re-reads live stock. When the admin product editor and order route land, call `revalidatePath("/products")` / `revalidatePath(`/products/${slug}`)` after writes so edits and sell-outs show immediately.
 - **Verify caching on the production server, not dev** — `next dev` never caches (`storefront-prod` config: build first, then `preview_start`). Production also prefetches visible `<Link>`s, so the unbuilt nav routes (`/policy`, `/branding`, `/feedback`, …) show as 404s in the console until those pages exist.
 - **Checkout has no live discount preview** — voucher and first-5 discounts are computed only inside `place_order()`; the form says "applied when you place the order" and the confirmation shows the real numbers. A preview needs a SQL quote function that shares the voucher logic with `place_order()` (never re-implement it in TS).
-- **Shipping fee is not in the order total** — §8.1 still pending; checkout says "confirmed on our call". `orders_total_math` asserts `total = subtotal - discount`.
+- **Shipping rates are SPX's public estimator prices (2026-10-09), not the client's account rates.** The client should create one real order per zone in their SPX account and compare; if different, update `shipping_rates`. SPX also re-weighs at pickup — the shop absorbs any difference (ARCHITECTURE.md §5).
+- **Areas SPX doesn't serve aren't detected.** The estimator returned "Địa chỉ ngoài khu vực giao nhận" for Đặc khu Côn Đảo (TP. HCM); checkout only knows the province (ward is free text), so such orders are caught at the confirmation call.
+- **Parcel weight is a flat 300 g per unit** (`shipping_fee()` + `UNIT_GRAMS` on the admin order page). The client sells tees only; heavier items (hoodies, pants are in the dev seed only) would need a weight per variant.
+- **Re-pulling SPX rates:** on `spx.vn/esf-tool`, the price request is `POST /shipment/order/open/order/batch_check_order` (`parcel_info.parcel_weight` accepts an array of weights → one fee each); provinces/wards from `GET /shipment/merchant/open/location/get_sub_location_layer_info?country=VN&location_id=<id|-1>&sub_level=1&address_version=2`. Capture one real request from the form (it has to render — keep the browser pane visible) and replay it from the page. These are SPX's internal website endpoints: fine for a one-off rate check, not for production calls.
+- **WebSearch / WebFetch failed all session on 2026-10-09** ("issue with the selected model"); the built-in browser worked. Fall back to it for web research.
 - **Storefront now needs `SUPABASE_SERVICE_ROLE_KEY`** (server-only, for `place_order`) — in `apps/storefront/.env.local` and in Vercel's storefront project env. Never `NEXT_PUBLIC_`.
 - **Province list is static data** (`apps/storefront/src/lib/provinces.ts`, 34 units per Resolution 202/2025/QH15). If boundaries change again, update it there; server validation rejects any city not in the list. `orders.district` is no longer written (districts abolished 2025-07-01) — admin order detail should not expect it.
 - **Inputs under 16px make iOS Safari zoom on focus.** Checkout, order lookup and search inputs use `text-base` (16px) below `lg` as a deliberate exception to DESIGN.md sizes.

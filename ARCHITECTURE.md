@@ -127,9 +127,9 @@ Valid transitions: pending→confirmed→shipped→delivered; pending/confirmed�
 ### End-to-end flow
 1. Customer browses; Buy It Now skips cart, Add to Cart doesn't.
 2. Order form: full name, phone, street address, ward/commune, city/province, secondary phone, email, note, voucher code. Province = one of Vietnam's 34 units since 1 July 2025 (searchable list, `apps/storefront/src/lib/provinces.ts`); districts no longer exist, so `orders.district` stays NULL. Field rules live in `lib/checkout-validation.ts`, run live in the form AND again in the server action.
-3. Server route validates voucher, recomputes ALL prices from DB, calls `place_order()`.
+3. Server route validates voucher, recomputes ALL prices from DB (items, discount, shipping fee — §5), calls `place_order()`.
 4. Customer gets Resend confirmation email; client gets Telegram + email alert.
-5. Client calls to confirm (standard VN COD practice) → `confirmed` → `shipped` → `delivered`.
+5. Client calls to confirm (standard VN COD practice) → `confirmed` → creates the SPX order by hand on spx.vn (COD amount = `orders.total`, weight = 0.3 kg × units; the admin order page shows both), prints the label, drops the parcel at the post office → `shipped` → `delivered`.
 6. Cancel/refusal → stock restored, refusals tracked.
 
 Order numbers: `PZ-YYYY-NNNN` from a Postgres sequence (concurrency-safe, 4+ digits).
@@ -152,6 +152,23 @@ Order numbers: `PZ-YYYY-NNNN` from a Postgres sequence (concurrency-safe, 4+ dig
 - **No stacking with vouchers**: the order gets the better of (bundle total) vs (first-5 / promo). A tie goes to the bundle, so the customer keeps their promo use. When the bundle wins, no `voucher_uses` row is written.
 - The bundle total is capped at the subtotal. `orders.applied_bundles` snapshots what was applied (`[{bundle_id, name, discount_amount, sets}]`), NULL when no bundle discount priced the order.
 
+### Shipping fee — decided 2026-10-09 (resolves §8.1)
+- The customer pays shipping at **SPX Express's rates**; no free-shipping threshold. Nationwide.
+- Fee = `shipping_fee(city, units)`: parcel weight = **300 g per unit** (client: "mặc định 1 áo là 0.3kg"), looked up in `shipping_rates` for the zone of the delivery province (`shipping_provinces`). Ward doesn't matter (SPX quoted two wards per province identically).
+- Zones and rates, from SPX's public estimator (spx.vn/esf-tool) on 2026-10-09, shipping from HCMC — every one of the 34 provinces checked at 1–20 units:
+
+  | Zone | Provinces | ≤ 1 kg | Above 1 kg |
+  | ---- | --------- | ------ | ---------- |
+  | `hcm` | TP. Hồ Chí Minh | ₫18.000 | +₫2.500 per 500 g |
+  | `south` | Đồng Nai, Tây Ninh, Đồng Tháp, Vĩnh Long, Cần Thơ, An Giang, Cà Mau | ₫22.000 | +₫2.500 per 500 g |
+  | `other` | the other 26 | ₫22.000 | ₫27.000 to 1.5 kg, ₫30.000 to 2 kg, then +₫5.000 per 500 g |
+
+  1–3 tees (≤ 0.9 kg) — almost every order — pay the flat ₫18.000 / ₫22.000.
+- `place_order()` computes it before any stock lock and stores it in `orders.shipping_fee`; `total = subtotal − discount + shipping_fee` (`orders_total_math`). Discounts apply to the subtotal only. Unknown city → `SHIPPING_UNAVAILABLE`.
+- Checkout previews the fee as soon as a province is picked (`quoteShipping` server action → `shipping_fee()`, service role). Display only; `place_order()` recomputes.
+- The quote is final for the customer. If SPX charges the shop a little differently (account rates, driver re-weighing), the shop absorbs it.
+- When SPX changes prices, update `shipping_rates` rows (no code change). No SPX API: SPX has no self-serve API (access via their sales form), and live rates aren't needed for a table this simple.
+
 ### Loyalty program
 - Counter = lifetime `customers.delivered_count` for the order's **phone**. Never resets.
 - Gift triggered at every multiple of 10 (10, 20, 30, …) → row in `loyalty_awards`.
@@ -170,7 +187,7 @@ Order numbers: `PZ-YYYY-NNNN` from a Postgres sequence (concurrency-safe, 4+ dig
 
 ---
 
-## 7. Database Schema (21 tables)
+## 7. Database Schema (23 tables)
 
 | Table | Key fields | Notes |
 | ----- | ---------- | ----- |
@@ -181,7 +198,7 @@ Order numbers: `PZ-YYYY-NNNN` from a Postgres sequence (concurrency-safe, 4+ dig
 | profiles | id (FK auth.users), full_name, phone UNIQUE (normalized, NULL until the phone step), is_admin | Optional — guests have none |
 | customers | phone PK (normalized), delivered_count, refusal_count, is_blacklisted | One row per phone, created on first order. Identity for all per-customer rules |
 | addresses | user_id, name, phone, address, ward, district, city, is_default, label | |
-| orders | order_number (PZ-YYYY-NNNN, sequence), user_id (NULL = guest), phone (normalized), address snapshot fields, status enum, subtotal, discount, total, applied_bundles (jsonb, §5), note, timestamps | Address is SNAPSHOTTED, not FK-only |
+| orders | order_number (PZ-YYYY-NNNN, sequence), user_id (NULL = guest), phone (normalized), address snapshot fields, status enum, subtotal, discount, shipping_fee (§5), total (= subtotal − discount + shipping_fee), applied_bundles (jsonb, §5), note, timestamps | Address is SNAPSHOTTED, not FK-only |
 | order_items | order_id, product_id, variant_id, name_snapshot, price_snapshot, qty, image_snapshot | Frozen at order time |
 | reviews | user_id, product_id, rating 1–5, content, is_visible | No pre-moderation |
 | review_replies | review_id, user_id, content, is_brand_reply | Brand flag server-enforced |
@@ -194,12 +211,15 @@ Order numbers: `PZ-YYYY-NNNN` from a Postgres sequence (concurrency-safe, 4+ dig
 | collection_items | collection_id, product_id, sort_order | |
 | loyalty_gifts | name, description, image_url, is_active | |
 | loyalty_awards | phone (FK customers), gift_id (nullable), milestone, status (pending / fulfilled) | Survives empty pool |
+| shipping_provinces | city PK (the 34 names in `lib/provinces.ts`), zone (hcm / south / other) | §5. RLS on, no policies — read via `shipping_fee()` |
+| shipping_rates | zone, max_grams, fee | Tier covers weights ≤ max_grams; 500 g steps to 6 kg (20 units). RLS on, no policies |
 | rate_limits | bucket ('order:ip:…' / 'lookup:phone:…'), window_start, hits | Order attempt counters; rows older than the previous window are pruned on each call |
 
 ### Required Postgres objects
 - Enum: `order_status` (6 values above).
 - Sequence + helper for `order_number`.
 - `place_order(...)` — SECURITY DEFINER, full transaction per section 3.
+- `shipping_fee(city, units)` — service role only; raises `SHIPPING_UNAVAILABLE` (§5).
 - `transition_order_status(order_id, new_status)` — SECURITY DEFINER: validates transition, restores stock, bumps counters, creates loyalty awards.
 - Extension: `unaccent` (`immutable_unaccent()` wrapper); `search_products()` for storefront search (§2.2).
 - RLS enabled on EVERY table, policies per section 2.3.
@@ -208,7 +228,7 @@ Order numbers: `PZ-YYYY-NNNN` from a Postgres sequence (concurrency-safe, 4+ dig
 
 ## 8. Pending Decisions (do NOT implement until resolved)
 
-1. Free shipping: all orders vs orders over ₫1.000.000 (designs contradict client statement).
+1. ~~Free shipping: all orders vs orders over ₫1.000.000~~ — **RESOLVED 2026-10-09: no free shipping; the customer pays SPX-rate shipping (§5).**
 2. ~~Guest checkout vs account required~~ — **RESOLVED 2026-09-26: guest checkout allowed, no account required.** Accounts stay optional (history, addresses, wishlist, reviews). The schema still assumes accounts (`orders.user_id not null`, `AUTH_REQUIRED`, voucher/loyalty/blacklist keyed on `profiles`); the guest-safe changes are listed under the Order form task in TODO.md and land with it.
 3. Voucher discount cap amount.
 4. Loyalty gift notification method + fulfillment method.
@@ -218,4 +238,4 @@ Order numbers: `PZ-YYYY-NNNN` from a Postgres sequence (concurrency-safe, 4+ dig
 
 ## 9. Out of Scope
 
-Payment gateways, Shopee integration, newsletter/email marketing, mobile apps, multi-language (the site is Vietnamese-only, not bilingual), multi-admin roles, analytics dashboards.
+Payment gateways, Shopee integration, carrier APIs (SPX order creation / live rates — fulfilment is manual, §4), newsletter/email marketing, mobile apps, multi-language (the site is Vietnamese-only, not bilingual), multi-admin roles, analytics dashboards.
