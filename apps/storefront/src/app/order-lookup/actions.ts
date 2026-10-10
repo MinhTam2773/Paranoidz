@@ -15,6 +15,7 @@ export type LookedUpOrder = {
   city: string;
   subtotal: number;
   discount: number;
+  shippingFee: number;
   total: number;
   items: { name: string; color: string | null; size: string | null; qty: number; price: number; imageUrl: string | null }[];
 };
@@ -50,7 +51,7 @@ export async function lookupOrder(input: { orderNumber: string; phone: string })
   const admin = createAdminClient();
   const { data, error } = await admin
     .from("orders")
-    .select("order_number, status, created_at, ward, city, subtotal, discount, total, order_items(name_snapshot, color_snapshot, size_snapshot, qty, price_snapshot, image_snapshot)")
+    .select("order_number, status, created_at, ward, city, subtotal, discount, shipping_fee, total, order_items(name_snapshot, color_snapshot, size_snapshot, qty, price_snapshot, image_snapshot)")
     .eq("order_number", orderNumber)
     .eq("phone", phone)
     .maybeSingle();
@@ -70,6 +71,7 @@ export async function lookupOrder(input: { orderNumber: string; phone: string })
       city: data.city,
       subtotal: data.subtotal,
       discount: data.discount,
+      shippingFee: data.shipping_fee,
       total: data.total,
       items: data.order_items.map((i) => ({
         name: i.name_snapshot,

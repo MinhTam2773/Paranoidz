@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@paranoidz/db/admin";
 import { createClient } from "@paranoidz/db/server";
 import { CHECKOUT_FIELDS, normalizePhone, validateAll, type CheckoutValues, type FieldErrors } from "@/lib/checkout-validation";
+import { PROVINCE_NAMES } from "@/lib/provinces";
 import { hitRateLimit } from "@/lib/rate-limit";
 import { HOTLINE } from "@/lib/site";
 
@@ -11,7 +12,7 @@ import { HOTLINE } from "@/lib/site";
 export type CheckoutInput = { items: { variantId: string; qty: number }[]; addressId?: string } & CheckoutValues;
 
 export type CheckoutResult =
-  | { ok: true; order: { orderNumber: string; subtotal: number; discount: number; total: number; phone: string } }
+  | { ok: true; order: { orderNumber: string; subtotal: number; discount: number; shippingFee: number; total: number; phone: string } }
   | { ok: false; message?: string; fieldErrors?: FieldErrors };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -27,6 +28,8 @@ function explain(code: string): CheckoutResult {
     return { ok: false, fieldErrors: { voucher: "Số điện thoại này đã dùng mã này rồi." } };
   if (code.startsWith("OUT_OF_STOCK") || code.startsWith("PRODUCT_INACTIVE"))
     return { ok: false, message: "Một số sản phẩm vừa hết hàng hoặc không còn bán. Vui lòng kiểm tra lại giỏ hàng." };
+  if (code === "SHIPPING_UNAVAILABLE")
+    return { ok: false, fieldErrors: { city: `Chưa tính được phí giao hàng đến đây. Vui lòng gọi ${HOTLINE}.` } };
   if (code === "INVALID_ADDRESS")
     return { ok: false, message: "Địa chỉ đã lưu này không còn. Hãy chọn địa chỉ khác hoặc nhập địa chỉ mới." };
   if (code === "TOO_MANY_ITEMS")
@@ -92,7 +95,7 @@ export async function placeOrder(input: CheckoutInput): Promise<CheckoutResult> 
     return explain(error.message);
   }
 
-  const order = data as { order_number: string; subtotal: number; discount: number; total: number };
+  const order = data as { order_number: string; subtotal: number; discount: number; shipping_fee: number; total: number };
 
   // Stock changed: refresh the ISR catalog + the ordered products now rather than within 60s.
   const { data: variants } = await admin
@@ -106,8 +109,17 @@ export async function placeOrder(input: CheckoutInput): Promise<CheckoutResult> 
       orderNumber: order.order_number,
       subtotal: order.subtotal,
       discount: order.discount,
+      shippingFee: order.shipping_fee,
       total: order.total,
       phone: normalizePhone(f.phone)!,
     },
   };
+}
+
+// Checkout preview of the shipping fee (ARCHITECTURE.md §5). Display only: place_order() charges
+// shipping_fee() itself from the submitted city and quantities. null = can't quote.
+export async function quoteShipping(city: string, units: number): Promise<number | null> {
+  if (typeof city !== "string" || !PROVINCE_NAMES.has(city) || !Number.isInteger(units) || units < 1 || units > 20) return null;
+  const { data, error } = await createAdminClient().rpc("shipping_fee", { p_city: city, p_units: units });
+  return error ? null : data;
 }

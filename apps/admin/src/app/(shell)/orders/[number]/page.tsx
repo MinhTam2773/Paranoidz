@@ -9,6 +9,8 @@ import { formatDateTime, formatPhone, formatVnd } from "@/lib/format";
 
 const card = "rounded-sm border border-border bg-surface p-5";
 const cardTitle = "mb-4 text-card-title uppercase";
+// Parcel weight per unit — same as shipping_fee() (supabase/migrations/20261009000002_shipping_fee.sql).
+const UNIT_GRAMS = 300;
 
 export default async function OrderDetailPage({ params }: PageProps<"/orders/[number]">) {
   await requireAdmin();
@@ -19,7 +21,7 @@ export default async function OrderDetailPage({ params }: PageProps<"/orders/[nu
     .from("orders")
     // One literal: supabase-js infers the row type from it.
     .select(
-      "id, order_number, status, created_at, recipient_name, phone, secondary_phone, email, address, ward, district, city, note, subtotal, discount, total, applied_bundles, order_items(id, name_snapshot, color_snapshot, size_snapshot, price_snapshot, image_snapshot, qty), order_status_history(id, status, note, created_at), voucher_uses(vouchers(code))",
+      "id, order_number, status, created_at, recipient_name, phone, secondary_phone, email, address, ward, district, city, note, subtotal, discount, shipping_fee, total, applied_bundles, order_items(id, name_snapshot, color_snapshot, size_snapshot, price_snapshot, image_snapshot, qty), order_status_history(id, status, note, created_at), voucher_uses(vouchers(code))",
     )
     .eq("order_number", number)
     .order("created_at", { referencedTable: "order_status_history" })
@@ -40,6 +42,7 @@ export default async function OrderDetailPage({ params }: PageProps<"/orders/[nu
   const bundles = (order.applied_bundles ?? []) as { name: string; sets: number }[];
   const discountSource = voucherCode ?? (bundles.length ? `Combo: ${bundles.map((b) => (b.sets > 1 ? `${b.name} ×${b.sets}` : b.name)).join(", ")}` : null);
   const fullAddress = [order.address, order.ward, order.district, order.city].filter(Boolean).join(", ");
+  const units = order.order_items.reduce((sum, item) => sum + item.qty, 0);
 
   return (
     <div className="flex flex-col gap-6">
@@ -115,10 +118,14 @@ export default async function OrderDetailPage({ params }: PageProps<"/orders/[nu
                   <dd>−{formatVnd(order.discount)}</dd>
                 </div>
               )}
+              <div className="flex justify-between gap-4"><dt className="text-text-secondary">Phí vận chuyển</dt><dd>{formatVnd(order.shipping_fee)}</dd></div>
               <div className="flex justify-between gap-4 border-t border-border pt-3 font-semibold">
-                <dt>Tổng thu</dt><dd>{formatVnd(order.total)}</dd>
+                <dt>Tổng thu hộ (COD)</dt><dd>{formatVnd(order.total)}</dd>
               </div>
             </dl>
+            <p className="mt-4 text-text-secondary">
+              Khối lượng gói hàng: {String((units * UNIT_GRAMS) / 1000).replace(".", ",")} kg ({units} sản phẩm)
+            </p>
           </section>
 
           <section className={card}>

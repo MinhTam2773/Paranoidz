@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState, useTransition, type FocusEvent, type FormEvent, type ReactNode } from "react";
 import { getCartItems, type CartItem } from "@/app/cart/actions";
-import { placeOrder, type CheckoutResult } from "@/app/checkout/actions";
+import { placeOrder, quoteShipping, type CheckoutResult } from "@/app/checkout/actions";
 import type { SavedAddress } from "@/components/account/AddressBook";
 import { BundleEstimate, useBundleEstimate } from "@/components/cart/BundleEstimate";
 import { clearCart, useCart, useCartReady, type CartLine } from "@/lib/cart";
@@ -93,6 +93,11 @@ export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; acc
   const [pending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
   const idsKey = lines.map((l) => l.variantId).toSorted().join(",");
+  const units = lines.reduce((sum, l) => sum + l.qty, 0);
+  // Shipping quote for the chosen province: undefined while loading, null if it can't be quoted.
+  const [shipping, setShipping] = useState<{ key: string; fee: number | null } | null>(null);
+  const shippingKey = `${city}|${units}`;
+  const shippingFee = shipping?.key === shippingKey ? shipping.fee : undefined;
 
   useEffect(() => {
     let cancelled = false;
@@ -103,6 +108,17 @@ export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; acc
       cancelled = true;
     };
   }, [idsKey]);
+
+  useEffect(() => {
+    if (!city || !units) return;
+    let cancelled = false;
+    quoteShipping(city, units).then((fee) => {
+      if (!cancelled) setShipping({ key: `${city}|${units}`, fee });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [city, units]);
 
   // FormData of the form includes the voucher (form="checkout-form") and the city's hidden input.
   function values(): CheckoutValues {
@@ -204,10 +220,10 @@ export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; acc
           {placed.discount > 0 && (
             <div className="flex justify-between"><dt className="text-text-secondary">Giảm giá</dt><dd className="text-accent">−{formatVnd(placed.discount)}</dd></div>
           )}
+          <div className="flex justify-between"><dt className="text-text-secondary">Phí vận chuyển</dt><dd>{formatVnd(placed.shippingFee)}</dd></div>
           <div className="flex justify-between border-t border-border pt-3">
             <dt className="text-nav uppercase">Tổng thanh toán khi nhận hàng</dt><dd className="text-price">{formatVnd(placed.total)}</dd>
           </div>
-          <p className="text-caption text-text-muted">Phí vận chuyển (nếu có) sẽ được xác nhận qua điện thoại.</p>
         </dl>
         <Link href="/products" className={`${secondaryClass} max-w-xs`}>Tiếp tục mua sắm</Link>
       </div>
@@ -333,8 +349,20 @@ export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; acc
             </div>
             <div className="flex justify-between gap-4">
               <dt className="text-text-secondary">Phí vận chuyển</dt>
-              <dd className="text-right text-caption text-text-secondary">Xác nhận qua điện thoại</dd>
+              {city && typeof shippingFee === "number" ? (
+                <dd>{formatVnd(shippingFee)}</dd>
+              ) : (
+                <dd className="text-right text-caption text-text-secondary">
+                  {!city ? "Chọn tỉnh / thành phố" : shippingFee === undefined ? "Đang tính…" : "Xác nhận qua điện thoại"}
+                </dd>
+              )}
             </div>
+            {city && typeof shippingFee === "number" && (
+              <div className="flex justify-between gap-4 border-t border-border pt-3">
+                <dt className="text-nav uppercase">Tổng trước giảm giá</dt>
+                <dd className="text-price">{formatVnd(subtotal + shippingFee)}</dd>
+              </div>
+            )}
           </dl>
           <BundleEstimate estimate={bundleEstimate} subtotal={subtotal} />
           <p className="text-caption text-text-secondary">

@@ -19,6 +19,7 @@ export type AccountOrder = {
   note: string | null;
   subtotal: number;
   discount: number;
+  shippingFee: number;
   total: number;
   items: OrderSummaryItem[];
 };
@@ -71,7 +72,7 @@ export function OrderHistory({ orders }: { orders: AccountOrder[] }) {
                   </summary>
                   <div className="flex max-w-xl flex-col gap-6 pb-6">
                     <p className="text-text-secondary">{STATUS[order.status].detail}</p>
-                    <OrderSummary items={order.items} subtotal={order.subtotal} discount={order.discount} total={order.total}>
+                    <OrderSummary items={order.items} subtotal={order.subtotal} discount={order.discount} shippingFee={order.shippingFee} total={order.total}>
                       <div className="flex flex-col gap-1 border-t border-border pt-3 text-caption text-text-secondary">
                         <span className="text-nav uppercase text-text-primary">Giao hàng</span>
                         <span>

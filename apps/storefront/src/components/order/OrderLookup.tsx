@@ -56,7 +56,7 @@ export function OrderLookup({ defaultOrderNumber }: { defaultOrderNumber: string
           <p className="text-text-secondary">{status.detail}</p>
         </div>
 
-        <OrderSummary items={order.items} subtotal={order.subtotal} discount={order.discount} total={order.total}>
+        <OrderSummary items={order.items} subtotal={order.subtotal} discount={order.discount} shippingFee={order.shippingFee} total={order.total}>
           <p className="text-caption text-text-muted">
             Giao đến {[order.ward, order.city].filter(Boolean).join(", ")}. Cần thay đổi thông tin, vui lòng gọi {HOTLINE}.
           </p>

@@ -6,10 +6,11 @@ export type OrderSummaryItem = { name: string; color: string | null; size: strin
 
 // Items + totals of a placed order (snapshotted prices). Used by guest lookup and "My orders";
 // `children` is the delivery line under the total.
-export function OrderSummary({ items, subtotal, discount, total, children }: {
+export function OrderSummary({ items, subtotal, discount, shippingFee, total, children }: {
   items: OrderSummaryItem[];
   subtotal: number;
   discount: number;
+  shippingFee: number;
   total: number;
   children: ReactNode;
 }) {
@@ -36,6 +37,10 @@ export function OrderSummary({ items, subtotal, discount, total, children }: {
         <div className="flex justify-between"><dt className="text-text-secondary">Tạm tính</dt><dd>{formatVnd(subtotal)}</dd></div>
         {discount > 0 && (
           <div className="flex justify-between"><dt className="text-text-secondary">Giảm giá</dt><dd className="text-accent">−{formatVnd(discount)}</dd></div>
+        )}
+        {/* 0 only on orders placed before shipping was charged (2026-10-09). */}
+        {shippingFee > 0 && (
+          <div className="flex justify-between"><dt className="text-text-secondary">Phí vận chuyển</dt><dd>{formatVnd(shippingFee)}</dd></div>
         )}
         <div className="flex justify-between border-t border-border pt-3">
           <dt className="text-nav uppercase">Tổng thanh toán khi nhận hàng</dt><dd className="text-price">{formatVnd(total)}</dd>
