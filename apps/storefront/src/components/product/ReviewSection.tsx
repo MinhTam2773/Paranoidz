@@ -1,21 +1,27 @@
 "use client";
 
+import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition, type ReactNode } from "react";
 import { createClient } from "@paranoidz/db/client";
 import {
   addReply,
+  addReviewImage,
+  createReviewImageUpload,
   deleteReply,
   deleteReview,
+  deleteReviewImage,
   getReviewViewer,
   saveReview,
+  type ReviewPhoto,
   type ReviewResult,
   type ReviewViewer,
 } from "@/app/products/[slug]/review-actions";
 import { openLogin } from "@/components/auth/LoginModal";
 import { errorClass, primaryClass } from "@/components/auth/styles";
+import { CloseIcon } from "@/components/layout/icons";
 import { placedOn } from "@/lib/order-status";
-import { MAX_REPLY, MAX_REVIEW } from "@/lib/reviews";
+import { MAX_REPLY, MAX_REVIEW, MAX_REVIEW_IMAGE_BYTES, MAX_REVIEW_IMAGES, REVIEW_IMAGE_TYPES } from "@/lib/reviews";
 
 export type ReviewReply = { id: string; userId: string; content: string; authorName: string; isBrand: boolean; createdAt: string };
 export type ReviewData = {
@@ -25,6 +31,7 @@ export type ReviewData = {
   content: string;
   authorName: string;
   createdAt: string;
+  photos: { id: string; url: string }[];
   replies: ReviewReply[];
 };
 
@@ -112,6 +119,17 @@ function useAction(onDone: () => void | Promise<void>) {
   return { pending, error, run };
 }
 
+// Signed URL from the server → bytes straight to Storage → register the row.
+async function uploadPhoto(productId: string, slug: string, file: File): Promise<ReviewResult> {
+  const ticket = await createReviewImageUpload(productId, file.type, file.size);
+  if (!ticket.ok) return ticket;
+  const { error } = await createClient()
+    .storage.from("review-images")
+    .uploadToSignedUrl(ticket.path, ticket.token, file, { contentType: file.type });
+  if (error) return { ok: false, message: "Tải lên thất bại." };
+  return addReviewImage(productId, slug, ticket.path);
+}
+
 function YourReview({
   viewer,
   productId,
@@ -124,10 +142,30 @@ function YourReview({
   onChanged: () => Promise<void>;
 }) {
   const [editing, setEditing] = useState(false);
+  const [photoError, setPhotoError] = useState<string | null>(null);
   const { pending, error, run } = useAction(async () => {
     setEditing(false);
     await onChanged();
   });
+  // Removing a saved photo keeps the form open.
+  const removal = useAction(onChanged);
+
+  // A new review must exist before its photos: save it, then upload each new file. Photos that
+  // fail are reported under the saved review; the ones that made it stay.
+  function submit(rating: number, content: string, files: File[]) {
+    setPhotoError(null);
+    run(async () => {
+      const saved = await saveReview({ productId, slug, rating, content });
+      if (!saved.ok) return saved;
+      const failed: string[] = [];
+      for (const file of files) {
+        const added = await uploadPhoto(productId, slug, file);
+        if (!added.ok) failed.push(`${file.name}: ${added.message}`);
+      }
+      if (failed.length) setPhotoError(`Đã lưu đánh giá, nhưng ${failed.length}/${files.length} ảnh chưa tải lên được. ${failed.join(" ")}`);
+      return saved;
+    });
+  }
 
   if (viewer === undefined) return null;
   if (viewer === null) {
@@ -147,10 +185,13 @@ function YourReview({
     return (
       <ReviewForm
         initial={own}
-        pending={pending}
-        error={error}
+        pending={pending || removal.pending}
+        error={error ?? removal.error}
         onCancel={own ? () => setEditing(false) : undefined}
-        onSubmit={(rating, content) => run(() => saveReview({ productId, slug, rating, content }))}
+        onSubmit={submit}
+        onRemovePhoto={(id) => {
+          if (confirm("Xóa ảnh này khỏi đánh giá?")) removal.run(() => deleteReviewImage(id, slug));
+        }}
       />
     );
   }
@@ -161,8 +202,20 @@ function YourReview({
       {!own.isVisible && <p className="text-caption text-accent">Đánh giá này đang bị cửa hàng ẩn khỏi trang sản phẩm.</p>}
       <Stars rating={own.rating} />
       <p className="whitespace-pre-line text-text-secondary">{own.content}</p>
+      <ReviewPhotos photos={own.photos} />
+      {own.photos.some((p) => !p.isVisible) && (
+        <p className="text-caption text-accent">Ảnh có nhãn “Đã ẩn” đang bị cửa hàng ẩn khỏi trang sản phẩm.</p>
+      )}
       <div className="flex gap-6">
-        <button type="button" onClick={() => setEditing(true)} disabled={pending} className={textButtonClass}>
+        <button
+          type="button"
+          onClick={() => {
+            setPhotoError(null);
+            setEditing(true);
+          }}
+          disabled={pending}
+          className={textButtonClass}
+        >
           Sửa
         </button>
         <button
@@ -176,6 +229,7 @@ function YourReview({
           Xóa
         </button>
       </div>
+      {photoError && <p className={errorClass}>{photoError}</p>}
       {error && <p className={errorClass}>{error}</p>}
     </div>
   );
@@ -187,23 +241,44 @@ function ReviewForm({
   error,
   onSubmit,
   onCancel,
+  onRemovePhoto,
 }: {
-  initial: { rating: number; content: string } | null;
+  initial: { rating: number; content: string; photos: ReviewPhoto[] } | null;
   pending: boolean;
   error: string | null;
-  onSubmit: (rating: number, content: string) => void;
+  onSubmit: (rating: number, content: string, files: File[]) => void;
   onCancel?: () => void;
+  onRemovePhoto: (id: string) => void;
 }) {
   const [rating, setRating] = useState(initial?.rating ?? 0);
   const [content, setContent] = useState(initial?.content ?? "");
   const [missingRating, setMissingRating] = useState(false);
+  const [files, setFiles] = useState<File[]>([]);
+  const [fileError, setFileError] = useState<string | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const photos = initial?.photos ?? [];
+  const room = MAX_REVIEW_IMAGES - photos.length - files.length;
+
+  // Clear messages up front; the bucket (type, 5 MB) and the trigger (4 per review) enforce the same.
+  function pick(list: File[]) {
+    const errors: string[] = [];
+    const valid = list.filter((f) => {
+      if (!Object.hasOwn(REVIEW_IMAGE_TYPES, f.type)) errors.push(`${f.name}: chỉ nhận ảnh JPG, PNG hoặc WebP.`);
+      else if (f.size > MAX_REVIEW_IMAGE_BYTES) errors.push(`${f.name}: ảnh tối đa 5 MB.`);
+      else return true;
+      return false;
+    });
+    if (valid.length > room) errors.push(`Tối đa ${MAX_REVIEW_IMAGES} ảnh mỗi đánh giá.`);
+    setFiles([...files, ...valid.slice(0, Math.max(room, 0))]);
+    setFileError(errors.join(" ") || null);
+  }
 
   return (
     <form
       onSubmit={(e) => {
         e.preventDefault();
         if (!rating) return setMissingRating(true);
-        onSubmit(rating, content);
+        onSubmit(rating, content, files);
       }}
       className="flex flex-col gap-4 rounded-sm border border-border p-4 lg:p-6"
     >
@@ -236,6 +311,49 @@ function ReviewForm({
         placeholder="Chất liệu, form dáng, size có vừa không…"
         className={`${textareaClass} border-border`}
       />
+      <div className="flex flex-col gap-2">
+        <div className="flex flex-wrap gap-2">
+          {photos.map((p, i) => (
+            <Thumb key={p.id} hidden={!p.isVisible} removeLabel={`Xóa ảnh ${i + 1}`} disabled={pending} onRemove={() => onRemovePhoto(p.id)}>
+              <Image src={p.url} alt={`Ảnh ${i + 1}`} fill sizes="80px" className="object-cover" />
+            </Thumb>
+          ))}
+          {files.map((f, i) => (
+            <Thumb
+              key={i}
+              removeLabel={`Bỏ ảnh ${f.name}`}
+              disabled={pending}
+              onRemove={() => setFiles(files.filter((_, j) => j !== i))}
+            >
+              <FilePreview file={f} />
+            </Thumb>
+          ))}
+          {room > 0 && (
+            <button
+              type="button"
+              onClick={() => fileRef.current?.click()}
+              disabled={pending}
+              className="flex size-20 flex-col items-center justify-center gap-1 rounded-sm border border-dashed border-border text-caption text-text-secondary hover:border-text-primary hover:text-text-primary disabled:opacity-50"
+            >
+              <span aria-hidden className="text-h3">+</span>
+              Thêm ảnh
+            </button>
+          )}
+        </div>
+        <p className="text-caption text-text-muted">Tối đa {MAX_REVIEW_IMAGES} ảnh · JPG, PNG, WebP · mỗi ảnh tối đa 5 MB</p>
+        {fileError && <p className={errorClass}>{fileError}</p>}
+        <input
+          ref={fileRef}
+          type="file"
+          accept={Object.keys(REVIEW_IMAGE_TYPES).join(",")}
+          multiple
+          hidden
+          onChange={(e) => {
+            pick([...(e.target.files ?? [])]);
+            e.target.value = "";
+          }}
+        />
+      </div>
       {error && <p className={errorClass}>{error}</p>}
       <div className="flex items-center gap-6">
         <button type="submit" disabled={pending} className={`${primaryClass} max-w-xs`}>
@@ -278,6 +396,7 @@ function ReviewItem({
         <span className="text-caption text-text-muted">{placedOn.format(new Date(review.createdAt))}</span>
       </div>
       <p className="whitespace-pre-line text-text-secondary">{review.content}</p>
+      <ReviewPhotos photos={review.photos} />
 
       {review.replies.length > 0 && (
         <ul className="mt-2 flex flex-col gap-3 border-l-2 border-border pl-4">
@@ -345,4 +464,105 @@ function ReviewItem({
       {error && <p className={errorClass}>{error}</p>}
     </li>
   );
+}
+
+// Marks a photo the shop hid; only its author ever sees it.
+function HiddenTag() {
+  return (
+    <span className="pointer-events-none absolute inset-x-0 bottom-0 bg-bg-primary/90 py-0.5 text-center text-caption text-accent">Đã ẩn</span>
+  );
+}
+
+// Thumbnails; a click opens the photo large in a native <dialog> (Esc, backdrop or × closes it).
+function ReviewPhotos({ photos }: { photos: { id: string; url: string; isVisible?: boolean }[] }) {
+  const [open, setOpen] = useState<string | null>(null);
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  // Opened from the click itself: reopening the same photo sets the same state, which re-renders nothing.
+  const show = (url: string) => {
+    setOpen(url);
+    dialogRef.current?.showModal();
+  };
+
+  if (!photos.length) return null;
+  return (
+    <>
+      <ul className="flex flex-wrap gap-2">
+        {photos.map((p, i) => (
+          <li key={p.id} className="relative size-20 overflow-hidden rounded-sm bg-bg-tertiary">
+            <button type="button" onClick={() => show(p.url)} aria-label={`Xem ảnh ${i + 1}`} className="block size-full">
+              <Image src={p.url} alt="" fill sizes="80px" className="object-cover" />
+            </button>
+            {p.isVisible === false && <HiddenTag />}
+          </li>
+        ))}
+      </ul>
+      <dialog
+        ref={dialogRef}
+        onClose={() => setOpen(null)}
+        // a click anywhere (photo, letterbox, × or backdrop) closes it
+        onClick={(e) => e.currentTarget.close()}
+        aria-label="Ảnh đánh giá"
+        className="m-auto h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] max-h-none max-w-none bg-transparent p-0 backdrop:bg-bg-dark/80"
+      >
+        {open && (
+          <>
+            {/* fills the screen minus 16px, photo scaled to fit whatever its shape */}
+            <Image src={open} alt="Ảnh đánh giá" fill sizes="100vw" className="object-contain" />
+            <button
+              type="button"
+              aria-label="Đóng"
+              className="absolute right-0 top-0 flex size-11 items-center justify-center rounded-sm bg-bg-primary/90"
+            >
+              <CloseIcon />
+            </button>
+          </>
+        )}
+      </dialog>
+    </>
+  );
+}
+
+// 80px square in the review form, with a remove button in its corner.
+function Thumb({
+  children,
+  hidden,
+  removeLabel,
+  disabled,
+  onRemove,
+}: {
+  children: ReactNode;
+  hidden?: boolean;
+  removeLabel: string;
+  disabled: boolean;
+  onRemove: () => void;
+}) {
+  return (
+    <div className="relative size-20 overflow-hidden rounded-sm bg-bg-tertiary">
+      {children}
+      {hidden && <HiddenTag />}
+      <button
+        type="button"
+        onClick={onRemove}
+        disabled={disabled}
+        aria-label={removeLabel}
+        className="absolute right-0 top-0 flex size-11 items-start justify-end p-1 disabled:opacity-50"
+      >
+        <span className="flex size-6 items-center justify-center rounded-sm bg-bg-primary/90 shadow-1">
+          <CloseIcon width={14} height={14} />
+        </span>
+      </button>
+    </div>
+  );
+}
+
+// Local preview of a picked file; its object URL is released when the file leaves the list.
+function FilePreview({ file }: { file: File }) {
+  const ref = useRef<HTMLImageElement>(null);
+  useEffect(() => {
+    const url = URL.createObjectURL(file);
+    if (ref.current) ref.current.src = url;
+    return () => URL.revokeObjectURL(url);
+  }, [file]);
+  // eslint-disable-next-line @next/next/no-img-element -- blob: URL, nothing for next/image to optimize
+  return <img ref={ref} alt={file.name} className="size-full object-cover" />;
 }

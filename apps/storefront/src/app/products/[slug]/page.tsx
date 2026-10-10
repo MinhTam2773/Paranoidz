@@ -42,14 +42,18 @@ const getProduct = cache(async (slug: string) => {
   };
 });
 
-// Visible reviews + visible replies only (RLS), newest review first, replies oldest first.
+// Visible reviews + visible replies and photos only (RLS), newest review first, replies oldest first.
 async function getReviews(productId: string): Promise<ReviewData[]> {
-  const { data, error } = await createPublicClient()
+  const supabase = createPublicClient();
+  const { data, error } = await supabase
     .from("reviews")
-    .select("id, user_id, rating, content, author_name, created_at, review_replies(id, user_id, content, author_name, is_brand_reply, created_at)")
+    .select(
+      "id, user_id, rating, content, author_name, created_at, review_replies(id, user_id, content, author_name, is_brand_reply, created_at), review_images(id, storage_path, sort_order)",
+    )
     .eq("product_id", productId)
     .order("created_at", { ascending: false })
-    .order("created_at", { referencedTable: "review_replies" });
+    .order("created_at", { referencedTable: "review_replies" })
+    .order("sort_order", { referencedTable: "review_images" });
   if (error) throw error;
   return data.map((r) => ({
     id: r.id,
@@ -58,6 +62,10 @@ async function getReviews(productId: string): Promise<ReviewData[]> {
     content: r.content,
     authorName: r.author_name,
     createdAt: r.created_at,
+    photos: r.review_images.map((i) => ({
+      id: i.id,
+      url: supabase.storage.from("review-images").getPublicUrl(i.storage_path).data.publicUrl,
+    })),
     replies: r.review_replies.map((p) => ({
       id: p.id,
       userId: p.user_id,
