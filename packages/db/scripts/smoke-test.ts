@@ -489,6 +489,43 @@ async function main() {
   const deleted = await c1.from("reviews").delete().eq("id", reviewId).select("id");
   const { count: repliesLeft } = await admin.from("review_replies").select("*", { count: "exact", head: true }).eq("review_id", reviewId);
   check("reviews: author deletes own review, its replies go with it", deleted.data?.length === 1 && repliesLeft === 0, `${deleted.data?.length} ${repliesLeft}`);
+
+  // 15. Review photos: service role writes only, author + 4-photo cap, moderated reads --------
+  // Rows only (no Storage objects): storage_path is plain text here. They cascade with the review.
+  const photoReview = await c1.from("reviews").insert({ product_id: product, user_id: c1Id, rating: 5, content: "Smoke photos" }).select("id").single();
+  const photoReviewId = photoReview.data!.id;
+  const photoRow = (i: number | string, userId = c1Id) =>
+    ({ review_id: photoReviewId, user_id: userId, storage_path: `${c1Id}/${photoReviewId}/smoke-${i}.jpg`, sort_order: Number(i) || 0 });
+  const firstFour = [];
+  for (let i = 0; i < 4; i++) firstFour.push(await admin.from("review_images").insert(photoRow(i)).select("id").single());
+  const [fifth, notAuthor, direct] = await Promise.all([
+    admin.from("review_images").insert(photoRow(4)),
+    admin.from("review_images").insert(photoRow("stranger", c3Id)),
+    c1.from("review_images").insert(photoRow("direct")),
+  ]);
+  check("review photos: 4 allowed, 5th → REVIEW_IMAGE_LIMIT, non-author → REVIEW_IMAGE_NOT_AUTHOR, customer can't insert",
+    firstFour.every((r) => !r.error) && fifth.error?.message === "REVIEW_IMAGE_LIMIT"
+      && notAuthor.error?.message === "REVIEW_IMAGE_NOT_AUTHOR" && direct.error?.code === "42501",
+    `four=${firstFour.map((r) => r.error?.message ?? "ok").join()} fifth=${fifth.error?.message} stranger=${notAuthor.error?.message} direct=${direct.error?.code}`);
+
+  const anonDb3 = createClient<Database>(url, publishable, noPersist);
+  const hiddenPhoto = firstFour[0].data!.id;
+  await admin.from("review_images").update({ is_visible: false }).eq("id", hiddenPhoto);
+  const [{ data: anonPhotos }, { data: ownPhotos }] = await Promise.all([
+    anonDb3.from("review_images").select("id").eq("review_id", photoReviewId),
+    c1.from("review_images").select("id").eq("review_id", photoReviewId),
+  ]);
+  await admin.from("reviews").update({ is_visible: false }).eq("id", photoReviewId);
+  const { data: anonOfHidden } = await anonDb3.from("review_images").select("id").eq("review_id", photoReviewId);
+  check("review photos: anon sees visible ones only, none of a hidden review; author sees own hidden photo",
+    anonPhotos?.length === 3 && !anonPhotos.some((p) => p.id === hiddenPhoto) && ownPhotos?.length === 4 && anonOfHidden?.length === 0,
+    `anon=${anonPhotos?.length} own=${ownPhotos?.length} anonHiddenReview=${anonOfHidden?.length}`);
+
+  const { data: bucket } = await admin.storage.getBucket("review-images");
+  check("review photos: bucket public, 5 MB, JPEG/PNG/WebP only",
+    bucket?.public === true && bucket.file_size_limit === 5242880
+      && [...(bucket.allowed_mime_types ?? [])].sort().join() === "image/jpeg,image/png,image/webp",
+    JSON.stringify({ public: bucket?.public, limit: bucket?.file_size_limit, types: bucket?.allowed_mime_types }));
 }
 
 async function cleanup() {
