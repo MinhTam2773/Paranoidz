@@ -112,7 +112,7 @@ Governed by `DASHBOARD_DESIGN.md` §6.
 
 - [ ] Resend transactional email (customer confirmation + client alert). Nothing built yet. Delivery needs a Resend API key + verified paranoidz.com domain from the client; template, send-after-`placeOrder` (only if an email was given, never failing the order) and a local preview can be built before that. A key alone can send from `onboarding@resend.dev` to the Resend account owner only. Link the email to `/order-lookup?order=<number>`.
 - [ ] Telegram bot new-order alert
-- [ ] Vercel: two projects from one monorepo, region `sin1`
+- [ ] Vercel: two projects from one monorepo, region `sin1` — projects live 2026-10-09 (`paranoidz-storefront`, `paranoidz-admin`, team `minhtam2773s-projects`, Hobby). `SUPABASE_SERVICE_ROLE_KEY` added to both as Secret by the owner (checkout's service-key variant lookup verified live). Still to do: function region (now default `iad1` — match the Supabase DB region), custom domains, Supabase auth URLs
 
 ---
 
@@ -257,3 +257,6 @@ Surfaced during the schema review, deliberately not fixed:
 - **Confirm-modal markup is now repeated in 3 components** (`OrderActions`, `ImageManager`, `BlacklistToggle`) — extract a shared `ConfirmDialog` next time one is touched.
 - **A collection created in the admin can 404 on the storefront for up to 60s** — every page prefetches the nav links, so `/collections/outlet-2026` gets rendered and cached as a 404 before the collection exists; ISR replaces it within the revalidate window. Same for any newly created slug someone visited before.
 - **Collections can't be deleted** (not in DASHBOARD_DESIGN.md §6.6) — switch one off instead. Add a delete with a confirmation if the client asks.
+- **Vercel installs with pnpm 10 and ignores `devEngines.packageManager`**, and pnpm 10 can't read pnpm 11's two-document `pnpm-lock.yaml` ("Ignoring broken lockfile") — it then resolves unpinned versions. Both projects' install command is overridden to `npx -y pnpm@11.13.0 install --frozen-lockfile`. npm flags `pnpm@11.13.0` as "a broken version" (install ≥ 11.13.1); bump the root `devEngines` and both install commands together.
+- **Vercel deployment protection is on for every non-custom-domain URL** (`all_except_custom_domains`): `*.vercel.app` asks for a Vercel login, so only the owner can see the deploys until a domain is attached. The MCP `web_fetch_vercel_url` tool bypasses it for checks.
+- **The claude.ai Vercel connector needed the team scope granted** — first attempt 403'd on `minhtam2773s-projects` until reconnected. The claude.ai Supabase connector is signed into a different account (sees only "All Barber"), so it can't reach `rbuoirnnroauzdjwwfij`.
