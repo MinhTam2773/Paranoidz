@@ -1,10 +1,12 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { createAdminClient } from "@paranoidz/db/admin";
 import { createClient } from "@paranoidz/db/server";
 import { CHECKOUT_FIELDS, normalizePhone, validateAll, type CheckoutValues, type FieldErrors } from "@/lib/checkout-validation";
 import { PROVINCE_NAMES } from "@/lib/provinces";
+import { sendOrderEmails } from "@/lib/order-email";
 import { hitRateLimit } from "@/lib/rate-limit";
 import { HOTLINE } from "@/lib/site";
 
@@ -98,13 +100,15 @@ export async function placeOrder(input: CheckoutInput): Promise<CheckoutResult> 
     return explain(error.message);
   }
 
-  const order = data as { order_number: string; subtotal: number; discount: number; shipping_fee: number; total: number };
+  const order = data as { order_id: string; order_number: string; subtotal: number; discount: number; shipping_fee: number; total: number };
 
   // Stock changed: refresh the ISR catalog + the ordered products now rather than within 60s.
   const { data: variants } = await admin
     .from("product_variants").select("products(slug)").in("id", items.map((i) => i.variantId));
   revalidatePath("/products");
   for (const slug of new Set((variants ?? []).map((v) => v.products.slug))) revalidatePath(`/products/${slug}`);
+  // Confirmation + shop alert after the response is sent; never affects the order.
+  after(() => sendOrderEmails(order.order_id));
 
   return {
     ok: true,
