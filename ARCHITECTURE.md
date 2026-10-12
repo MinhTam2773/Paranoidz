@@ -152,6 +152,11 @@ Order numbers: `PZ-YYYY-NNNN` from a Postgres sequence (concurrency-safe, 4+ dig
 - **No stacking with vouchers**: the order gets the better of (bundle total) vs (first-5 / promo). A tie goes to the bundle, so the customer keeps their promo use. When the bundle wins, no `voucher_uses` row is written.
 - The bundle total is capped at the subtotal. `orders.applied_bundles` snapshots what was applied (`[{bundle_id, name, discount_amount, sets}]`), NULL when no bundle discount priced the order.
 
+### Live checkout price — decided 2026-10-11
+- The checkout shows the discount and the total to pay before "Đặt hàng" (client). One rule set: `order_discount(phone, subtotal, counts, code)` holds first-5 vs promo vs bundles; `place_order()` and the read-only `quote_order(items, phone, code)` both call it, so the preview can't drift from the charge.
+- No valid phone yet → priced as a new customer (first-5 applies, the page says it is re-checked). A bad code is returned as `voucher_error` with the discount computed without it. Display only: `place_order()` still decides at submit (pending limit, blacklist and stock are checked only there).
+- `quoteOrder` server action, rate limited (`quote` scope); on failure the page says "Áp dụng khi đặt hàng".
+
 ### Shipping fee — decided 2026-10-09 (resolves §8.1)
 - The customer pays shipping at **SPX Express's rates**; no free-shipping threshold. Nationwide.
 - Fee = `shipping_fee(city, units)`: parcel weight = **300 g per unit** (client: "mặc định 1 áo là 0.3kg"), looked up in `shipping_rates` for the zone of the delivery province (`shipping_provinces`). Ward doesn't matter (SPX quoted two wards per province identically).
@@ -220,6 +225,7 @@ Order numbers: `PZ-YYYY-NNNN` from a Postgres sequence (concurrency-safe, 4+ dig
 - Sequence + helper for `order_number`.
 - `place_order(...)` — SECURITY DEFINER, full transaction per section 3.
 - `shipping_fee(city, units)` — service role only; raises `SHIPPING_UNAVAILABLE` (§5).
+- `order_discount(...)` — internal (no grants), the discount rules shared by `place_order()` and `quote_order(...)` (service role only) (§5).
 - `transition_order_status(order_id, new_status)` — SECURITY DEFINER: validates transition, restores stock, bumps counters, creates loyalty awards.
 - Extension: `unaccent` (`immutable_unaccent()` wrapper); `search_products()` for storefront search (§2.2).
 - RLS enabled on EVERY table, policies per section 2.3.

@@ -4,15 +4,15 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState, useTransition, type FocusEvent, type FormEvent, type ReactNode } from "react";
 import { getCartItems, type CartItem } from "@/app/cart/actions";
-import { placeOrder, quoteShipping, type CheckoutResult } from "@/app/checkout/actions";
+import { placeOrder, quoteOrder, quoteShipping, type CheckoutResult, type OrderQuote } from "@/app/checkout/actions";
 import type { SavedAddress } from "@/components/account/AddressBook";
-import { BundleEstimate, useBundleEstimate } from "@/components/cart/BundleEstimate";
 import { clearCart, useCart, useCartReady, type CartLine } from "@/lib/cart";
 import {
   ALLOWED_CHARS,
   CHECKOUT_FIELDS,
   MAX_LENGTH,
   formatPhone,
+  normalizePhone,
   validateAll,
   validateField,
   type CheckoutField,
@@ -83,7 +83,6 @@ export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; acc
   const cartReady = useCartReady();
   const lines = buyNow ? [buyNow] : cart;
   const [items, setItems] = useState<Map<string, CartItem> | null>(null);
-  const bundleEstimate = useBundleEstimate(lines);
   const [message, setMessage] = useState<string | undefined>();
   const [errors, setErrors] = useState<FieldErrors>({});
   const initial = account?.addresses[0];
@@ -98,6 +97,15 @@ export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; acc
   const [shipping, setShipping] = useState<{ key: string; fee: number | null } | null>(null);
   const shippingKey = `${city}|${units}`;
   const shippingFee = shipping?.key === shippingKey ? shipping.fee : undefined;
+  // Live discount (quoteOrder): re-asked when the lines, the phone or the code change. The last
+  // answer stays on screen while the next one loads; null = couldn't quote.
+  const [phone, setPhone] = useState(initial?.phone ?? account?.phone ?? "");
+  const [voucher, setVoucher] = useState("");
+  const [quote, setQuote] = useState<{ key: string; value: OrderQuote | null } | null>(null);
+  const linesKey = lines.map((l) => `${l.variantId}:${l.qty}`).toSorted().join(",");
+  const quotePhone = normalizePhone(phone) ?? "";
+  const quoteVoucher = voucher.trim().toUpperCase();
+  const quoteKey = `${linesKey}|${quotePhone}|${quoteVoucher}`;
 
   useEffect(() => {
     let cancelled = false;
@@ -119,6 +127,22 @@ export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; acc
       cancelled = true;
     };
   }, [city, units]);
+
+  useEffect(() => {
+    if (!linesKey) return;
+    let cancelled = false;
+    const items = linesKey.split(",").map((s) => ({ variantId: s.split(":")[0], qty: Number(s.split(":")[1]) }));
+    // Debounced: the code field re-quotes as it's typed.
+    const timer = setTimeout(() => {
+      quoteOrder({ items, phone: quotePhone, voucher: quoteVoucher }).then((value) => {
+        if (!cancelled) setQuote({ key: `${linesKey}|${quotePhone}|${quoteVoucher}`, value });
+      });
+    }, 400);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [linesKey, quotePhone, quoteVoucher]);
 
   // FormData of the form includes the voucher (form="checkout-form") and the city's hidden input.
   function values(): CheckoutValues {
@@ -153,6 +177,8 @@ export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; acc
       const clean = f.el.value.replace(strip, "");
       if (clean !== f.el.value) f.el.value = clean;
     }
+    if (f.field === "phone") setPhone(f.el.value);
+    if (f.field === "voucher") setVoucher(f.el.value);
     if (errors[f.field]) check(f.field, f.el.value);
   }
 
@@ -171,6 +197,7 @@ export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; acc
     const form = formRef.current!;
     for (const k of ADDRESS_FIELDS) (form.elements.namedItem(k) as HTMLInputElement).value = k === "phone" ? formatPhone(fill.phone) : fill[k];
     setCity(fill.city);
+    setPhone(fill.phone);
     setAddressId(a?.id ?? null);
     setErrors((e) => ({ ...e, name: undefined, phone: undefined, address: undefined, ward: undefined, city: undefined }));
   }
@@ -244,6 +271,14 @@ export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; acc
   const rows = lines.map((line) => ({ line, item: items.get(line.variantId) }));
   const problem = rows.some(({ line, item }) => !item || line.qty > item.stock);
   const subtotal = rows.reduce((sum, { line, item }) => sum + (item ? item.price * line.qty : 0), 0);
+  const priced = quote?.value ?? null; // last answer, possibly for older inputs while re-quoting
+  const fresh = quote?.key === quoteKey ? quote.value : undefined;
+  const shippingKnown = !!city && typeof shippingFee === "number";
+  const discountLabel =
+    priced?.source === "auto_first5" ? `Ưu đãi 5 đơn đầu (−${priced.pct}%)`
+    : priced?.source === "promo" ? `Mã ${priced.code} (−${priced.pct}%)`
+    : priced?.source === "bundle" ? `Combo: ${priced.bundles.map((b) => (b.sets > 1 ? `${b.name} ×${b.sets}` : b.name)).join(", ")}`
+    : "Giảm giá";
   return (
     <div onInput={onInput} onBlur={onBlur} className="grid gap-8 lg:grid-cols-12 lg:gap-12">
       <form ref={formRef} id="checkout-form" onSubmit={submit} noValidate className="flex flex-col gap-6 lg:col-span-7">
@@ -337,16 +372,25 @@ export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; acc
             ))}
           </ul>
 
-          <Field name="voucher" label="Mã giảm giá" error={errors.voucher}>
+          <Field name="voucher" label="Mã giảm giá" error={errors.voucher ?? fresh?.voucherError ?? undefined}>
             {(p) => <input {...p} form="checkout-form" className={`${p.className} h-11 uppercase`} autoComplete="off" maxLength={MAX_LENGTH.voucher} />}
           </Field>
 
           <dl className="flex flex-col gap-3 border-t border-border pt-4">
             <div className="flex justify-between"><dt className="text-text-secondary">Tạm tính</dt><dd>{formatVnd(subtotal)}</dd></div>
             <div className="flex justify-between gap-4">
-              <dt className="text-text-secondary">Giảm giá</dt>
-              <dd className="text-right text-caption text-text-secondary">Áp dụng khi đặt hàng</dd>
+              <dt className="min-w-0 wrap-break-word text-text-secondary">{discountLabel}</dt>
+              {priced ? (
+                <dd className={`shrink-0 ${priced.discount > 0 ? "text-accent" : ""}`}>
+                  {priced.discount > 0 ? `−${formatVnd(priced.discount)}` : formatVnd(0)}
+                </dd>
+              ) : (
+                <dd className="text-right text-caption text-text-secondary">{quote ? "Áp dụng khi đặt hàng" : "Đang tính…"}</dd>
+              )}
             </div>
+            {priced?.source === "auto_first5" && !priced.phoneKnown && (
+              <p className="-mt-1 text-caption text-text-muted">Áp dụng cho 5 đơn đầu tiên của mỗi số điện thoại — kiểm tra lại khi bạn nhập số.</p>
+            )}
             <div className="flex justify-between gap-4">
               <dt className="text-text-secondary">Phí vận chuyển</dt>
               {city && typeof shippingFee === "number" ? (
@@ -357,16 +401,22 @@ export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; acc
                 </dd>
               )}
             </div>
-            {city && typeof shippingFee === "number" && (
+            {priced ? (
               <div className="flex justify-between gap-4 border-t border-border pt-3">
-                <dt className="text-nav uppercase">Tổng trước giảm giá</dt>
-                <dd className="text-price">{formatVnd(subtotal + shippingFee)}</dd>
+                <dt className="text-nav uppercase">{shippingKnown ? "Tổng thanh toán" : "Tổng (chưa gồm phí vận chuyển)"}</dt>
+                <dd className="shrink-0 text-price">{formatVnd(subtotal - priced.discount + (shippingKnown ? shippingFee : 0))}</dd>
               </div>
+            ) : (
+              shippingKnown && (
+                <div className="flex justify-between gap-4 border-t border-border pt-3">
+                  <dt className="text-nav uppercase">Tổng trước giảm giá</dt>
+                  <dd className="text-price">{formatVnd(subtotal + shippingFee)}</dd>
+                </div>
+              )
             )}
           </dl>
-          <BundleEstimate estimate={bundleEstimate} subtotal={subtotal} />
           <p className="text-caption text-text-secondary">
-            Khách hàng được giảm 10% cho 5 đơn đầu tiên, tự động áp dụng. Nếu mã giảm giá có lợi hơn, mã sẽ được áp dụng thay thế.
+            Khách hàng được giảm 10% cho 5 đơn đầu tiên, tự động áp dụng. Ưu đãi 5 đơn đầu, mã giảm giá và combo không cộng dồn — đơn hàng được mức giảm cao nhất.
           </p>
 
           <p className="border-l-4 border-accent bg-accent-soft px-3 py-2 text-caption font-semibold uppercase text-text-primary">

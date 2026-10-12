@@ -16,6 +16,14 @@ export type CheckoutResult =
   | { ok: false; message?: string; fieldErrors?: FieldErrors };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+// 1–20 lines of { variantId: uuid, qty: 1–20 }, or null.
+function validItems(value: unknown) {
+  const items = Array.isArray(value) ? (value as CheckoutInput["items"]) : [];
+  const ok = items.length > 0 && items.length <= 20 &&
+    items.every((i) => typeof i?.variantId === "string" && UUID.test(i.variantId) && Number.isInteger(i.qty) && i.qty >= 1 && i.qty <= 20);
+  return ok ? items : null;
+}
+
 const PHONE_HELP = "Nhập số di động Việt Nam: 10 chữ số, bắt đầu bằng 03, 05, 07, 08 hoặc 09.";
 
 // place_order() error codes → what the customer sees (and which field it belongs to).
@@ -47,13 +55,8 @@ function explain(code: string): CheckoutResult {
 // about money is trusted: only variant ids, quantities and delivery details go in.
 // Rate limited per IP + phone (lib/rate-limit) before any order work.
 export async function placeOrder(input: CheckoutInput): Promise<CheckoutResult> {
-  const items = Array.isArray(input?.items) ? input.items : [];
-  if (
-    !items.length || items.length > 20 ||
-    !items.every((i) => typeof i?.variantId === "string" && UUID.test(i.variantId) && Number.isInteger(i.qty) && i.qty >= 1 && i.qty <= 20)
-  ) {
-    return { ok: false, message: "Đơn hàng trống hoặc không hợp lệ. Vui lòng kiểm tra lại giỏ hàng." };
-  }
+  const items = validItems(input?.items);
+  if (!items) return { ok: false, message: "Đơn hàng trống hoặc không hợp lệ. Vui lòng kiểm tra lại giỏ hàng." };
 
   // Same rules as the form (lib/checkout-validation), re-run here because the browser is untrusted.
   const f = {} as CheckoutValues;
@@ -122,4 +125,64 @@ export async function quoteShipping(city: string, units: number): Promise<number
   if (typeof city !== "string" || !PROVINCE_NAMES.has(city) || !Number.isInteger(units) || units < 1 || units > 20) return null;
   const { data, error } = await createAdminClient().rpc("shipping_fee", { p_city: city, p_units: units });
   return error ? null : data;
+}
+
+// The voucher field error place_order() would give for this code (same wording at submit).
+function voucherMessage(code: string) {
+  const res = explain(code);
+  return (!res.ok && res.fieldErrors?.voucher) || null;
+}
+
+export type OrderQuote = {
+  subtotal: number;
+  discount: number;
+  source: "auto_first5" | "promo" | "bundle" | null;
+  pct: number | null;
+  code: string | null;
+  bundles: { name: string; sets: number }[];
+  phoneKnown: boolean;
+  voucherError: string | null;
+};
+
+// Checkout preview of the discount (client, 2026-10-11): quote_order() runs the same
+// order_discount() as place_order(), without touching stock. No valid phone yet = priced as a new
+// customer. Display only — place_order() decides at submit. null = can't quote now (rate limited or
+// failed): the page falls back to "applied at checkout". Rate limited per IP + phone so it can't be
+// used to try promo codes faster than placing orders would allow by much.
+export async function quoteOrder(input: { items: CheckoutInput["items"]; phone: string; voucher: string }): Promise<OrderQuote | null> {
+  const items = validItems(input?.items);
+  if (!items) return null;
+  const phone = typeof input?.phone === "string" ? input.phone.trim().slice(0, 20) : "";
+  const voucher = typeof input?.voucher === "string" ? input.voucher.trim().slice(0, 30) : "";
+
+  try {
+    if (!(await hitRateLimit("quote", phone, { ip: 60, phone: 30 }))) return null;
+  } catch (limitError) {
+    console.error("hit_rate_limit failed", limitError);
+    return null;
+  }
+
+  const { data, error } = await createAdminClient().rpc("quote_order", {
+    p_items: items.map((i) => ({ variant_id: i.variantId, qty: i.qty })),
+    p_phone: phone || undefined,
+    p_voucher_code: voucher || undefined,
+  });
+  if (error) {
+    if (!/^[A-Z_]+(:|$)/.test(error.message)) console.error("quote_order failed", error);
+    return null;
+  }
+  const q = data as {
+    subtotal: number; discount: number; source: OrderQuote["source"]; pct: number | null; code: string | null;
+    bundles: { name: string; sets: number }[] | null; phone_known: boolean; voucher_error: string | null;
+  };
+  return {
+    subtotal: q.subtotal,
+    discount: q.discount,
+    source: q.source,
+    pct: q.pct,
+    code: q.code,
+    bundles: (q.bundles ?? []).map((b) => ({ name: b.name, sets: b.sets })),
+    phoneKnown: q.phone_known,
+    voucherError: q.voucher_error ? voucherMessage(q.voucher_error) : null,
+  };
 }

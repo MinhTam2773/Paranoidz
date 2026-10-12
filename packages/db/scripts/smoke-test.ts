@@ -5,7 +5,7 @@
 // the admin client exactly like the storefront order route, with p_user_id for account orders.
 // Customer sessions (admin magic-link → verifyOtp) are only used to prove what a browser
 // can't do. Every per-customer rule is keyed on the normalized phone; test phones are
-// 0900000001-0900000009. Cleans up after itself; the only permanent trace is order_number_seq gaps.
+// 0900000001-0900000010. Cleans up after itself; the only permanent trace is order_number_seq gaps.
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../src/types.ts";
 
@@ -23,8 +23,10 @@ const admin: Db = createClient<Database>(url, secret, noPersist);
 const CUSTOMERS = ["customer1@paranoidz.test", "customer3@paranoidz.test"];
 const VOUCHER = "SMOKE-TEST";
 const BUNDLE_VOUCHER = "SMOKE-TEST-BUNDLE";
+const QUOTE_VOUCHER = "SMOKE-TEST-QUOTE";
 const BUNDLE_PREFIX = "SMOKE-BUNDLE"; // assumes no other active bundle holds the products picked in case 12
 const PHONES = Array.from({ length: 9 }, (_, i) => `090000000${i + 1}`);
+const QUOTE_PHONE = "0900000010"; // case 17's promo order: no history from earlier cases
 const AUTH_EMAILS = [1, 2, 3].map((i) => `smoke-auth-${i}@paranoidz.test`);
 
 let failures = 0;
@@ -559,8 +561,8 @@ async function main() {
   type Quote = { subtotal: number; discount: number; source: string | null; voucher_error: string | null; phone_known: boolean };
   const qVariant = await variant(pool[3].id);
   const qItems = [{ variant_id: qVariant.id, qty: 2 }];
-  const quote = async (phone?: string, voucher?: string, db: Db = admin) =>
-    (await db.rpc("quote_order", { p_items: qItems, p_phone: phone, p_voucher_code: voucher })) as { data: Quote | null; error: { message: string } | null };
+  const quote = async (phone?: string, voucher?: string, db: Db = admin, items = qItems) =>
+    (await db.rpc("quote_order", { p_items: items, p_phone: phone, p_voucher_code: voucher })) as { data: Quote | null; error: { message: string } | null };
 
   // Two phones with different histories from the cases above: the quote must equal the order.
   const pairs = [];
@@ -580,6 +582,19 @@ async function main() {
       && badCode.data?.voucher_error === "INVALID_VOUCHER" && badCode.data.discount === plain.data?.discount
       && (await variant(pool[3].id)).stock === stockBefore,
     `noPhone=${JSON.stringify(noPhone.data ?? noPhone.error)} bad=${JSON.stringify(badCode.data ?? badCode.error)} plain=${plain.data?.discount}`);
+
+  await admin.from("vouchers").delete().eq("code", QUOTE_VOUCHER);
+  const { error: qvErr } = await admin.from("vouchers").insert({ code: QUOTE_VOUCHER, type: "promo", discount_pct: 30 });
+  if (qvErr) throw qvErr;
+  const promoItems = [{ variant_id: pool[1].id, qty: 1 }]; // pool[3] may be used up by now
+  const promoQuote = await quote(QUOTE_PHONE, QUOTE_VOUCHER.toLowerCase(), admin, promoItems);
+  const promoPlaced = await placeOrder(promoItems, { phone: QUOTE_PHONE, voucher: QUOTE_VOUCHER });
+  const usedQuote = await quote(QUOTE_PHONE, QUOTE_VOUCHER, admin, promoItems);
+  check("quote: a better promo wins with code + pct, equals the order; after use → VOUCHER_ALREADY_USED",
+    promoQuote.data?.source === "promo" && (promoQuote.data as Quote & { code: string; pct: number }).code === QUOTE_VOUCHER
+      && (promoQuote.data as Quote & { pct: number }).pct === 30 && promoQuote.data.discount === promoPlaced.data?.discount
+      && usedQuote.data?.voucher_error === "VOUCHER_ALREADY_USED" && usedQuote.data.source !== "promo",
+    `quote=${JSON.stringify(promoQuote.data ?? promoQuote.error)} order=${promoPlaced.data?.discount ?? promoPlaced.error?.message} after=${JSON.stringify(usedQuote.data ?? usedQuote.error)}`);
 
   const [anonQuote, customerQuote, anonDiscount] = await Promise.all([
     quote(PHONES[7], undefined, anon),
@@ -605,10 +620,10 @@ async function cleanup() {
     await admin.from("product_variants").update({ stock: stock + qty }).eq("id", variant_id);
   }
   if (createdOrders.length) await admin.from("orders").delete().in("id", createdOrders);
-  await admin.from("customers").delete().in("phone", PHONES);
+  await admin.from("customers").delete().in("phone", [...PHONES, QUOTE_PHONE]);
   await admin.from("rate_limits").delete().in("bucket", PHONES.flatMap((p) => [`order:phone:${p}`, `lookup:phone:${p}`]));
   await admin.from("rate_limits").delete().or("bucket.like.order:ip:192.0.2.%,bucket.like.order:ip:2001:db8:%");
-  await admin.from("vouchers").delete().in("code", [VOUCHER, BUNDLE_VOUCHER]);
+  await admin.from("vouchers").delete().in("code", [VOUCHER, BUNDLE_VOUCHER, QUOTE_VOUCHER]);
   await admin.from("bundles").delete().like("name", `${BUNDLE_PREFIX}%`);
   if (cartUsers.length) await admin.from("cart_items").delete().in("user_id", cartUsers);
   if (reviewUsers.length) await admin.from("reviews").delete().in("user_id", reviewUsers);
