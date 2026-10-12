@@ -360,6 +360,7 @@ export type Database = {
           product_id: string | null
           qty: number
           size_snapshot: string | null
+          sku_snapshot: string | null
           variant_id: string | null
         }
         Insert: {
@@ -372,6 +373,7 @@ export type Database = {
           product_id?: string | null
           qty: number
           size_snapshot?: string | null
+          sku_snapshot?: string | null
           variant_id?: string | null
         }
         Update: {
@@ -384,6 +386,7 @@ export type Database = {
           product_id?: string | null
           qty?: number
           size_snapshot?: string | null
+          sku_snapshot?: string | null
           variant_id?: string | null
         }
         Relationships: [
@@ -447,6 +450,8 @@ export type Database = {
           address: string
           address_id: string | null
           applied_bundles: Json | null
+          bigseller_exported_at: string | null
+          bigseller_restocked_at: string | null
           city: string
           created_at: string
           discount: number
@@ -469,6 +474,8 @@ export type Database = {
           address: string
           address_id?: string | null
           applied_bundles?: Json | null
+          bigseller_exported_at?: string | null
+          bigseller_restocked_at?: string | null
           city: string
           created_at?: string
           discount?: number
@@ -491,6 +498,8 @@ export type Database = {
           address?: string
           address_id?: string | null
           applied_bundles?: Json | null
+          bigseller_exported_at?: string | null
+          bigseller_restocked_at?: string | null
           city?: string
           created_at?: string
           discount?: number
@@ -877,6 +886,47 @@ export type Database = {
         }
         Relationships: []
       }
+      stock_adjustments: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          delta: number
+          exported_at: string | null
+          id: string
+          reason: string | null
+          sku_snapshot: string
+          variant_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          delta: number
+          exported_at?: string | null
+          id?: string
+          reason?: string | null
+          sku_snapshot: string
+          variant_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          delta?: number
+          exported_at?: string | null
+          id?: string
+          reason?: string | null
+          sku_snapshot?: string
+          variant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_adjustments_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "product_variants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       voucher_uses: {
         Row: {
           created_at: string
@@ -1005,6 +1055,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      adjust_variant_stock: {
+        Args: { p_delta: number; p_reason?: string; p_variant_id: string }
+        Returns: number
+      }
       best_bundles: { Args: { p_counts: Json }; Returns: Json }
       best_bundles_search: {
         Args: { p_bundles: Json; p_counts: Json; p_i: number }
@@ -1014,6 +1068,15 @@ export type Database = {
         Args: { p_limit: number }
         Returns: {
           product_id: string
+        }[]
+      }
+      bigseller_unsent: {
+        Args: never
+        Returns: {
+          unsent_adj: number
+          unsent_back: number
+          unsent_out: number
+          variant_id: string
         }[]
       }
       has_delivered_product: {
@@ -1031,6 +1094,10 @@ export type Database = {
         Returns: boolean
       }
       immutable_unaccent: { Args: { "": string }; Returns: string }
+      mark_bigseller_sent: {
+        Args: { p_adjustments: string[]; p_back: string[]; p_out: string[] }
+        Returns: Json
+      }
       merge_cart: { Args: { p_lines: Json }; Returns: undefined }
       normalize_vn_phone: { Args: { p: string }; Returns: string }
       order_discount: {
@@ -1063,6 +1130,10 @@ export type Database = {
       quote_order: {
         Args: { p_items: Json; p_phone?: string; p_voucher_code?: string }
         Returns: Json
+      }
+      rename_product_color: {
+        Args: { p_from: string; p_product_id: string; p_to: string }
+        Returns: undefined
       }
       search_products: {
         Args: { p_query: string }

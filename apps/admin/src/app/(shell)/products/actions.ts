@@ -31,7 +31,7 @@ export async function saveProduct(input: ProductInput): Promise<SaveResult> {
     const { data: taken } = await admin.from("product_variants").select("sku, product_id").in("sku", skus);
     const clash = new Set((taken ?? []).filter((t) => t.product_id !== input.id).map((t) => t.sku));
     input.variants.forEach((v, i) => {
-      if (!v.removed && clash.has(v.sku.trim())) errors[`variants.${i}.sku`] = "SKU đã được dùng cho sản phẩm khác.";
+      if (!v.removed && clash.has(v.sku.normalize("NFC").trim())) errors[`variants.${i}.sku`] = "SKU đã được dùng cho sản phẩm khác.";
     });
     if (Object.keys(errors).length) return { errors };
   }
@@ -111,6 +111,24 @@ export async function saveProduct(input: ProductInput): Promise<SaveResult> {
     }
   }
   return { id: input.id };
+}
+
+const COLOR_ERRORS: Record<string, string> = {
+  COLOR_EXISTS: "Sản phẩm đã có màu này.",
+  COLOR_NOT_FOUND: "Màu này không còn trên sản phẩm. Tải lại trang.",
+  INVALID_COLOR: "Nhập tên màu (tối đa 40 ký tự).",
+};
+
+// Renames one colour on every size and on its photos (rename_product_color, one
+// transaction). Order history keeps the old name in its snapshots.
+export async function renameColor(productId: string, from: string, to: string): Promise<{ error?: string }> {
+  await requireAdmin();
+  if (!UUID.test(productId)) return { error: "Không tìm thấy sản phẩm." };
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("rename_product_color", { p_product_id: productId, p_from: from, p_to: to.trim() });
+  if (error) return { error: COLOR_ERRORS[error.message] ?? "Không thể đổi tên màu. Vui lòng thử lại." };
+  revalidatePath("/", "layout");
+  return {};
 }
 
 export async function setProductActive(id: string, isActive: boolean): Promise<{ error?: string }> {

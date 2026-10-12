@@ -132,7 +132,8 @@ export function validateProduct(input: ProductInput) {
     }
     const stock = /^\d{1,5}$/.test(v.stock.trim()) ? Number(v.stock.trim()) : NaN;
     if (Number.isNaN(stock)) errors[key("stock")] = "Nhập số từ 0 đến 99999.";
-    const sku = v.sku.trim();
+    // NFC: BigSeller's SKUs ("QT03-Xám") must match byte for byte (DB check product_variants_sku_nfc).
+    const sku = v.sku.normalize("NFC").trim();
     if (sku.length > 50) errors[key("sku")] = "SKU tối đa 50 ký tự.";
     else if (sku && skus.has(sku.toUpperCase())) errors[key("sku")] = "SKU trùng với một dòng khác.";
     if (sku) skus.add(sku.toUpperCase());

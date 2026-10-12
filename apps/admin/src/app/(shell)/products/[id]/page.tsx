@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createAdminClient } from "@paranoidz/db/admin";
+import { ColorRename } from "@/components/products/ColorRename";
 import { ImageManager } from "@/components/products/ImageManager";
 import { ProductEditor } from "@/components/products/ProductForm";
 import { requireAdmin } from "@/lib/auth";
@@ -45,6 +46,7 @@ export default async function EditProductPage({ params }: PageProps<"/products/[
         <h2 className="text-page-title wrap-break-word">{product.name}</h2>
       </div>
       <ImageManager productId={product.id} productName={product.name} images={images} colors={colors} />
+      <ColorRename key={colors.join("|")} productId={product.id} colors={colors} />
       <ProductEditor
         version={version}
         categories={categories ?? []}
