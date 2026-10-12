@@ -19,6 +19,10 @@ and the admin gets the inventory page the client asked for ("làm cái page danh
 - **Option A** for the +/- buttons: every website adjustment is logged and sent to BigSeller.
 - The import **creates products** for unknown SKUs. A SKU with no size part gets size **"Freesize"**.
   Adding new variants to an *existing* product from the import is **out of v1** (listed only).
+- **Website price = 70 % of the Shopee price**, suggested by the import and always editable (client,
+  2026-10-12). Which Shopee price is open — see "Open decisions".
+- **The product editor can rename a colour** (owner, 2026-10-12). The import therefore no longer
+  needs its own colour-label step.
 - Shipping weight stays **300 g per unit** (BigSeller records 100 g; not used).
 - Placeholder catalog + test orders deleted from production on 2026-10-12 (done; the client enters
   the real catalog).
@@ -31,6 +35,7 @@ and the admin gets the inventory page the client asked for ("làm cái page danh
 | Stock-out template | Inventory → Manual Stock-Out → Import & Update | Sheet "SKU": `*SKU Name`, `*Stock-Out Qty`, `Serial Number`. ≤ 2,000 lines. Type "Stock-Out / Ordinary" only. |
 | Stock-in template | Inventory → Manual Stock-In → Import & Update | Sheet "SKU": `*SKU Name (Either SKU or GTIN is required)`, `*GTIN (Either SKU or GTIN is required)`, `*Stock-In Qty`, `Unit Price`, `Production Date`, `Expiry Date`, `Serial Number`. ≤ 2,000 lines. Type Ordinary or Return (chosen in the dialog, per file). |
 | Inventory "Import & Update" | Inventory List | **No quantity column** (`*SKU Name`, `Stock Alert`, `Shelf`, `Weighted Average Cost`, `Sales Status`, `Note`) — cannot set stock. |
+| Shopee listings export | Products → Shopee → Active → Import & Export → Export by Page (standard template) | `Online_products_<…>.xlsx`, sheet "sheet1", one row per listing × SKU: `Store Nickname`, `Product Name`, `Item ID`, `Sales`, `Parent SKU`, `Variation`, `SKU`, `Stock`, `Price`, `Special Price`, `activity information` (campaign text). 136 rows = 70 SKUs across 18 listings in 2 shops. |
 
 - Export filenames carry the generation time **in UTC**: `Inventory_List20261012172745857.xlsx` =
   2026-10-12 17:27:45.857 UTC (checked against the download time).
@@ -40,6 +45,31 @@ and the admin gets the inventory page the client asked for ("làm cái page danh
   (`QT03-Xám`, `QT03-Random`, `Sck1-Random`). Titles are long Shopee titles, and **`pdz01` and
   `pdz08` share the same title** — products must be grouped by SKU code, never by title.
 - The client already records off-marketplace sales as manual stock-outs (101 so far).
+
+### Shopee prices (listings export, 2026-10-12)
+
+Every SKU has a list price (`Price`) and a promotion price (`Special Price`); every row is in a running
+campaign (windows end 2026-10-14, 2026-11-30, 2027-03-29). The same SKU is priced differently per shop,
+and `pdz01-SP` sells `pdz01`/`pdz02`/`pdz08` SKUs in a combined 27-variant listing as well as their own.
+
+| Code | List price | Promotion price | 70 % of list | 70 % of promotion |
+| --- | --- | --- | --- | --- |
+| pdz01 | 385k (pdz01-SP) / 320k (pdz02-SP) | 235k | 269.5k / 224k | 164.5k |
+| pdz02 | 385k | 199k (own listing, pdz01-SP) / 235k (combined listing, pdz02-SP) | 269.5k | 139.3k / 164.5k |
+| pdz03, pdz04 | 385k | 199k | 269.5k | 139.3k |
+| pdz05, pdz06 | 320k | 235k (pdz01-SP) / 265k (pdz02-SP) | 224k | 164.5k / 185.5k |
+| pdz07 | 365k | 245k (pdz01-SP) / 299k (pdz02-SP) | 255.5k | 171.5k / 209.3k |
+| pdz08 | 385k (pdz01-SP only) | 235k | 269.5k | 164.5k |
+| QT03 socks | 36k | 19k (`QT03-Random`: none) | 25.2k | 13.3k |
+| Sck1 gift socks | 60k (QT01) / 36k (`Sck1-Random` in QT02) | 36k / 19k | — | — |
+
+70 % of the **list** price is above Shopee's current promotion price for most shirts (e.g. pdz03: website
+269.5k vs Shopee 199k); 70 % of the **promotion** price is below it.
+
+`Variation` holds Shopee's colour/size label, `<colour>,<size spec>`: some Vietnamese (`Đen,L`,
+`Trắng kem,M`, `Xanh Be,XL:70–85kg`, `Xám,M: 40-55kg` on pdz02-SP), some English (`Basic Gray`,
+`Mint Blue Orb`, `Green Beige`). The size specs (M 40–55 kg, L 55–70 kg, XL 70–85 kg) are a ready
+size guide for the client.
 
 ## The sync rule
 
@@ -77,6 +107,7 @@ BigSeller sau lần gửi gần nhất".
 | **M3** | `product_variants` check: `sku is null or sku = normalize(btrim(sku), NFC)`. The editor and the import normalize before saving. | Vietnamese SKUs (`QT03-Xám`) typed on some keyboards arrive decomposed (NFD) and would never match BigSeller's text. Current data is empty, so the constraint is safe to add. |
 | **M4** | Table `stock_adjustments (id, variant_id → product_variants on delete set null, sku_snapshot text not null, delta int not null check (delta <> 0), reason text, created_by uuid, created_at, exported_at timestamptz)`, RLS on with no policies. Function `adjust_variant_stock(p_variant_id uuid, p_delta int, p_reason text) returns int`: admin/service_role check; `update product_variants set stock = stock + p_delta where id = p_variant_id and stock + p_delta >= 0 returning stock`; raises `STOCK_NEGATIVE` / `SKU_REQUIRED` / `VARIANT_NOT_FOUND`; inserts the log row in the same transaction. | The +/- buttons (option A). A delta needs no compare-and-set: `stock + delta >= 0` is the atomic guard, and concurrent orders simply compose with it. |
 | — | Function `bigseller_unsent()` returning `(variant_id, unsent_out, unsent_back, unsent_adj)` (read-only, `stable`). | Shared by the page and the import (see the sync rule). |
+| **M5** | Function `rename_product_color(p_product_id uuid, p_from text, p_to text)` (definer, admin/service_role). | Colour rename in the editor: variants and photos change together or not at all. Touches no stock. |
 
 Stock writers after this change: `place_order()`, `transition_order_status()`, `set_variant_stocks()`
 (editor + **import**), and the new `adjust_variant_stock()`. CLAUDE.md §4 and ARCHITECTURE.md §3 must
@@ -104,8 +135,10 @@ New sidebar item **"Tồn kho"** (`/inventory`), after "Sản phẩm". Full page
 
 ### `/inventory/import` — BigSeller → website
 
-1. Upload the Inventory List export (`.xlsx`, ≤ 5,000 rows). Parsed on the server by **header name**;
-   an unknown layout (e.g. BigSeller switched to Vietnamese) fails with a clear message.
+1. Upload the Inventory List export (`.xlsx`, ≤ 5,000 rows) and, optionally, the **Shopee listings
+   export** (used only for new products: suggested price and colour names). Both are parsed on the
+   server by **header name**; an unknown layout (e.g. BigSeller switched to Vietnamese) fails with a
+   clear message. Without the listings file, new products get no suggested price.
 2. Validation: stale-file guard; one warehouse only; `SKU Type` other than `Single SKU` skipped with a
    warning; duplicate SKUs and non-integer quantities rejected.
 3. Preview, three groups:
@@ -126,15 +159,31 @@ Per group (one checkbox each, e.g. untick the `Sck1` gift socks):
 | --- | --- |
 | Name | Pre-filled from `Title`, editable, required. Groups with the same name must be renamed (unique slug). |
 | Slug | `slugify(name)` (existing helper), fixed after creation as today. |
-| Price | **Entered by the admin**, required (BigSeller has none). One price for all variants of the group. |
+| Price | **Suggested** per variant = *Shopee price* × **percentage** (a field on the page, default **70**), **rounded down to ₫1.000** (never above the percentage; 269.500 → ₫269.000). *Shopee price* = the rule chosen under "Open decisions" (which price, which shop; when one shop lists the SKU twice, the lower one). The preview shows the Shopee price it used next to each suggestion. Every price is editable before creating and in the product editor afterwards. No listings file / SKU not found → empty, admin enters it. A price is required (`price > 0`). |
 | Variants | Parsed from each SKU: `code-Color-Size`; if the last part isn't a size token (XS…3XL, FREE) or there are only two parts, colour = everything after the code and size = **Freesize**. |
-| Colour labels | Each distinct colour in the group is shown with an editable label (Gray → Xám). The editor can't rename a variant's colour later, so this is where it's done. The SKU never changes. |
+| Colour labels | Prefilled from Shopee's `Variation` (the part before the comma) in the pricing shop when the listings file has it (`Đen`, `Trắng kem`), else the colour from the SKU (`Gray`). Not editable in the preview — renamed afterwards in the product editor (below). The SKU never changes. |
 | SKU, stock | Exact SKU (NFC); stock = `available` (a brand-new variant may start with stock, CLAUDE.md §4). |
 | Photos | Optional tick (default on): for each colour, the original (query string stripped) of its first SKU's `Image URL` is downloaded by the server — **only from `https://res.bigseller.pro/`**, JPEG/PNG/WebP, ≤ 10 MB — and stored as `products/<slug>/<uuid>.<ext>` with `product_images.color` = the colour label; the first is primary. A failed photo doesn't fail the product. |
 | Status | Created **hidden** (`is_active = false`). The client adds description, category, size guide, more photos, then switches it on. |
 
 Creation reuses the editor's validation and insert path (`validateProduct`, SKU clash check); like the
 editor it isn't one transaction, and a product whose variants fail to insert is deleted again.
+
+### Product editor — rename a colour
+
+Today an existing variant's colour is plain text in the editor (`ProductForm`), and a colour is joined
+to its photos **by name** (`product_images.color` = `product_variants.color`; the storefront's
+`ProductView` and cart pick photos that way). So renaming is **per colour, not per row**:
+
+- New block in the editor, "Màu sắc": one row per distinct colour of the product → current name,
+  input for the new name, **ĐỔI TÊN** (saved on its own, outside the main form's Save).
+- Server action → `rename_product_color(p_product_id, p_from, p_to)` (M5): admin/service_role check;
+  trims; 1–40 chars; refuses if `p_to` already exists on the product (case-insensitive, it would merge
+  two colours — `COLOR_EXISTS`) or `p_from` doesn't (`COLOR_NOT_FOUND`); then updates
+  `product_variants.color` and `product_images.color` for that product in one transaction.
+- Unaffected: SKUs, stock, prices, cart lines (by `variant_id`), and order history (`color_snapshot`
+  keeps the name at the time of the order). No URL carries a colour.
+- Applies to products from the import and products made by hand alike.
 
 ### `/inventory/export` — website → BigSeller
 
@@ -161,8 +210,10 @@ editor it isn't one transaction, and a product whose variants fail to insert is 
   the sync rule, the stale-file guard, the export flow); §3 lists `adjust_variant_stock()`; §7 adds
   `stock_adjustments` and the new columns/functions; §9 notes the file sync is in scope, the Open API
   is not (yet).
-- **DASHBOARD_DESIGN.md**: §4 sidebar gets "Tồn kho"; §6 gets the three pages above; §7's "no export"
-  gets an exception for the BigSeller files.
+- **DASHBOARD_DESIGN.md**: §4 sidebar gets "Tồn kho"; §6 gets the three pages above; §6.3 Products
+  edit gets the "Màu sắc" rename block; §7's "no export" gets an exception for the BigSeller files.
+- **ARCHITECTURE.md** also records the pricing rule (website = % of Shopee price, suggested at import,
+  editable; the website does not follow later Shopee price changes).
 - **CLAUDE.md §4**: add `adjust_variant_stock()` to the allowed stock writers.
 
 ## Dependencies
@@ -177,6 +228,11 @@ publishes to npm). Verify their Node APIs when implementing.
 
 - Parser unit tests on the real export (trimmed fixture, no customer data in it) and the three
   templates' headers; SKU parsing cases (`pdz08-Gray-XL`, `QT03-Xám`, `Sck1-Random`, NFD input).
+- Price suggestion on the real listings file: chosen basis and shop, lower of two listings in one shop,
+  rounding down (385.000 × 70 % → ₫269.000), SKU missing → empty; colour prefill from `Variation`.
+- `rename_product_color()`: renames variants + photos together; `COLOR_EXISTS` (incl. case-only
+  clash) and `COLOR_NOT_FOUND`; the storefront product page still shows each colour's photos after a
+  rename.
 - Local Supabase: the sync rule for each case (pending, confirmed-unsent, sent-then-cancelled,
   adjustments); `adjust_variant_stock()` refuses to go below 0 and logs; an order placed between
   preview and apply → `STOCK_CHANGED`; `mark_bigseller_sent()` twice is a no-op; stale file rejected.
@@ -185,9 +241,23 @@ publishes to npm). Verify their Node APIs when implementing.
 - **Not tested against BigSeller** (owner's instruction: don't touch production BigSeller). The client
   does the first real upload; check the result together.
 
+## Open decisions (client)
+
+1. **Which Shopee price is "the Shopee price"?** The list price (`Price`) or the promotion price
+   customers actually pay (`Special Price`)? See the table above — 70 % of the list price makes most
+   shirts *dearer* on the website than on Shopee today (pdz03: 269k vs 199k).
+2. **Which shop when they differ?** `pdz01-SP` (the main shop: most sales) or the lowest of both?
+3. **Show the Shopee price as "Giá gốc"** (strike-through, `original_price`) next to the website price?
+   Default: no.
+
+Until answered, the spec's suggestion uses whichever rule the client picks; the percentage field and
+manual override work regardless.
+
 ## Out of scope (v1)
 
-- Adding variants to existing products from the import; auto-pricing.
+- Adding variants to existing products from the import.
+- Re-pricing existing products from Shopee (the % rule only suggests prices for new products; later
+  Shopee price changes are applied by hand in the editor).
 - BigSeller manual-order export (with addresses / SPX via BigSeller) — the province names differ
   (`TP. Hồ Chí Minh` vs `Thành phố Hồ Chí Minh`) and would need a mapping.
 - BigSeller Open API (automatic sync) — after launch.
