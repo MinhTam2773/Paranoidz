@@ -107,7 +107,17 @@ Two separate identities. Orders connect them.
   3. Record voucher use if applicable.
 - **Stock restoration**: `transition_order_status()` restores quantities automatically when an order moves to `cancelled` or `delivery_failed`. No manual correction.
 - **Sold out**: variant with stock 0 is unselectable; product where ALL variants are 0 renders SOLD OUT and cannot be carted.
+- **Admin stock writes** (the only other writers): `set_variant_stocks()` — compare-and-set (`WHERE stock = expected`, all or nothing), used by the product editor and the BigSeller import; `adjust_variant_stock()` — +/- on the inventory page (`WHERE stock + delta >= 0`), logged in `stock_adjustments` in the same transaction. A brand-new variant may be inserted with its initial stock.
 - Never let an agent "simplify" this into check-then-write — that reintroduces the race condition.
+
+### 3.1 BigSeller sync (file-based) — decided 2026-10-12
+
+The client runs Shopee (2 shops) and TikTok Shop through BigSeller, which holds the **master stock count** and pushes it to the marketplaces. The website can't receive that push (only authorized marketplace stores can), and BigSeller's Open API is deferred until after launch, so the two are kept in step with Excel files moved by hand (spec: `docs/superpowers/specs/2026-10-12-bigseller-inventory-sync-design.md`).
+
+- **BigSeller → website** (admin `/inventory/import`): the Inventory List export sets each matching variant to
+  `stock = max(0, available − unsent_out + unsent_back + unsent_adj)` through `set_variant_stocks()`, where the three numbers come from `bigseller_unsent()`: units in orders not yet exported (pending included), units in exported orders that were then cancelled / refused, and unexported adjustments. A file generated before the last export batch was marked sent is rejected (its export time is in the file name, UTC). Unknown SKUs become **hidden** new products (price = 70 % of the pdz01-SP Shopee promotion price, rounded down to ₫1.000, from BigSeller's Shopee listings export; "Giá gốc" = that Shopee price; both editable).
+- **Website → BigSeller** (admin `/inventory/export`): confirmed / shipped / delivered orders not yet exported and negative adjustments go out as a **stock-out** file; exported orders later cancelled / refused and positive adjustments as a **stock-in** file (BigSeller's own template headers). "Đã nhập vào BigSeller" calls `mark_bigseller_sent()` with exactly the ids in the downloaded files. The website never sends absolute stock numbers (BigSeller's inventory import can't set quantities anyway).
+- Rule for the client: record each physical stock change in **one** place — on the website (it reaches BigSeller through the export) or in BigSeller (it reaches the website through the next import).
 
 ---
 
@@ -129,7 +139,7 @@ Valid transitions: pending→confirmed→shipped→delivered; pending/confirmed�
 2. Order form: full name, phone, street address, ward/commune, city/province, secondary phone, email, note, voucher code. Province = one of Vietnam's 34 units since 1 July 2025 (searchable list, `apps/storefront/src/lib/provinces.ts`); districts no longer exist, so `orders.district` stays NULL. Field rules live in `lib/checkout-validation.ts`, run live in the form AND again in the server action.
 3. Server route validates voucher, recomputes ALL prices from DB (items, discount, shipping fee — §5), calls `place_order()`.
 4. Customer gets Resend confirmation email; client gets Zalo + email alert.
-5. Client calls to confirm (standard VN COD practice) → `confirmed` → creates the SPX order by hand on spx.vn (COD amount = `orders.total`, weight = 0.3 kg × units; the admin order page shows both), prints the label, drops the parcel at the post office → `shipped` → `delivered`.
+5. Client calls to confirm (standard VN COD practice) → `confirmed` (from then on the order is in the next BigSeller stock-out export, §3.1) → creates the SPX order by hand on spx.vn (COD amount = `orders.total`, weight = 0.3 kg × units; the admin order page shows both), prints the label, drops the parcel at the post office → `shipped` → `delivered`.
 6. Cancel/refusal → stock restored, refusals tracked.
 
 Order numbers: `PZ-YYYY-NNNN` from a Postgres sequence (concurrency-safe, 4+ digits).
@@ -192,19 +202,20 @@ Order numbers: `PZ-YYYY-NNNN` from a Postgres sequence (concurrency-safe, 4+ dig
 
 ---
 
-## 7. Database Schema (23 tables)
+## 7. Database Schema (24 tables)
 
 | Table | Key fields | Notes |
 | ----- | ---------- | ----- |
 | products | id, name, slug, description, category_id, care_instructions, size_guide, is_active | `size_guide` jsonb (nullable): `{ "sizes": ["S","M"], "rows": [{ "label": "Chest (cm)", "values": ["52","55"] }] }` — one string per size, units in the label |
-| product_variants | product_id, color, size, price, original_price, stock, sku | Stock lives HERE |
+| product_variants | product_id, color, size, price, original_price, stock, sku | Stock lives HERE. `sku` unique, NFC-normalised (check `product_variants_sku_nfc`) — must equal BigSeller's SKU |
 | product_images | product_id, color (nullable), storage_path, sort_order, is_primary | Supabase Storage. Images belong to a COLORWAY, not a variant — `color` matches `product_variants.color`; NULL = general image |
 | categories | id, name, slug, sort_order | |
 | profiles | id (FK auth.users), full_name, phone UNIQUE (normalized, NULL until the phone step), is_admin | Optional — guests have none |
 | customers | phone PK (normalized), delivered_count, refusal_count, is_blacklisted | One row per phone, created on first order. Identity for all per-customer rules |
 | addresses | user_id, name, phone, address, ward, district, city, is_default, label | |
-| orders | order_number (PZ-YYYY-NNNN, sequence), user_id (NULL = guest), phone (normalized), address snapshot fields, status enum, subtotal, discount, shipping_fee (§5), total (= subtotal − discount + shipping_fee), applied_bundles (jsonb, §5), note, timestamps | Address is SNAPSHOTTED, not FK-only |
-| order_items | order_id, product_id, variant_id, name_snapshot, price_snapshot, qty, image_snapshot | Frozen at order time |
+| orders | order_number (PZ-YYYY-NNNN, sequence), user_id (NULL = guest), phone (normalized), address snapshot fields, status enum, subtotal, discount, shipping_fee (§5), total (= subtotal − discount + shipping_fee), applied_bundles (jsonb, §5), note, bigseller_exported_at, bigseller_restocked_at (§3.1), timestamps | Address is SNAPSHOTTED, not FK-only |
+| order_items | order_id, product_id, variant_id, name_snapshot, color_snapshot, size_snapshot, price_snapshot, image_snapshot, sku_snapshot, qty | Frozen at order time |
+| stock_adjustments | variant_id (set null on delete), sku_snapshot, delta (≠ 0), reason, created_by, created_at, exported_at | +/- from the inventory page, sent to BigSeller (§3.1). RLS on, no policies |
 | reviews | user_id, product_id, rating 1–5, content, is_visible | No pre-moderation |
 | review_replies | review_id, user_id, content, is_brand_reply | Brand flag server-enforced |
 | wishlists | user_id, product_id, added_at | |
@@ -227,6 +238,8 @@ Order numbers: `PZ-YYYY-NNNN` from a Postgres sequence (concurrency-safe, 4+ dig
 - `shipping_fee(city, units)` — service role only; raises `SHIPPING_UNAVAILABLE` (§5).
 - `order_discount(...)` — internal (no grants), the discount rules shared by `place_order()` and `quote_order(...)` (service role only) (§5).
 - `transition_order_status(order_id, new_status)` — SECURITY DEFINER: validates transition, restores stock, bumps counters, creates loyalty awards.
+- `set_variant_stocks(changes)` / `adjust_variant_stock(variant, delta, reason)` — admin stock writes (§3). `rename_product_color(product, from, to)` — renames a colour on its variants and photos together.
+- `bigseller_unsent()` / `mark_bigseller_sent(out, back, adjustments)` — service role only, the BigSeller sync bookkeeping (§3.1).
 - Extension: `unaccent` (`immutable_unaccent()` wrapper); `search_products()` for storefront search (§2.2).
 - RLS enabled on EVERY table, policies per section 2.3.
 
@@ -244,4 +257,4 @@ Order numbers: `PZ-YYYY-NNNN` from a Postgres sequence (concurrency-safe, 4+ dig
 
 ## 9. Out of Scope
 
-Payment gateways, Shopee integration, carrier APIs (SPX order creation / live rates — fulfilment is manual, §4), newsletter/email marketing, mobile apps, multi-language (the site is Vietnamese-only, not bilingual), multi-admin roles, analytics dashboards.
+Payment gateways, Shopee integration (stock reaches Shopee through BigSeller, §3.1; BigSeller's Open API comes after launch), carrier APIs (SPX order creation / live rates — fulfilment is manual, §4), newsletter/email marketing, mobile apps, multi-language (the site is Vietnamese-only, not bilingual), multi-admin roles, analytics dashboards.

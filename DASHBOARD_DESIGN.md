@@ -78,12 +78,13 @@ Prices always Vietnamese Dong: `₫` prefix, dot separators (`₫1.240.000`).
 1. DASHBOARD
 2. ORDERS (red count badge for pending orders)
 3. PRODUCTS
-4. CUSTOMERS
-5. BUNDLES
-6. COLLECTIONS
-7. PROMO CODES
-8. GIFT POOL
-9. REVIEWS
+4. INVENTORY (Tồn kho)
+5. CUSTOMERS
+6. BUNDLES
+7. COLLECTIONS
+8. PROMO CODES
+9. GIFT POOL
+10. REVIEWS
 
 - Default link: white at 70% opacity, icon left (20px, lucide).
 - Hover: 100% opacity, `rgba(255,255,255,0.06)` background.
@@ -144,7 +145,7 @@ Bottom-right, dark `#111111` background, white text, 3s auto-dismiss. Success pr
 
 ### 6.3 Products
 - **List**: thumbnail, name, category, price range, total stock, active toggle, updated at. Search + category filter. "ADD PRODUCT" primary top-right.
-- **Edit/Create**: name, slug (auto), category, description, care instructions, size guide, active toggle; variant matrix (color × size → price, original price, stock, SKU per row); image uploader per product with variant assignment.
+- **Edit/Create**: name, slug (auto), category, description, care instructions, size guide, active toggle; variant matrix (color × size → price, original price, stock, SKU per row); image uploader per product with variant assignment. On edit, a "Màu sắc" block renames a colour on all its sizes and photos at once (`rename_product_color()`, saved on its own; SKUs unchanged).
 
 ### 6.4 Customers
 - **List**: name, phone, email, delivered count, refusal count, blacklist badge, joined date. Search by name/phone.
@@ -161,6 +162,11 @@ List (code, discount %, cap, uses/max, active, expires). Create form: code (uppe
 
 ### 6.8 Gift pool
 Grid of gift cards (image, name, description, active toggle). "ADD GIFT" form: name, description, image upload. Banner on top if any `loyalty_awards` are pending with an empty pool ("2 customers waiting for a gift — add gifts to fulfill").
+
+### 6.10 Inventory (BigSeller sync — ARCHITECTURE.md §3.1)
+- **List** (`/inventory`), modelled on BigSeller's Inventory List: one row per variant — thumbnail, product name + SKU, colour / size, stock with "Hết hàng" (0) / "Sắp hết" (≤ 3) marker, "Chờ gửi BigSeller" (signed: website changes BigSeller doesn't have yet). Filter tabs Tất cả / Sắp hết / Hết hàng, "Ẩn SKU tồn kho 0", search by name or SKU (comma-separated = exact SKU list). Per row: − / quantity / + , reason (Nhập hàng / Kiểm kho / Hàng lỗi / Khác), LƯU → `adjust_variant_stock()`. Variants without a SKU are read-only. Top-right: "Nhập từ BigSeller", "Xuất sang BigSeller".
+- **Import** (`/inventory/import`): file inputs (Inventory List export, optional Shopee listings export), % of Shopee price (default 70) → preview: stock updates table, new products (tick, name, colour labels, per-SKU price + Giá gốc, "download photos" tick), read-only lists → ÁP DỤNG → result with links to the new (hidden) products.
+- **Export** (`/inventory/export`): stock-out and stock-in SKU tables, the orders / adjustments behind them, blocked orders (item without SKU) → TẢI FILE (downloads BigSeller-format `.xlsx`) → upload instructions → ĐÃ NHẬP VÀO BIGSELLER.
 
 ### 6.9 Reviews
 List: product, customer, rating stars, content preview, visible toggle, date. Detail drawer: full text + replies thread + "Reply as PARANOIDZ" input (sets `is_brand_reply`). Hide/show is the only moderation — no deletes.
@@ -181,7 +187,7 @@ List: product, customer, rating stars, content preview, visible toggle, date. De
 - NEVER build modal-based CRUD for products/bundles/collections — full pages only.
 - NEVER introduce new colors, fonts, or radii beyond this file + DESIGN.md.
 - NEVER show the service_role key or any Supabase internals in the UI.
-- NEVER add features not in ARCHITECTURE.md scope (no analytics charts, no export, no multi-admin).
+- NEVER add features not in ARCHITECTURE.md scope (no analytics charts, no export — except the BigSeller stock files, §6.10 — no multi-admin).
 
 ---
 

@@ -15,6 +15,7 @@
     "gen:types": "supabase gen types typescript --linked --schema public > src/types.ts",
     "typecheck": "tsc --noEmit",
     "smoke": "node --env-file=../../apps/admin/.env.local scripts/smoke-test.ts",
+    "smoke:inventory": "node --env-file=../../apps/admin/.env.local scripts/inventory-smoke.ts",
     "seed:images": "node --env-file=../../apps/admin/.env.local scripts/upload-dev-images.ts"
   },
   "dependencies": {

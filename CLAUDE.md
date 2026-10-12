@@ -39,7 +39,7 @@ Design tokens are law. Never invent colors, fonts, radii, or spacing not defined
 - `admin.ts` (service_role) starts with `import "server-only"` and must never be imported into a `"use client"` file.
 - NO client-side writes to `orders`, stock, `vouchers`, or loyalty counters — server routes / RPCs only.
 - All prices and totals are recomputed server-side from the database. Client-submitted totals are never trusted.
-- Stock mutations happen ONLY inside Postgres functions: `place_order()` / `transition_order_status()` decrement and restore; the admin editor sets stock only through `set_variant_stocks()` (compare-and-set: `WHERE stock = expected`, all or nothing — decided 2026-10-05). A brand-new variant may be inserted with its initial stock. Never "simplify" an atomic guard (`WHERE stock >= qty`, `WHERE stock = expected`) into check-then-write — that reintroduces the race condition.
+- Stock mutations happen ONLY inside Postgres functions: `place_order()` / `transition_order_status()` decrement and restore; the admin editor and the BigSeller import set stock only through `set_variant_stocks()` (compare-and-set: `WHERE stock = expected`, all or nothing — decided 2026-10-05); the inventory page's +/- goes through `adjust_variant_stock()` (`WHERE stock + delta >= 0`, logged for the BigSeller export — decided 2026-10-12). A brand-new variant may be inserted with its initial stock. Never "simplify" an atomic guard (`WHERE stock >= qty`, `WHERE stock = expected`, `WHERE stock + delta >= 0`) into check-then-write — that reintroduces the race condition.
 - Order status is only changed via `transition_order_status()` — never a raw UPDATE.
 
 ## 5. Project conventions

@@ -16,7 +16,7 @@ export default async function InventoryExportPage() {
     <ul className="flex flex-col gap-1">
       {orders.map((o) => (
         <li key={o.id}>
-          <Link href={`/orders/${o.id}`} className="font-semibold underline">{o.number}</Link>{" "}
+          <Link href={`/orders/${o.number}`} className="font-semibold underline">{o.number}</Link>{" "}
           <span className="text-text-secondary">{o.lines.map((l) => `${l.sku ?? "chưa có SKU"} × ${l.qty}`).join(", ")}</span>
         </li>
       ))}

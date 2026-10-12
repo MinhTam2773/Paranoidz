@@ -1,6 +1,6 @@
 # BigSeller inventory sync + inventory page — design
 
-Date: 2026-10-12 · Status: draft (client decisions recorded), awaiting owner review
+Date: 2026-10-12 · Status: approved; implemented on `feat/bigseller-inventory-sync` (plan: `docs/superpowers/plans/2026-10-12-bigseller-inventory-sync.md`), migration push pending owner approval
 
 The client runs Shopee (2 shops) and TikTok Shop through BigSeller. BigSeller keeps the one physical
 stock count and pushes it to every marketplace (push rule "sp2tt": 100 % of Default Warehouse
@@ -149,9 +149,10 @@ New sidebar item **"Tồn kho"** (`/inventory`), after "Sản phẩm". Full page
    - **Sản phẩm mới** — unknown SKUs grouped by code (text before the first `-`). See below.
    - **Chỉ để xem** — unknown SKUs whose code already belongs to an existing product ("thêm biến thể
      trong trang sản phẩm"), and website SKUs missing from the file (left untouched).
-4. **ÁP DỤNG**: creates the new products, then applies all stock updates in one
-   `set_variant_stocks()` call (expected = stock read when the preview was built). `STOCK_CHANGED`
-   (an order landed meanwhile) → "Tồn kho vừa thay đổi, hãy xem lại" and a fresh preview.
+4. **ÁP DỤNG**: creates the new products, then re-reads stock and unsent counts, recomputes the
+   targets and applies them in one `set_variant_stocks()` call (expected = the stock just read), so the
+   written numbers are never older than the click. `STOCK_CHANGED` (an order landed in between) →
+   "Tồn kho vừa thay đổi … Bấm Áp dụng lại"; re-applying is safe (created products are then existing ones).
 
 ### Creating products from the import
 
