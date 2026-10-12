@@ -17,7 +17,7 @@ Self-contained headless e-commerce for a Vietnamese streetwear brand. COD only �
 | File storage        | Supabase Storage (product images) |
 | Search              | Postgres FTS + `unaccent` (diacritic-insensitive Vietnamese) |
 | Transactional email | Resend (customer confirmations + client alerts) |
-| Notifications       | Telegram Bot (client new-order alerts) |
+| Notifications       | Zalo Bot Platform (client new-order alerts) |
 | Hosting             | Vercel (sin1), two projects from one monorepo |
 
 UI language: **Vietnamese only**, storefront and admin (decided 2026-10-01; see CLAUDE.md §5).
@@ -128,7 +128,7 @@ Valid transitions: pending→confirmed→shipped→delivered; pending/confirmed�
 1. Customer browses; Buy It Now skips cart, Add to Cart doesn't.
 2. Order form: full name, phone, street address, ward/commune, city/province, secondary phone, email, note, voucher code. Province = one of Vietnam's 34 units since 1 July 2025 (searchable list, `apps/storefront/src/lib/provinces.ts`); districts no longer exist, so `orders.district` stays NULL. Field rules live in `lib/checkout-validation.ts`, run live in the form AND again in the server action.
 3. Server route validates voucher, recomputes ALL prices from DB (items, discount, shipping fee — §5), calls `place_order()`.
-4. Customer gets Resend confirmation email; client gets Telegram + email alert.
+4. Customer gets Resend confirmation email; client gets Zalo + email alert.
 5. Client calls to confirm (standard VN COD practice) → `confirmed` → creates the SPX order by hand on spx.vn (COD amount = `orders.total`, weight = 0.3 kg × units; the admin order page shows both), prints the label, drops the parcel at the post office → `shipped` → `delivered`.
 6. Cancel/refusal → stock restored, refusals tracked.
 
