@@ -7,6 +7,7 @@ import { createClient } from "@paranoidz/db/server";
 import { CHECKOUT_FIELDS, normalizePhone, validateAll, type CheckoutValues, type FieldErrors } from "@/lib/checkout-validation";
 import { PROVINCE_NAMES } from "@/lib/provinces";
 import { sendOrderEmails } from "@/lib/order-email";
+import { sendZaloAlert } from "@/lib/order-zalo";
 import { hitRateLimit } from "@/lib/rate-limit";
 import { HOTLINE } from "@/lib/site";
 
@@ -107,8 +108,9 @@ export async function placeOrder(input: CheckoutInput): Promise<CheckoutResult> 
     .from("product_variants").select("products(slug)").in("id", items.map((i) => i.variantId));
   revalidatePath("/products");
   for (const slug of new Set((variants ?? []).map((v) => v.products.slug))) revalidatePath(`/products/${slug}`);
-  // Confirmation + shop alert after the response is sent; never affects the order.
+  // Confirmation + shop alerts (email, Zalo) after the response is sent; never affects the order.
   after(() => sendOrderEmails(order.order_id));
+  after(() => sendZaloAlert(order.order_id));
 
   return {
     ok: true,

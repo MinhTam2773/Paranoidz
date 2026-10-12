@@ -66,8 +66,8 @@ Plain text (no `parse_mode`, so customer-typed names and notes need no escaping)
 Nguyễn Văn A · 0901234567 [/ 0907654321]
 <address>, <ward>, <city>
 ─────
-2 × Áo thun Paranoid (L / Đen)
-1 × Quần cargo (M / Xám)
+2 × Áo thun Paranoid (Đen / L)
+1 × Quần cargo (Xám / M)
 ─────
 Tạm tính ₫738.000 · [Giảm −₫73.800 · ]Ship ₫30.000
 THU COD: ₫694.200
@@ -84,8 +84,7 @@ Privacy: name, phone and address land in the client's own Zalo chat — the same
 
 Before the bot exists:
 - Lint, typecheck, build green.
-- A local order with the Zalo env vars unset completes; the log shows the skip line, no error.
-- A local order with a fake token completes; the log shows the Zalo failure, no error to the customer.
+- Scratch script (not committed, read-only on the DB): message text for sample orders; the real order query; env unset → skip line; fake token → logged failure. No test orders are placed before the bot exists.
 
 After the client creates the bot:
 1. Token → `apps/storefront/.env.local` + Vercel production (Sensitive).
