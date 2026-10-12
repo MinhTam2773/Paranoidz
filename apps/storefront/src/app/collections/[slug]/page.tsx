@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { cache } from "react";
 import { createPublicClient } from "@paranoidz/db/public";
 import { Breadcrumb } from "@/components/layout/Breadcrumb";
-import { ProductCard } from "@/components/product/ProductCard";
+import { ProductGrid } from "@/components/product/ProductGrid";
 import { productCardQuery, toProductCard } from "@/lib/catalog";
 
 // A collection set up in the admin (/collections there). ISR like product pages:
@@ -24,7 +24,7 @@ const getCollection = cache(async (slug: string) => {
   const supabase = createPublicClient();
   const { data: collection, error } = await supabase
     .from("collections")
-    .select("name, collection_items(product_id, sort_order)")
+    .select("name, description, collection_items(product_id, sort_order)")
     .eq("slug", slug)
     .maybeSingle();
   if (error) throw error;
@@ -32,13 +32,13 @@ const getCollection = cache(async (slug: string) => {
 
   const order = new Map(collection.collection_items.map((i) => [i.product_id, i.sort_order]));
   const ids = [...order.keys()];
-  if (!ids.length) return { name: collection.name, cards: [] };
+  if (!ids.length) return { name: collection.name, description: collection.description, cards: [] };
   const { data: products, error: productsError } = await productCardQuery(supabase).in("id", ids);
   if (productsError) throw productsError;
   const cards = products
     .toSorted((a, b) => order.get(a.id)! - order.get(b.id)!)
     .map((p) => toProductCard(supabase, p));
-  return { name: collection.name, cards };
+  return { name: collection.name, description: collection.description, cards };
 });
 
 export async function generateMetadata({ params }: PageProps<"/collections/[slug]">): Promise<Metadata> {
@@ -50,21 +50,26 @@ export default async function CollectionPage({ params }: PageProps<"/collections
   const collection = await getCollection((await params).slug);
   if (!collection) notFound();
 
+  const heading = (
+    <>
+      <h1 className="text-h2 uppercase">{collection.name}</h1>
+      {collection.description && <p className="mt-2 max-w-xl text-body text-text-secondary">{collection.description}</p>}
+    </>
+  );
+
   return (
     <div className="mx-auto w-full max-w-7xl px-4 pb-16 lg:px-6">
       <Breadcrumb items={[{ label: "Trang chủ", href: "/" }, { label: collection.name }]} />
-      <h1 className="mb-6 text-h2 uppercase">{collection.name}</h1>
       {collection.cards.length ? (
-        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
-          {collection.cards.map((card, i) => (
-            <ProductCard key={card.slug} product={card} eager={i < 3} />
-          ))}
-        </div>
+        <ProductGrid cards={collection.cards}>{heading}</ProductGrid>
       ) : (
-        <p className="text-text-secondary">
-          Bộ sưu tập này chưa có sản phẩm.{" "}
-          <Link href="/products" className="text-text-primary underline underline-offset-4 hover:text-accent">Xem tất cả sản phẩm</Link>
-        </p>
+        <>
+          <div className="mb-6">{heading}</div>
+          <p className="text-text-secondary">
+            Bộ sưu tập này chưa có sản phẩm.{" "}
+            <Link href="/products" className="text-text-primary underline underline-offset-4 hover:text-accent">Xem tất cả sản phẩm</Link>
+          </p>
+        </>
       )}
     </div>
   );
