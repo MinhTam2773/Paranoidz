@@ -1,6 +1,7 @@
 // Shared helpers for reading BigSeller's Excel exports (rows as read-excel-file returns them).
 
-export type Cell = string | number | boolean | Date | null | undefined;
+// read-excel-file cells (string, number, boolean, Date, null); only ever read as text here.
+export type Cell = unknown;
 
 export function text(cell: Cell) {
   return cell === null || cell === undefined ? "" : String(cell).trim();

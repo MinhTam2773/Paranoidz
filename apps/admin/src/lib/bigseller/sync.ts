@@ -14,6 +14,18 @@ export type WebVariant = { id: string; sku: string; stock: number };
 export type StockUpdate = { variantId: string; sku: string; current: number; available: number; unsent: Unsent; target: number };
 export type NewGroup = { code: string; title: string; rows: (InventoryRow & ParsedSku)[] };
 
+// Display colour per SKU colour for a new product: Shopee's label when the listings
+// file has one (first SKU of that colour with a label), else the SKU's colour. Two
+// SKU colours must never end up with the same label (unique colour + size).
+export function colorLabels(group: NewGroup, labelBySku: (sku: string) => string | null | undefined) {
+  const out = new Map<string, string>();
+  for (const r of group.rows) if (!out.has(r.color) || out.get(r.color) === r.color) out.set(r.color, labelBySku(r.sku)?.trim() || r.color);
+  const taken = new Map<string, number>();
+  for (const label of out.values()) taken.set(label.toLowerCase(), (taken.get(label.toLowerCase()) ?? 0) + 1);
+  for (const [color, label] of out) if ((taken.get(label.toLowerCase()) ?? 0) > 1) out.set(color, color);
+  return out;
+}
+
 export function planImport(fileRows: InventoryRow[], variants: WebVariant[], unsent: Map<string, Unsent>) {
   const bySku = new Map(variants.map((v) => [normalizeSku(v.sku), v]));
   const webCodes = new Set(variants.flatMap((v) => parseSku(v.sku)?.code ?? []));

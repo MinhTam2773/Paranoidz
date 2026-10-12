@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { planImport, targetStock, type WebVariant } from "../../src/lib/bigseller/sync.ts";
+import { colorLabels, planImport, targetStock, type WebVariant } from "../../src/lib/bigseller/sync.ts";
 import type { InventoryRow } from "../../src/lib/bigseller/inventory-file.ts";
 
 const file = (sku: string, available: number, title = `Áo ${sku.split("-")[0]}`): InventoryRow =>
@@ -51,6 +51,16 @@ test("planImport: unknown SKUs grouped by code, known codes only listed", () => 
       { code: "QT03", title: "Tất QT03", skus: ["QT03-Xám:Xám/Freesize:19"] },
     ],
   );
+});
+
+test("colorLabels: Shopee label per colour, SKU colour when missing or colliding", () => {
+  const plan = planImport(
+    [file("pdz06-Brown-M", 1), file("pdz06-Brown-L", 1), file("pdz06-White-M", 1), file("pdz06-Cream-M", 1), file("pdz06-Red-M", 1)],
+    [], new Map(),
+  );
+  const labels: Record<string, string> = { "pdz06-Brown-L": "Nâu", "pdz06-White-M": "Trắng", "pdz06-Cream-M": "Trắng" };
+  const out = colorLabels(plan.newGroups[0], (sku) => labels[sku]);
+  assert.deepEqual(Object.fromEntries(out), { Brown: "Nâu", White: "White", Cream: "Cream", Red: "Red" });
 });
 
 test("planImport matches SKUs regardless of Unicode form", () => {
