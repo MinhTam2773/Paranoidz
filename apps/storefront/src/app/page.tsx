@@ -10,7 +10,8 @@ import heroImage from "../../public/hero.jpg";
 
 // Homepage (DESIGN.md §5 page structure, items 5–10). ISR like /products: rebuilt at most once a
 // minute. The hero is hardcoded until the CMS question (ARCHITECTURE.md §8.6) is settled; its photo
-// is a dev placeholder (Unsplash). Below sm the 16:9 hero only fits the title + CTA (no subtitle).
+// is the client's (Drive pdz04/4, square): cropped at 30% from the top so the face stays in at 21:9.
+// Below sm the 16:9 hero only fits the title + CTA (no subtitle).
 // No newsletter block — out of scope per ARCHITECTURE.md §9.
 export const revalidate = 60;
 
@@ -64,7 +65,7 @@ export default async function HomePage() {
   return (
     <>
       <section className="relative aspect-video w-full overflow-hidden bg-bg-dark lg:aspect-21/9">
-        <Image src={heroImage} alt="" fill preload sizes="100vw" placeholder="blur" className="object-cover" />
+        <Image src={heroImage} alt="" fill preload sizes="100vw" placeholder="blur" className="object-cover object-[50%_30%]" />
         <div className="absolute inset-0 bg-linear-to-t from-bg-dark/70 via-bg-dark/20 to-transparent" />
         <div className="absolute inset-x-0 bottom-0 mx-auto flex w-full max-w-7xl flex-col items-start gap-2 px-4 pb-4 text-text-on-dark sm:gap-3 sm:pb-6 lg:gap-4 lg:px-6 lg:pb-16">
           <h1 className="text-h1-mobile uppercase lg:text-h1">Bộ sưu tập mới 2026</h1>

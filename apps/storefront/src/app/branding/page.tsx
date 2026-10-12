@@ -1,14 +1,21 @@
 import type { Metadata } from "next";
+import Image, { type StaticImageData } from "next/image";
 import type { ReactNode } from "react";
 import { Breadcrumb } from "@/components/layout/Breadcrumb";
 import { BadgeCheckIcon, GemIcon, SparklesIcon } from "@/components/layout/icons";
+import beach from "../../../public/branding/beach.jpg";
+import bedroom from "../../../public/branding/bedroom.jpg";
+import cafe from "../../../public/branding/cafe.jpg";
+import embroidery from "../../../public/branding/embroidery.jpg";
+import polo from "../../../public/branding/polo.jpg";
+import studio from "../../../public/branding/studio.jpg";
 
 export const metadata: Metadata = { title: "Thương hiệu | Paranoidz" };
 
 // Brand story (Stitch "PARANOIDZ - Branding Page", spec 2026-10-11 §2). The hero is a dark block,
 // not a photo: DESIGN.md keeps the hero banner for the homepage.
-// PLACEHOLDER — copy translated from the Stitch mock-up, grey photo slots. The client supplies the real
-// text and photos; a photo goes in as <Image fill className="object-cover" /> inside the same slot.
+// Photos: the client's (Drive, 2026-10-12), resized to ≤ 1600px with metadata stripped.
+// PLACEHOLDER — copy translated from the Stitch mock-up; the client supplies the real text.
 const PHILOSOPHY = [
   "Sinh ra giữa những khu phố bê tông của Việt Nam, PARANOIDZ là lời đáp trả trước sự ồn ào của thời trang nhanh. Chúng tôi tin rằng sự nổi loạn thật sự không cần phải hét lên — nó nằm ở độ chính xác của từng đường cắt, sức nặng của chất vải và hình dáng của một chiếc bóng.",
   "Gốc rễ từ văn hoá underground Sài Gòn có mặt trong mọi bộ sưu tập. Chúng tôi kết hợp chất liệu kỹ thuật với tinh thần streetwear thô mộc, tạo nên lớp áo giáp cho người trẻ thành thị — những người đi qua hỗn loạn bằng sự điềm tĩnh.",
@@ -21,8 +28,13 @@ const VALUES = [
   { Icon: SparklesIcon, title: "Đổi mới", text: "Không ngừng mở rộng giới hạn của streetwear với phom dáng mới và thiết kế linh hoạt." },
 ];
 
-function PhotoSlot({ className }: { className: string }) {
-  return <div aria-hidden="true" className={`rounded-sm bg-bg-tertiary ${className}`} />;
+// The box (aspect / grid span) comes from className; the photo covers it.
+function Photo({ src, alt, sizes, className }: { src: StaticImageData; alt: string; sizes: string; className: string }) {
+  return (
+    <div className={`relative overflow-hidden rounded-sm bg-bg-tertiary ${className}`}>
+      <Image src={src} alt={alt} fill sizes={sizes} placeholder="blur" className="object-cover" />
+    </div>
+  );
 }
 
 // Section title with the vertical accent bar (DESIGN.md §4), as on the homepage.
@@ -52,8 +64,8 @@ export default function BrandingPage() {
           </div>
         </div>
         <div className="grid grid-cols-2 gap-4">
-          <PhotoSlot className="mt-8 aspect-3/4" />
-          <PhotoSlot className="aspect-3/4" />
+          <Photo src={embroidery} alt="Hình thêu chữ パラノイズ trên áo polo đen" sizes="(min-width: 1280px) 300px, (min-width: 1024px) 25vw, 50vw" className="mt-8 aspect-3/4" />
+          <Photo src={studio} alt="Người mẫu mặc áo thun Paranoidz màu be" sizes="(min-width: 1280px) 300px, (min-width: 1024px) 25vw, 50vw" className="aspect-3/4" />
         </div>
       </section>
 
@@ -75,10 +87,10 @@ export default function BrandingPage() {
         <SectionTitle>Đời sống Paranoidz</SectionTitle>
         {/* lg: large 2×2 | two stacked squares | tall 1×2. Mobile: large on top, then square + tall + square. */}
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-          <PhotoSlot className="col-span-2 aspect-square lg:row-span-2 lg:aspect-auto" />
-          <PhotoSlot className="aspect-square" />
-          <PhotoSlot className="row-span-2" />
-          <PhotoSlot className="aspect-square" />
+          <Photo src={bedroom} alt="Người mẫu mặc áo thun đen in nổi chữ paranoidz trong phòng ngủ" sizes="(min-width: 1280px) 616px, (min-width: 1024px) 50vw, 100vw" className="col-span-2 aspect-square lg:row-span-2 lg:aspect-auto" />
+          <Photo src={polo} alt="Người mẫu mặc áo polo nâu thêu hình đại bàng" sizes="(min-width: 1280px) 300px, (min-width: 1024px) 25vw, 50vw" className="aspect-square" />
+          <Photo src={cafe} alt="Người mẫu mặc áo thun trắng thêu hình đôi mắt trong quán cà phê" sizes="(min-width: 1280px) 300px, (min-width: 1024px) 25vw, 50vw" className="row-span-2" />
+          <Photo src={beach} alt="Người mẫu mặc áo thun trắng Paranoidz trên ghềnh đá ven biển" sizes="(min-width: 1280px) 300px, (min-width: 1024px) 25vw, 50vw" className="aspect-square" />
         </div>
       </section>
     </>
