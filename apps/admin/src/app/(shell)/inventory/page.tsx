@@ -76,7 +76,7 @@ export default async function InventoryPage({ searchParams }: PageProps<"/invent
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
         <form action="/inventory" role="search" className="flex flex-wrap items-center gap-2">
           <input
             type="search" name="q" defaultValue={q} maxLength={500}
@@ -92,11 +92,11 @@ export default async function InventoryPage({ searchParams }: PageProps<"/invent
             Lọc
           </button>
         </form>
-        <div className="flex gap-2">
-          <Link href="/inventory/import" className="flex h-10 items-center justify-center rounded-sm border border-text-primary px-4 text-button uppercase hover:bg-text-primary hover:text-text-on-dark">
+        <div className="flex flex-wrap gap-2">
+          <Link href="/inventory/import" className="flex h-10 items-center justify-center whitespace-nowrap rounded-sm border border-text-primary px-4 text-button uppercase hover:bg-text-primary hover:text-text-on-dark">
             Nhập từ BigSeller
           </Link>
-          <Link href="/inventory/export" className="flex h-10 items-center justify-center rounded-sm bg-accent px-4 text-button uppercase text-text-on-dark hover:bg-accent-hover">
+          <Link href="/inventory/export" className="flex h-10 items-center justify-center whitespace-nowrap rounded-sm bg-accent px-4 text-button uppercase text-text-on-dark hover:bg-accent-hover">
             Xuất sang BigSeller
           </Link>
         </div>
