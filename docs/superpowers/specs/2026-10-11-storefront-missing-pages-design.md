@@ -1,6 +1,6 @@
 # Storefront missing pages — design
 
-Date: 2026-10-11 · Status: approved in chat, pending spec review
+Date: 2026-10-11 · Status: approved and implemented (see TODO.md Done, 2026-10-11)
 
 The nav (`apps/storefront/src/lib/site.ts`) links five pages that 404 today:
 
