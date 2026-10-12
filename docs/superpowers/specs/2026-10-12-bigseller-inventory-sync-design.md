@@ -1,6 +1,6 @@
 # BigSeller inventory sync + inventory page — design
 
-Date: 2026-10-12 · Status: draft, awaiting owner review
+Date: 2026-10-12 · Status: draft (client decisions recorded), awaiting owner review
 
 The client runs Shopee (2 shops) and TikTok Shop through BigSeller. BigSeller keeps the one physical
 stock count and pushes it to every marketplace (push rule "sp2tt": 100 % of Default Warehouse
@@ -20,7 +20,9 @@ and the admin gets the inventory page the client asked for ("làm cái page danh
 - The import **creates products** for unknown SKUs. A SKU with no size part gets size **"Freesize"**.
   Adding new variants to an *existing* product from the import is **out of v1** (listed only).
 - **Website price = 70 % of the Shopee price**, suggested by the import and always editable (client,
-  2026-10-12). Which Shopee price is open — see "Open decisions".
+  2026-10-12). The Shopee price is the **promotion price** (`Special Price`; the list price when a SKU
+  has none) in shop **`pdz01-SP`**, and it is shown on the website crossed out as **"Giá gốc"**
+  (`original_price`) (client, 2026-10-12).
 - **The product editor can rename a colour** (owner, 2026-10-12). The import therefore no longer
   needs its own colour-label step.
 - Shipping weight stays **300 g per unit** (BigSeller records 100 g; not used).
@@ -159,7 +161,8 @@ Per group (one checkbox each, e.g. untick the `Sck1` gift socks):
 | --- | --- |
 | Name | Pre-filled from `Title`, editable, required. Groups with the same name must be renamed (unique slug). |
 | Slug | `slugify(name)` (existing helper), fixed after creation as today. |
-| Price | **Suggested** per variant = *Shopee price* × **percentage** (a field on the page, default **70**), **rounded down to ₫1.000** (never above the percentage; 269.500 → ₫269.000). *Shopee price* = the rule chosen under "Open decisions" (which price, which shop; when one shop lists the SKU twice, the lower one). The preview shows the Shopee price it used next to each suggestion. Every price is editable before creating and in the product editor afterwards. No listings file / SKU not found → empty, admin enters it. A price is required (`price > 0`). |
+| Price | **Suggested** per variant = *Shopee price* × **percentage** (a field on the page, default **70**), **rounded down to ₫1.000** (never above the percentage; 199.000 × 70 % = 139.300 → ₫139.000). *Shopee price* = `Special Price` in **`pdz01-SP`**, or `Price` when `Special Price` is empty/0; when `pdz01-SP` lists the SKU twice (pdz02: 199k own listing, 235k combined listing), the lower one. The preview shows the Shopee price it used next to each suggestion. Every price is editable before creating and in the product editor afterwards. No listings file / SKU not in `pdz01-SP` → empty, admin enters it. A price is required (`price > 0`). |
+| Giá gốc | `original_price` = that same Shopee price (editable, may be cleared). The storefront already renders it crossed out with a "−N%" badge (`ProductCard`, cart, search). |
 | Variants | Parsed from each SKU: `code-Color-Size`; if the last part isn't a size token (XS…3XL, FREE) or there are only two parts, colour = everything after the code and size = **Freesize**. |
 | Colour labels | Prefilled from Shopee's `Variation` (the part before the comma) in the pricing shop when the listings file has it (`Đen`, `Trắng kem`), else the colour from the SKU (`Gray`). Not editable in the preview — renamed afterwards in the product editor (below). The SKU never changes. |
 | SKU, stock | Exact SKU (NFC); stock = `available` (a brand-new variant may start with stock, CLAUDE.md §4). |
@@ -228,8 +231,10 @@ publishes to npm). Verify their Node APIs when implementing.
 
 - Parser unit tests on the real export (trimmed fixture, no customer data in it) and the three
   templates' headers; SKU parsing cases (`pdz08-Gray-XL`, `QT03-Xám`, `Sck1-Random`, NFD input).
-- Price suggestion on the real listings file: chosen basis and shop, lower of two listings in one shop,
-  rounding down (385.000 × 70 % → ₫269.000), SKU missing → empty; colour prefill from `Variation`.
+- Price suggestion on the real listings file reproduces the "Resulting prices" table: `pdz01-SP` only,
+  promotion price with list-price fallback (`QT03-Random`), lower of two listings (pdz02 → 199k),
+  rounding down, `original_price` = the Shopee price, SKU missing → empty; colour prefill from
+  `Variation`.
 - `rename_product_color()`: renames variants + photos together; `COLOR_EXISTS` (incl. case-only
   clash) and `COLOR_NOT_FOUND`; the storefront product page still shows each colour's photos after a
   rename.
@@ -241,17 +246,29 @@ publishes to npm). Verify their Node APIs when implementing.
 - **Not tested against BigSeller** (owner's instruction: don't touch production BigSeller). The client
   does the first real upload; check the result together.
 
-## Open decisions (client)
+## Resulting prices (pdz01-SP, 70 %, from the 2026-10-12 files)
 
-1. **Which Shopee price is "the Shopee price"?** The list price (`Price`) or the promotion price
-   customers actually pay (`Special Price`)? See the table above — 70 % of the list price makes most
-   shirts *dearer* on the website than on Shopee today (pdz03: 269k vs 199k).
-2. **Which shop when they differ?** `pdz01-SP` (the main shop: most sales) or the lowest of both?
-3. **Show the Shopee price as "Giá gốc"** (strike-through, `original_price`) next to the website price?
-   Default: no.
+| Code | Shopee promotion (= Giá gốc) | Website price |
+| --- | --- | --- |
+| pdz01, pdz05, pdz06, pdz08 | ₫235.000 | ₫164.000 |
+| pdz02, pdz03, pdz04 | ₫199.000 | ₫139.000 |
+| pdz07 | ₫245.000 | ₫171.000 |
+| QT03 Đen / Trắng / Xám | ₫19.000 | ₫13.000 |
+| QT03-Random (no promotion → list price) | ₫36.000 | ₫25.000 |
+| Sck1 gift socks (Đen / Trắng; Random) | ₫36.000; ₫19.000 | ₫25.000; ₫13.000 |
 
-Until answered, the spec's suggestion uses whichever rule the client picks; the percentage field and
-manual override work regardless.
+Consequences to know:
+- `QT03-Random` has no promotion price on Shopee, so it comes out dearer than the named colours —
+  the client may want to fix it on Shopee or override it in the preview.
+- **Every product counts as "on sale"** (`original_price > price`): it appears in the homepage's sale
+  row (`app/page.tsx`, filter `originalPrice > price`), sorts by "Giảm nhiều nhất", and shows a
+  "−30%" … "−32%" badge (rounding down). Clearing "Giá gốc" on a product takes it out again.
+
+## Decisions log
+
+1. Shopee price = promotion price (`Special Price`), list price when missing — client, 2026-10-12.
+2. Shop = `pdz01-SP` — client, 2026-10-12.
+3. Show the Shopee price crossed out as "Giá gốc" — client, 2026-10-12.
 
 ## Out of scope (v1)
 
