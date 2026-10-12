@@ -554,6 +554,41 @@ async function main() {
       && shipRow.total === shipRow.subtotal - shipRow.discount + 22000 && shipped.data?.total === shipRow.total
       && badCity.error?.message === "SHIPPING_UNAVAILABLE" && (await variant(pool[3].id)).stock === shipVariant.stock - 2,
     `err=${shipped.error?.message} row=${JSON.stringify(shipRow)} badCity=${badCity.error?.message}`);
+
+  // 17. Checkout quote: quote_order() prices like place_order() (shared order_discount) --------
+  type Quote = { subtotal: number; discount: number; source: string | null; voucher_error: string | null; phone_known: boolean };
+  const qVariant = await variant(pool[3].id);
+  const qItems = [{ variant_id: qVariant.id, qty: 2 }];
+  const quote = async (phone?: string, voucher?: string, db: Db = admin) =>
+    (await db.rpc("quote_order", { p_items: qItems, p_phone: phone, p_voucher_code: voucher })) as { data: Quote | null; error: { message: string } | null };
+
+  // Two phones with different histories from the cases above: the quote must equal the order.
+  const pairs = [];
+  for (const phone of [PHONES[6], PHONES[2]]) {
+    const q = await quote(phone);
+    const placed = await placeOrder(qItems, { phone });
+    pairs.push({ phone, q: q.data, placed: placed.data, err: q.error?.message ?? placed.error?.message });
+  }
+  check("quote: subtotal + discount equal what place_order() then charges, for two phones",
+    pairs.every((p) => !p.err && p.q?.subtotal === p.placed?.subtotal && p.q?.discount === p.placed?.discount && p.q?.phone_known),
+    JSON.stringify(pairs.map((p) => ({ phone: p.phone, quote: p.q && [p.q.subtotal, p.q.discount, p.q.source], order: p.placed && [p.placed.subtotal, p.placed.discount], err: p.err }))));
+
+  const stockBefore = (await variant(pool[3].id)).stock;
+  const [noPhone, badCode, plain] = await Promise.all([quote(), quote(PHONES[7], "NO-SUCH-CODE"), quote(PHONES[7])]);
+  check("quote: no phone → new customer (first-5 applies); bad code → voucher_error, priced without it; stock untouched",
+    noPhone.data?.phone_known === false && noPhone.data.source === "auto_first5" && noPhone.data.discount > 0
+      && badCode.data?.voucher_error === "INVALID_VOUCHER" && badCode.data.discount === plain.data?.discount
+      && (await variant(pool[3].id)).stock === stockBefore,
+    `noPhone=${JSON.stringify(noPhone.data ?? noPhone.error)} bad=${JSON.stringify(badCode.data ?? badCode.error)} plain=${plain.data?.discount}`);
+
+  const [anonQuote, customerQuote, anonDiscount] = await Promise.all([
+    quote(PHONES[7], undefined, anon),
+    quote(PHONES[7], undefined, c1),
+    anon.rpc("order_discount", { p_phone: PHONES[7], p_subtotal: 100000, p_counts: {}, p_voucher_code: "" }),
+  ]);
+  check("quote: anon and signed-in customers can't call quote_order / order_discount",
+    !!anonQuote.error && !!customerQuote.error && !!anonDiscount.error,
+    `anon=${anonQuote.error?.message} customer=${customerQuote.error?.message} discount=${anonDiscount.error?.message}`);
 }
 
 async function cleanup() {

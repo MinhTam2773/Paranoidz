@@ -1033,6 +1033,15 @@ export type Database = {
       immutable_unaccent: { Args: { "": string }; Returns: string }
       merge_cart: { Args: { p_lines: Json }; Returns: undefined }
       normalize_vn_phone: { Args: { p: string }; Returns: string }
+      order_discount: {
+        Args: {
+          p_counts: Json
+          p_phone: string
+          p_subtotal: number
+          p_voucher_code: string
+        }
+        Returns: Json
+      }
       place_order: {
         Args: {
           p_address?: string
@@ -1049,6 +1058,10 @@ export type Database = {
           p_voucher_code?: string
           p_ward?: string
         }
+        Returns: Json
+      }
+      quote_order: {
+        Args: { p_items: Json; p_phone?: string; p_voucher_code?: string }
         Returns: Json
       }
       search_products: {
