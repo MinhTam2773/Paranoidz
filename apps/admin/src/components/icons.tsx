@@ -45,6 +45,15 @@ export const ProductsIcon = (p: P) => (
     <path d="m7.5 4.27 9 5.15" />
   </Icon>
 );
+export const InventoryIcon = (p: P) => (
+  <Icon {...p}>
+    <path d="M18 21V10a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1v11" />
+    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8.35a2 2 0 0 1 1.26-1.86l8-3.2a2 2 0 0 1 1.48 0l8 3.2A2 2 0 0 1 22 8.35Z" />
+    <path d="M6 13h12" />
+    <path d="M6 17h12" />
+  </Icon>
+);
+
 export const CustomersIcon = (p: P) => (
   <Icon {...p}>
     <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
