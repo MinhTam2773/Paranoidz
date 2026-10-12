@@ -92,7 +92,7 @@ export function ReviewSection({ productId, slug, reviews }: { productId: string;
   );
 }
 
-function Stars({ rating }: { rating: number }) {
+export function Stars({ rating }: { rating: number }) {
   return (
     <span role="img" aria-label={`${rating}/5 sao`} className="flex gap-0.5 text-price">
       {[1, 2, 3, 4, 5].map((i) => (
