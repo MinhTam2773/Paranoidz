@@ -126,9 +126,9 @@ Governed by `DASHBOARD_DESIGN.md` §6.
 
 ## Backlog — infra
 
-- [ ] Resend transactional email (customer confirmation + client alert). Nothing built yet. Delivery needs a Resend API key + verified paranoidz.com domain from the client; template, send-after-`placeOrder` (only if an email was given, never failing the order) and a local preview can be built before that. A key alone can send from `onboarding@resend.dev` to the Resend account owner only. Link the email to `/order-lookup?order=<number>`.
+- [ ] Resend transactional email (customer confirmation + client alert). Nothing built yet. Delivery needs a Resend API key + verified paranoidz.vn domain from the client; template, send-after-`placeOrder` (only if an email was given, never failing the order) and a local preview can be built before that. A key alone can send from `onboarding@resend.dev` to the Resend account owner only. Link the email to `/order-lookup?order=<number>`.
 - [ ] Telegram bot new-order alert
-- [ ] Vercel: two projects from one monorepo, region `sin1` — projects live 2026-10-09 (`paranoidz-storefront`, `paranoidz-admin`, team `minhtam2773s-projects`, Hobby). `SUPABASE_SERVICE_ROLE_KEY` added to both as Secret by the owner (checkout's service-key variant lookup verified live). Still to do: function region (now default `iad1` — match the Supabase DB region), custom domains, Supabase auth URLs
+- [ ] Vercel: two projects from one monorepo, region `sin1` — projects live 2026-10-09 (`paranoidz-storefront`, `paranoidz-admin`, team `minhtam2773s-projects`, Hobby). `SUPABASE_SERVICE_ROLE_KEY` added to both as Secret by the owner (checkout's service-key variant lookup verified live). Still to do: function region (now default `iad1` — match the Supabase DB region), Supabase auth URLs. **Domains (2026-10-11):** client bought `paranoidz.vn` at P.A Việt Nam (DNS stays there — the client's mailbox MX records live in the same zone). Attached on Vercel: `paranoidz.vn` + `www.paranoidz.vn` (308 → apex) on the storefront, `admin.paranoidz.vn` on the admin. Live once these records exist at P.A: `@ A 76.76.21.21`, `www CNAME cname.vercel-dns.com`, `admin CNAME cname.vercel-dns.com`; check with the Vercel MCP `get_domain_config` (`misconfigured: false`).
 
 ---
 
@@ -167,7 +167,7 @@ Surfaced during the schema review, deliberately not fixed:
 - **Browser pane can't screenshot `file://` pages.** For visual review of local images, build a contact sheet PNG with Pillow and Read it.
 - **No admin user seeded.** Deliberately — a committed password on an `is_admin` account would be a real hole. The owner promotes their own account once, by hand (SQL editor or `supabase db query`, never a migration): `update public.profiles set is_admin = true where id = (select id from auth.users where email = 'tamnguyen277353@gmail.com');` Done 2026-10-01 for user `995ee159-…` (via the service role, on the owner's request).
 - **Admin nav routes 404 until built** (Vietnamese `not-found.tsx`, outside the shell): `/gift-pool`.
-- **"Xem cửa hàng" points at `https://paranoidz.com`** (`STORE_URL` in `apps/admin/src/lib/nav.ts`), so in dev it opens the not-yet-live domain.
+- **"Xem cửa hàng" points at `https://paranoidz.vn`** (`STORE_URL` in `apps/admin/src/lib/nav.ts`), so in dev it opens the production storefront.
 - **ARCHITECTURE.md §2.2 "Admin realtime order feed — RLS restricts channel to admin role"** has no backing policy: orders have no admin SELECT policy. Add an `is_admin` policy (or broadcast from the server) when building the feed.
 - **Resizing the browser pane across the 768px breakpoint animates the admin sidebar** (it slides out over 300ms), so a screenshot right after `resize_window` shows it half-off. Wait ~1s or measure `getBoundingClientRect`.
 - **Next dev indicator ("N" bubble, bottom-left) covers the admin logout button** in dev only. Not in production builds.

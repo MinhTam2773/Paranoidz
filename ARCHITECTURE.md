@@ -11,8 +11,8 @@ Self-contained headless e-commerce for a Vietnamese streetwear brand. COD only �
 
 | Layer               | Technology                       |
 | ------------------- | -------------------------------- |
-| Storefront          | Next.js (App Router) — paranoidz.com |
-| Admin               | Next.js (App Router) — admin.paranoidz.com |
+| Storefront          | Next.js (App Router) — paranoidz.vn |
+| Admin               | Next.js (App Router) — admin.paranoidz.vn |
 | Database & Auth     | Supabase (PostgreSQL, Pro plan, Singapore) |
 | File storage        | Supabase Storage (product images) |
 | Search              | Postgres FTS + `unaccent` (diacritic-insensitive Vietnamese) |

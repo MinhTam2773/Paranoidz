@@ -1,6 +1,6 @@
 # DASHBOARD_DESIGN.md — Paranoidz Admin Panel
 
-> Agent-friendly design system for admin.paranoidz.com.
+> Agent-friendly design system for admin.paranoidz.vn.
 > Same brand DNA as the storefront (see DESIGN.md), tuned for a data-dense back office.
 > Single admin user (the client). Optimize for speed and clarity, not marketing polish.
 

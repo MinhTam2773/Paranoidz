@@ -9,8 +9,8 @@ Rules for AI agents working in this repo. Read this fully before writing any cod
 Headless e-commerce for a Vietnamese streetwear brand. COD only — no payment gateway.
 Two Next.js apps in one pnpm workspace:
 
-- `apps/storefront` → paranoidz.com (customers)
-- `apps/admin` → admin.paranoidz.com (single admin user, the client)
+- `apps/storefront` → paranoidz.vn (customers)
+- `apps/admin` → admin.paranoidz.vn (single admin user, the client)
 - `packages/db` → shared Supabase clients + generated types (create if missing)
 - `supabase/` → migrations, seed, config
 - `design-refs/` → Stitch PNG exports (visual reference for all UI work)

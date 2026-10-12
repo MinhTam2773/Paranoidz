@@ -31,4 +31,4 @@ export function pageTitle(pathname: string) {
   return NAV_ITEMS.find(({ href }) => isActive(pathname, href))?.label ?? "";
 }
 
-export const STORE_URL = "https://paranoidz.com";
+export const STORE_URL = "https://paranoidz.vn";
