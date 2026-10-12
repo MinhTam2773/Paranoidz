@@ -29,7 +29,9 @@ for New collection (reuses the collection page) or Policy.
 ## Stitch deviations (DESIGN.md wins, per TODO.md 2026-09-26)
 
 - Product grid stays **3 columns** on desktop (DESIGN.md §5), not Stitch's 4.
-- **No red accent bar** beside headings (red is not decorative; same call as the account page).
+- Red accent bar: **on section H2s only** (DESIGN.md §4, as the homepage does: `border-l-4 border-accent pl-3`),
+  e.g. Branding's "Triết lý" / "Đời sống Paranoidz". **Not on page H1s** (Outlet's H1 in Stitch has one) —
+  consistent with the products, collection and account pages.
 - **No "Join the Underground" newsletter strip** — no newsletter backend; a form would collect nothing.
 - Branding hero is a **dark block with the title**, not a photo (DESIGN.md: hero banner is homepage-only;
   revisit when the client supplies photos).
@@ -65,8 +67,8 @@ for New collection (reuses the collection page) or Policy.
   "Đời sống Paranoidz" 4-slot photo grid (1 large + 2 stacked + 1 tall at ≥1024px; stacked on mobile).
 - Photo slots: `bg-bg-secondary` blocks with fixed aspect ratios and an `aria-hidden` treatment, so
   real images drop in later via `next/image` without layout change.
-- Icons: three inline SVGs defined in the branding page file, same stroke style as
-  `components/layout/icons.tsx` (no icon dependency).
+- Icons: three inline stroke icons added to `components/layout/icons.tsx` (its `Icon` wrapper is
+  private to that file; no icon dependency).
 - Metadata title: "Thương hiệu | Paranoidz".
 
 ## 3. `/policy` — Chính sách
