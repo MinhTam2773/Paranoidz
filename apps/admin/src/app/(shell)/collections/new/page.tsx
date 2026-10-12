@@ -11,7 +11,7 @@ export default async function NewCollectionPage() {
         <Link href="/collections" className="text-label uppercase text-text-secondary hover:text-text-primary">‹ Bộ sưu tập</Link>
         <h2 className="text-page-title">Bộ sưu tập mới</h2>
       </div>
-      <CollectionForm initial={{ name: "", slug: "", isActive: true, productIds: [] }} products={await pickerProducts()} />
+      <CollectionForm initial={{ name: "", slug: "", description: "", isActive: true, productIds: [] }} products={await pickerProducts()} />
     </div>
   );
 }

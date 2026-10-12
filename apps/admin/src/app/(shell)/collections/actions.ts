@@ -7,7 +7,7 @@ import { requireAdmin } from "@/lib/auth";
 // Collections (DASHBOARD_DESIGN.md §6.6). The storefront shows an active
 // collection at /collections/<slug> (ISR, so changes appear within 60s).
 
-export type CollectionInput = { id?: string; name: string; slug: string; isActive: boolean; productIds: string[] };
+export type CollectionInput = { id?: string; name: string; slug: string; description: string; isActive: boolean; productIds: string[] };
 export type CollectionResult = { errors?: Record<string, string>; id?: string };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -22,6 +22,8 @@ export async function saveCollection(input: CollectionInput): Promise<Collection
   const slug = input.slug.trim();
   if (!input.id && !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(slug)) errors.slug = "Chỉ dùng chữ thường không dấu, số và dấu gạch ngang.";
   if (slug.length > 80) errors.slug = "Tối đa 80 ký tự.";
+  const description = input.description.trim();
+  if (description.length > 300) errors.description = "Tối đa 300 ký tự.";
   const productIds = [...new Set(input.productIds)];
   if (productIds.length > 200 || !productIds.every((id) => UUID.test(id))) errors.products = "Danh sách sản phẩm không hợp lệ.";
   if (Object.keys(errors).length) return { errors };
@@ -36,12 +38,12 @@ export async function saveCollection(input: CollectionInput): Promise<Collection
   if (!id) {
     const { data: last } = await admin.from("collections").select("sort_order").order("sort_order", { ascending: false }).limit(1).maybeSingle();
     const { data, error } = await admin
-      .from("collections").insert({ name, slug, is_active: input.isActive, sort_order: (last?.sort_order ?? -1) + 1 }).select("id").single();
+      .from("collections").insert({ name, slug, description: description || null, is_active: input.isActive, sort_order: (last?.sort_order ?? -1) + 1 }).select("id").single();
     if (error) return { errors: error.code === "23505" ? { slug: "Slug đã được dùng cho bộ sưu tập khác." } : { form: "Không thể lưu. Vui lòng thử lại." } };
     id = data.id;
   } else {
     // Slug stays fixed after creation: storefront links (and the nav) use it.
-    const { data, error } = await admin.from("collections").update({ name, is_active: input.isActive }).eq("id", id).select("id");
+    const { data, error } = await admin.from("collections").update({ name, description: description || null, is_active: input.isActive }).eq("id", id).select("id");
     if (error || !data?.length) return { errors: { form: "Không thể lưu. Vui lòng thử lại." } };
     await admin.from("collection_items").delete().eq("collection_id", id);
   }

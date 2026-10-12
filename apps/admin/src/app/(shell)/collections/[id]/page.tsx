@@ -12,7 +12,7 @@ export default async function EditCollectionPage({ params }: PageProps<"/collect
   const [{ data: collection, error }, products] = await Promise.all([
     createAdminClient()
       .from("collections")
-      .select("id, name, slug, is_active, collection_items(product_id, sort_order)")
+      .select("id, name, slug, description, is_active, collection_items(product_id, sort_order)")
       .eq("id", id)
       .maybeSingle(),
     pickerProducts(),
@@ -28,7 +28,7 @@ export default async function EditCollectionPage({ params }: PageProps<"/collect
         <h2 className="text-page-title wrap-break-word">{collection.name}</h2>
       </div>
       <CollectionForm
-        initial={{ id: collection.id, name: collection.name, slug: collection.slug, isActive: collection.is_active, productIds }}
+        initial={{ id: collection.id, name: collection.name, slug: collection.slug, description: collection.description ?? "", isActive: collection.is_active, productIds }}
         products={products}
       />
     </div>

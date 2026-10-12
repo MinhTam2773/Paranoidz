@@ -17,7 +17,7 @@ const iconButton = "flex size-11 shrink-0 items-center justify-center rounded-sm
 // Full-page create / edit (§6.6, no modal CRUD). Saved in one go: name, active,
 // and the ordered product list (collection_items.sort_order = position).
 export function CollectionForm({ initial, products }: {
-  initial: { id?: string; name: string; slug: string; isActive: boolean; productIds: string[] };
+  initial: { id?: string; name: string; slug: string; description: string; isActive: boolean; productIds: string[] };
   products: PickerProduct[];
 }) {
   const router = useRouter();
@@ -25,6 +25,7 @@ export function CollectionForm({ initial, products }: {
   const [name, setName] = useState(initial.name);
   const [slug, setSlug] = useState(initial.slug);
   const [slugEdited, setSlugEdited] = useState(false);
+  const [description, setDescription] = useState(initial.description);
   const [isActive, setIsActive] = useState(initial.isActive);
   const [selected, setSelected] = useState(initial.productIds);
   const [filter, setFilter] = useState("");
@@ -49,7 +50,7 @@ export function CollectionForm({ initial, products }: {
   function submit(e: FormEvent) {
     e.preventDefault();
     startTransition(async () => {
-      const res = await saveCollection({ id: initial.id, name, slug, isActive, productIds: selected });
+      const res = await saveCollection({ id: initial.id, name, slug, description, isActive, productIds: selected });
       startTransition(() => {
         setErrors(res.errors ?? {});
         if (res.errors) return;
@@ -97,6 +98,16 @@ export function CollectionForm({ initial, products }: {
               Trang trên cửa hàng: /collections/{slug || "…"} — không đổi được sau khi tạo. Menu cửa hàng dùng &quot;outlet-2026&quot; và &quot;new-collection&quot;.
             </p>
             {err("slug")}
+          </div>
+          <div className="flex flex-col gap-2 md:col-span-2">
+            <label htmlFor="description" className="text-label uppercase">Mô tả</label>
+            <textarea
+              id="description" value={description} rows={2} maxLength={300} aria-invalid={!!errors.description} aria-describedby={errors.description ? "description-error" : undefined}
+              onChange={(e) => setDescription(e.target.value)}
+              className={`${input} h-auto py-2 ${errors.description ? "border-accent" : "border-border"}`}
+            />
+            <p className="text-stat-label text-text-secondary">Hiện dưới tên bộ sưu tập trên cửa hàng. Để trống nếu không cần.</p>
+            {err("description")}
           </div>
           <label className="flex h-10 items-center gap-3">
             <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} className="size-5 accent-text-primary" />
