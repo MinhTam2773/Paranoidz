@@ -1,6 +1,6 @@
 # BigSeller inventory sync + inventory page — design
 
-Date: 2026-10-12 · Status: approved; implemented on `feat/bigseller-inventory-sync` (plan: `docs/superpowers/plans/2026-10-12-bigseller-inventory-sync.md`), migration push pending owner approval
+Date: 2026-10-12 · Status: approved; implemented on `feat/bigseller-inventory-sync` (plan: `docs/superpowers/plans/2026-10-12-bigseller-inventory-sync.md`), migration pushed to production 2026-10-12
 
 The client runs Shopee (2 shops) and TikTok Shop through BigSeller. BigSeller keeps the one physical
 stock count and pushes it to every marketplace (push rule "sp2tt": 100 % of Default Warehouse
