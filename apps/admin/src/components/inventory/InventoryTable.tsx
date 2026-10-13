@@ -23,13 +23,14 @@ export type InventoryRowView = {
 
 const control = "h-10 rounded-sm border border-border bg-surface text-base md:text-input focus:border-text-primary focus:outline-none";
 
+// Table from 1024px (the 240px sidebar leaves too little room below that), cards under it.
 // Rows with − / + / LƯU. Each save is one adjust_variant_stock() call; the page then
 // reloads with fresh stock (an order may have changed it meanwhile).
 export function InventoryTable({ rows }: { rows: InventoryRowView[] }) {
   const [toast, setToast] = useState<ToastMessage | null>(null);
   return (
     <>
-      <table className="hidden w-full overflow-hidden rounded-sm border border-border bg-surface md:table">
+      <table className="hidden w-full overflow-hidden rounded-sm border border-border bg-surface lg:table">
         <thead className="bg-bg-secondary text-left">
           <tr className="text-th uppercase text-text-secondary">
             <th scope="col" className="w-16 px-4 py-3"><span className="sr-only">Ảnh</span></th>
@@ -54,7 +55,7 @@ export function InventoryTable({ rows }: { rows: InventoryRowView[] }) {
         </tbody>
       </table>
 
-      <ul className="flex flex-col gap-2 md:hidden">
+      <ul className="flex flex-col gap-2 lg:hidden">
         {rows.map((r) => (
           <li key={r.id} className="flex flex-col gap-3 rounded-sm border border-border bg-surface p-3">
             <div className="flex gap-3">
