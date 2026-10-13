@@ -2,6 +2,7 @@
 // Spec "The sync rule": stock = max(0, available − unsent_out + unsent_back + unsent_adj).
 import { normalizeSku, parseSku, type ParsedSku } from "./sku.ts";
 import type { InventoryRow } from "./inventory-file.ts";
+import { slugify } from "../product.ts";
 
 export type Unsent = { out: number; back: number; adj: number };
 export const NOTHING_UNSENT: Unsent = { out: 0, back: 0, adj: 0 };
@@ -13,6 +14,26 @@ export function targetStock(available: number, unsent: Unsent = NOTHING_UNSENT) 
 export type WebVariant = { id: string; sku: string; stock: number };
 export type StockUpdate = { variantId: string; sku: string; current: number; available: number; unsent: Unsent; target: number };
 export type NewGroup = { code: string; title: string; rows: (InventoryRow & ParsedSku)[] };
+
+// URL slug for a product the import creates. Always ends with the group code, so two
+// products with the same Shopee title (pdz01 / pdz08) never collide, even after the
+// 80-character cut.
+export function productSlug(name: string, code: string) {
+  const c = slugify(code);
+  const base = slugify(name);
+  if (!base || base === c || base.endsWith(`-${c}`)) return base || c;
+  return `${base.slice(0, 80 - c.length - 1).replace(/-+$/, "")}-${c}`;
+}
+
+// Pre-filled product name: the Shopee title, plus " (code)" when another new product has
+// the same title and this one doesn't already end with its own code.
+export function defaultName(group: NewGroup, all: NewGroup[]) {
+  const title = group.title.trim();
+  const shared = all.filter((g) => g.title.trim() === title).length > 1;
+  if (!shared || title.toLowerCase().endsWith(group.code.toLowerCase())) return title.slice(0, 120);
+  const suffix = ` (${group.code})`;
+  return title.slice(0, 120 - suffix.length).trimEnd() + suffix;
+}
 
 // Display colour per SKU colour for a new product: Shopee's label when the listings
 // file has one (first SKU of that colour with a label), else the SKU's colour. Two

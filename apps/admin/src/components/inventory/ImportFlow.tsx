@@ -52,7 +52,7 @@ export function ImportFlow() {
       setChoices(Object.fromEntries(p.newGroups.map((g) => [g.code, {
         code: g.code,
         include: true,
-        name: g.title.slice(0, 120),
+        name: g.name,
         colors: Object.fromEntries(g.colors.map((c) => [c.color, c.label])),
         prices: Object.fromEntries(g.variants.map((v) => [v.sku, {
           price: v.price ? String(v.price) : "",

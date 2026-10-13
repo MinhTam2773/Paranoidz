@@ -7,10 +7,10 @@ import { createAdminClient } from "@paranoidz/db/admin";
 import { createClient } from "@paranoidz/db/server";
 import { requireAdmin } from "@/lib/auth";
 import { formatDateTime } from "@/lib/format";
-import { parseMoney, slugify } from "@/lib/product";
+import { parseMoney } from "@/lib/product";
 import { fileTimestamp, parseInventorySheet, type InventoryRow } from "@/lib/bigseller/inventory-file";
 import { DEFAULT_PERCENT, parseListingsSheet, shopeePrices, suggestPrice, type ShopeePrice } from "@/lib/bigseller/listings-file";
-import { colorLabels, planImport, type StockUpdate, type Unsent } from "@/lib/bigseller/sync";
+import { colorLabels, defaultName, planImport, productSlug, type StockUpdate, type Unsent } from "@/lib/bigseller/sync";
 import type { Cell } from "@/lib/bigseller/sheet";
 
 // BigSeller → website (spec: docs/superpowers/specs/2026-10-12-bigseller-inventory-sync-design.md).
@@ -24,7 +24,7 @@ const PHOTO_TYPES: Record<string, string> = { "image/jpeg": "jpg", "image/png": 
 const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
 
 export type NewVariantView = { sku: string; color: string; size: string; available: number; shopeePrice: number | null; price: number | null };
-export type NewGroupView = { code: string; title: string; colors: { color: string; label: string }[]; variants: NewVariantView[]; photos: number };
+export type NewGroupView = { code: string; title: string; name: string; colors: { color: string; label: string }[]; variants: NewVariantView[]; photos: number };
 export type ImportPreview = {
   errors: string[];
   warnings: string[];
@@ -140,6 +140,7 @@ export async function previewImport(form: FormData): Promise<ImportPreview> {
     return {
       code: g.code,
       title: g.title,
+      name: defaultName(g, plan.newGroups),
       colors: [...labels].map(([color, label]) => ({ color, label })),
       photos: new Set(g.rows.filter((r) => r.imageUrl).map((r) => r.color)).size,
       variants: g.rows.map((r) => {
@@ -177,10 +178,10 @@ export async function applyImport(form: FormData): Promise<ApplyResult> {
   for (const c of picked) {
     const g = groups.get(c.code)!;
     const name = String(c.name ?? "").trim();
-    const slug = slugify(name);
+    const slug = productSlug(name, c.code);
     const where = `Sản phẩm ${c.code}`;
     if (!name || name.length > 120) { result.errors.push(`${where}: nhập tên (tối đa 120 ký tự).`); continue; }
-    if (!slug || slugs.has(slug)) { result.errors.push(`${where}: tên trùng với một sản phẩm mới khác.`); continue; }
+    if (slugs.has(slug)) { result.errors.push(`${where}: đường dẫn "${slug}" trùng với một sản phẩm mới khác. Đổi tên.`); continue; }
     slugs.add(slug);
     const labels = new Map(g.rows.map((r) => [r.color, String(c.colors?.[r.color] ?? r.color).trim()]));
     if ([...labels.values()].some((x) => !x || x.length > 40)) { result.errors.push(`${where}: tên màu 1–40 ký tự.`); continue; }

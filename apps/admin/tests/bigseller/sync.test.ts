@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { colorLabels, planImport, targetStock, type WebVariant } from "../../src/lib/bigseller/sync.ts";
+import { colorLabels, defaultName, planImport, productSlug, targetStock, type WebVariant } from "../../src/lib/bigseller/sync.ts";
 import type { InventoryRow } from "../../src/lib/bigseller/inventory-file.ts";
 
 const file = (sku: string, available: number, title = `Áo ${sku.split("-")[0]}`): InventoryRow =>
@@ -61,6 +61,28 @@ test("colorLabels: Shopee label per colour, SKU colour when missing or colliding
   const labels: Record<string, string> = { "pdz06-Brown-L": "Nâu", "pdz06-White-M": "Trắng", "pdz06-Cream-M": "Trắng" };
   const out = colorLabels(plan.newGroups[0], (sku) => labels[sku]);
   assert.deepEqual(Object.fromEntries(out), { Brown: "Nâu", White: "White", Cream: "Cream", Red: "Red" });
+});
+
+const LONG = "Áo thun LocalBrand unisex form boxy slim fit thêu minimalism vải nhung Premium Collection pdz01";
+
+test("productSlug always ends with the group code and stays ≤ 80 chars", () => {
+  assert.equal(productSlug("Tất cổ trung QT03", "QT03"), "tat-co-trung-qt03");
+  assert.equal(productSlug("Áo polo", "pdz05"), "ao-polo-pdz05");
+  const a = productSlug(LONG, "pdz01");
+  const b = productSlug(LONG, "pdz08");
+  assert.ok(a.endsWith("-pdz01") && b.endsWith("-pdz08"), `${a} | ${b}`);
+  assert.notEqual(a, b);
+  assert.ok(a.length <= 80 && b.length <= 80);
+  assert.equal(productSlug("!!!", "Sck1"), "sck1");
+});
+
+test("defaultName adds the code only when two new products share a title", () => {
+  const plan = planImport([file("pdz01-Gray-M", 1, LONG), file("pdz08-Gray-M", 1, LONG), file("pdz05-Black-M", 1, "Áo polo pdz05")], [], new Map());
+  const names = Object.fromEntries(plan.newGroups.map((g) => [g.code, defaultName(g, plan.newGroups)]));
+  assert.equal(names.pdz01, LONG); // already ends with its own code
+  assert.equal(names.pdz08, `${LONG} (pdz08)`);
+  assert.equal(names.pdz05, "Áo polo pdz05");
+  assert.ok(Object.values(names).every((n) => n.length <= 120));
 });
 
 test("planImport matches SKUs regardless of Unicode form", () => {
