@@ -120,7 +120,8 @@ Client reference, 2026-10-12 (supersedes the bordered card):
 - Image area: `--bg-secondary` (#F5F5F5) background, `--radius-lg` (8px) corners, aspect ratio `3:4`, `object-fit: cover`, subtle zoom on hover (`transform: scale(1.05)`, `overflow: hidden`)
 - Sale badge: small pill top-**right** of image, `--accent` background, white text, `-XX%`. Sold out replaces it with a white "HẾT HÀNG" pill
 - Bottom-right of image: wishlist heart, then the quick-add cart button — white 44px circles, `shadow-1`. Sold out hides the cart button
-- Text area: `12px` above, no side padding (text aligns with the image edges)
+- Colour dots under the image: one per colour, 28px circle in a 44px tap target, admin-picked hex; selected = 2px `--text-primary` ring with 2px offset. Tapping one swaps the photo to that colour's first photo. A colour without a hex shows its name in a small bordered chip
+- Text area: `12px` above (`4px` below the dots), no side padding (text aligns with the image edges)
 - Product name: `--text-primary`, 14px, 500 weight, max 2 lines with ellipsis
 - Price: `--text-primary`, 16px, 700 weight. Format: `₫XXX.000` (Vietnamese Dong, dot separator)
 - Sale price: accent red, original price in `--text-muted` with line-through beside it

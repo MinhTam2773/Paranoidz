@@ -20,7 +20,7 @@ export default async function EditProductPage({ params }: PageProps<"/products/[
   const [{ data: product, error }, { data: categories }] = await Promise.all([
     admin
       .from("products")
-      .select("id, name, slug, category_id, description, care_instructions, size_guide, is_active, updated_at, product_variants(id, color, size, price, original_price, stock, sku, updated_at), product_images(id, storage_path, color, sort_order, is_primary)")
+      .select("id, name, slug, category_id, description, care_instructions, size_guide, is_active, updated_at, product_variants(id, color, color_hex, size, price, original_price, stock, sku, updated_at), product_images(id, storage_path, color, sort_order, is_primary)")
       .eq("id", id)
       .maybeSingle(),
     admin.from("categories").select("id, name").order("sort_order"),
@@ -36,6 +36,8 @@ export default async function EditProductPage({ params }: PageProps<"/products/[
     .sort((a, b) => a.sort_order - b.sort_order || Number(b.is_primary) - Number(a.is_primary))
     .map((i) => ({ id: i.id, color: i.color, url: storage.getPublicUrl(i.storage_path).data.publicUrl }));
   const colors = [...new Set(variants.map((v) => v.color))];
+  // First non-null hex per colour: a size added after the hex was picked has none yet.
+  const colorHexes = colors.map((c) => ({ name: c, hex: variants.find((v) => v.color === c && v.color_hex)?.color_hex ?? null }));
   // Any saved change (product row or any variant, incl. stock from an order) gives a new key.
   const version = [product.updated_at, ...variants.map((v) => `${v.id}:${v.stock}:${v.updated_at}`)].join("|");
 
@@ -46,7 +48,7 @@ export default async function EditProductPage({ params }: PageProps<"/products/[
         <h2 className="text-page-title wrap-break-word">{product.name}</h2>
       </div>
       <ImageManager productId={product.id} productName={product.name} images={images} colors={colors} />
-      <ColorRename key={colors.join("|")} productId={product.id} colors={colors} />
+      <ColorRename key={colorHexes.map((c) => `${c.name}:${c.hex}`).join("|")} productId={product.id} colors={colorHexes} />
       <ProductEditor
         version={version}
         categories={categories ?? []}

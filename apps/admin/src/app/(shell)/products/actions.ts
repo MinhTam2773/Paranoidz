@@ -131,6 +131,19 @@ export async function renameColor(productId: string, from: string, to: string): 
   return {};
 }
 
+// The swatch colour for one colour, on every size of it (storefront card dots). null = no swatch.
+export async function setColorHex(productId: string, color: string, hex: string | null): Promise<{ error?: string }> {
+  await requireAdmin();
+  if (!UUID.test(productId)) return { error: "Không tìm thấy sản phẩm." };
+  if (hex !== null && !/^#[0-9a-f]{6}$/.test(hex)) return { error: "Mã màu không hợp lệ." };
+  const { data, error } = await createAdminClient()
+    .from("product_variants").update({ color_hex: hex }).eq("product_id", productId).eq("color", color).select("id");
+  if (error) return { error: "Không thể lưu màu. Vui lòng thử lại." };
+  if (!data.length) return { error: COLOR_ERRORS.COLOR_NOT_FOUND };
+  revalidatePath("/", "layout");
+  return {};
+}
+
 export async function setProductActive(id: string, isActive: boolean): Promise<{ error?: string }> {
   await requireAdmin();
   const { error } = await createAdminClient().from("products").update({ is_active: isActive }).eq("id", id);

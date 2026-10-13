@@ -145,7 +145,7 @@ Bottom-right, dark `#111111` background, white text, 3s auto-dismiss. Success pr
 
 ### 6.3 Products
 - **List**: thumbnail, name, category, price range, total stock, active toggle, updated at. Search + category filter. "ADD PRODUCT" primary top-right.
-- **Edit/Create**: name, slug (auto), category, description, care instructions, size guide, active toggle; variant matrix (color × size → price, original price, stock, SKU per row); image uploader per product with variant assignment. On edit, a "Màu sắc" block renames a colour on all its sizes and photos at once (`rename_product_color()`, saved on its own; SKUs unchanged).
+- **Edit/Create**: name, slug (auto), category, description, care instructions, size guide, active toggle; variant matrix (color × size → price, original price, stock, SKU per row); image uploader per product with variant assignment. On edit, a "Màu sắc" block renames a colour on all its sizes and photos at once (`rename_product_color()`, saved on its own; SKUs unchanged) and picks its swatch colour for the storefront card dots (native colour picker, "Bỏ màu" clears it; `product_variants.color_hex` on every size of the colour).
 
 ### 6.4 Customers
 - **List**: name, phone, email, delivered count, refusal count, blacklist badge, joined date. Search by name/phone.

@@ -576,6 +576,7 @@ export type Database = {
       product_variants: {
         Row: {
           color: string
+          color_hex: string | null
           created_at: string
           id: string
           original_price: number | null
@@ -588,6 +589,7 @@ export type Database = {
         }
         Insert: {
           color: string
+          color_hex?: string | null
           created_at?: string
           id?: string
           original_price?: number | null
@@ -600,6 +602,7 @@ export type Database = {
         }
         Update: {
           color?: string
+          color_hex?: string | null
           created_at?: string
           id?: string
           original_price?: number | null
