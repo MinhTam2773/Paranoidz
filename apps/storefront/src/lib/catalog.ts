@@ -9,7 +9,7 @@ type PublicClient = ReturnType<typeof createPublicClient>;
 export function productCardQuery(supabase: PublicClient) {
   return supabase
     .from("products")
-    .select("id, name, slug, category_id, product_variants(price, original_price, stock, color, color_hex), product_images(storage_path, color), reviews(rating)")
+    .select("id, name, slug, category_id, product_variants(id, size, price, original_price, stock, color, color_hex), product_images(storage_path, color), reviews(rating)")
     .eq("reviews.is_visible", true)
     .order("sort_order", { referencedTable: "product_images" });
 }
@@ -55,6 +55,7 @@ export function toProductCard(supabase: PublicClient, p: CardRow): ProductCardDa
     originalPrice: cheapest?.original_price ?? null,
     soldOut: inStock.length === 0,
     colors,
+    variants: p.product_variants.map(({ id, color, size, price, original_price, stock }) => ({ id, color, size, price, original_price, stock })),
     reviewCount,
     ratingAverage: reviewCount ? p.reviews.reduce((sum, r) => sum + r.rating, 0) / reviewCount : 0,
   };

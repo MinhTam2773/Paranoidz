@@ -8,7 +8,7 @@ import { flyToCart } from "@/lib/fly-to-cart";
 import type { ProductVariant } from "./ProductView";
 import { QuantityStepper } from "./QuantityStepper";
 
-const primaryClass =
+export const primaryClass =
   "h-12 rounded-sm bg-accent px-4 text-button uppercase text-text-on-dark transition-all duration-200 enabled:hover:-translate-y-px enabled:hover:bg-accent-hover enabled:hover:shadow-accent disabled:cursor-not-allowed disabled:bg-bg-tertiary disabled:text-text-muted";
 
 // Quantity + ADD TO CART / BUY IT NOW for the selected variant, plus the mobile sticky bar

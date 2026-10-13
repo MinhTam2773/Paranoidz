@@ -3,8 +3,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
-import { BagPlusIcon } from "@/components/layout/icons";
 import { formatVnd } from "@/lib/format";
+import { QuickAdd } from "./QuickAdd";
 import { WishlistButton } from "./WishlistButton";
 
 export type ProductCardData = {
@@ -17,12 +17,13 @@ export type ProductCardData = {
   originalPrice: number | null;
   soldOut: boolean;
   colors: { name: string; hex: string | null; imageUrl: string | null }[];
+  variants: { id: string; color: string; size: string; price: number; original_price: number | null; stock: number }[];
   reviewCount: number;
   ratingAverage: number;
 };
 
 // DESIGN.md §4 product card (client reference 2026-10-12): borderless, rounded 3:4 image on
-// bg-secondary with hover zoom, sale / sold-out badge top-right, heart + cart buttons bottom-right,
+// bg-secondary with hover zoom, sale / sold-out badge top-right, heart + quick-add buttons bottom-right,
 // colour dots, name, dual price, rating. Sold out (every variant at 0, ARCHITECTURE.md §3) replaces
 // the sale badge and drops the cart button. The rating shows from an average of 3 up (owner,
 // 2026-10-12). A dot swaps the photo to that colour's first one; a colour without an admin-picked
@@ -64,16 +65,7 @@ export function ProductCard({ product, eager = false }: { product: ProductCardDa
         )}
         <div className="absolute bottom-2 right-2 flex gap-2">
           <WishlistButton productId={id} className="rounded-full bg-bg-primary shadow-1" />
-          {!soldOut && (
-            // Step 3 of the card rework turns this into a size / colour picker; until then it opens the product.
-            <Link
-              href={href}
-              aria-label={`Chọn size và thêm vào giỏ: ${name}`}
-              className="flex size-11 items-center justify-center rounded-full bg-bg-primary text-text-primary shadow-1 transition-transform duration-200 hover:scale-110"
-            >
-              <BagPlusIcon width={22} height={22} />
-            </Link>
-          )}
+          {!soldOut && <QuickAdd product={product} color={color} onColor={setColor} />}
         </div>
       </div>
       {colors.length > 0 && (

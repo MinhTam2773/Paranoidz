@@ -18,19 +18,19 @@ export type ProductVariant = {
 export type ProductImage = { color: string | null; url: string };
 
 const SIZE_ORDER = ["XS", "S", "M", "L", "XL", "XXL", "FREE"];
-const sizeRank = (size: string) => {
+export const sizeRank = (size: string) => {
   const i = SIZE_ORDER.indexOf(size);
   return i === -1 ? SIZE_ORDER.length : i;
 };
 const LOW_STOCK = 3; // same threshold as the admin low-stock list
 
 // Only in-stock single-size colourways (e.g. FREE) are preselected.
-function defaultSize(variants: ProductVariant[], color: string) {
+export function defaultSize(variants: ProductVariant[], color: string) {
   const sizes = variants.filter((v) => v.color === color);
   return sizes.length === 1 && sizes[0].stock > 0 ? sizes[0].size : null;
 }
 
-const optionClass = (selected: boolean) =>
+export const optionClass = (selected: boolean) =>
   `flex h-11 min-w-12 items-center justify-center rounded-sm border px-4 text-button uppercase transition-colors duration-200 ${
     selected
       ? "border-text-primary bg-text-primary text-text-on-dark"
