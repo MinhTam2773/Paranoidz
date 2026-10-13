@@ -139,7 +139,7 @@ export function ProductView({
             <div className="flex flex-col gap-3">
               <div className="flex items-start justify-between gap-2">
                 <h1 className="text-h2 uppercase">{name}</h1>
-                <WishlistButton productId={productId} className="-mr-2 shrink-0" />
+                <WishlistButton productId={productId} className="-mr-2 shrink-0 rounded-sm" />
               </div>
               {shown && (
                 <p className="flex items-baseline gap-3">

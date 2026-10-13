@@ -3,12 +3,14 @@ import type { ProductCardData } from "@/components/product/ProductCard";
 
 type PublicClient = ReturnType<typeof createPublicClient>;
 
-// Product rows for ProductCard (catalog + search). RLS returns active products only. Callers add
-// their own filter / order.
+// Product rows for ProductCard (catalog + search). RLS returns active products only; the ratings are
+// visible reviews only (a signed-in author also sees their own hidden one). Callers add their own
+// filter / order.
 export function productCardQuery(supabase: PublicClient) {
   return supabase
     .from("products")
-    .select("id, name, slug, category_id, product_variants(price, original_price, stock), product_images(storage_path)")
+    .select("id, name, slug, category_id, product_variants(price, original_price, stock), product_images(storage_path), reviews(rating)")
+    .eq("reviews.is_visible", true)
     .order("sort_order", { referencedTable: "product_images" })
     .limit(1, { referencedTable: "product_images" });
 }
@@ -32,6 +34,7 @@ export function toProductCard(supabase: PublicClient, p: CardRow): ProductCardDa
   // Cheapest variant the customer can actually buy; any variant once sold out.
   const [cheapest] = (inStock.length ? inStock : p.product_variants).toSorted((a, b) => a.price - b.price);
   const image = p.product_images[0];
+  const reviewCount = p.reviews.length;
   return {
     id: p.id,
     name: p.name,
@@ -40,5 +43,7 @@ export function toProductCard(supabase: PublicClient, p: CardRow): ProductCardDa
     price: cheapest?.price ?? 0,
     originalPrice: cheapest?.original_price ?? null,
     soldOut: inStock.length === 0,
+    reviewCount,
+    ratingAverage: reviewCount ? p.reviews.reduce((sum, r) => sum + r.rating, 0) / reviewCount : 0,
   };
 }

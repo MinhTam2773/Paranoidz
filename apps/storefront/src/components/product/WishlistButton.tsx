@@ -24,7 +24,7 @@ export function WishlistButton({ productId, className = "" }: { productId: strin
       disabled={status === "loading"}
       aria-pressed={saved}
       aria-label={saved ? "Bỏ khỏi danh sách yêu thích" : "Thêm vào danh sách yêu thích"}
-      className={`flex size-11 items-center justify-center rounded-sm text-text-primary transition-transform duration-200 enabled:hover:scale-110 disabled:opacity-50 ${className}`}
+      className={`flex size-11 items-center justify-center text-text-primary transition-transform duration-200 enabled:hover:scale-110 disabled:opacity-50 ${className}`}
     >
       <HeartIcon width={22} height={22} fill={saved ? "currentColor" : "none"} />
     </button>

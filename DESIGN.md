@@ -115,17 +115,18 @@
 - Border-radius: `4px`
 - Gap: `16px`
 ### Product card
-- Background: `--bg-primary` (#FFFFFF)
-- Border: `1px solid --border`
-- Border-radius: `4px`
-- Padding: `0` (image flush to top) + `16px` text area at bottom
-- Image area: `--bg-secondary` (#F5F5F5) background behind product photo
-- Image: aspect ratio `3:4`, `object-fit: cover`, subtle zoom on hover (`transform: scale(1.05)`, `overflow: hidden`)
+Client reference, 2026-10-12 (supersedes the bordered card):
+- No card border or background; hover zooms the image only
+- Image area: `--bg-secondary` (#F5F5F5) background, `--radius-lg` (8px) corners, aspect ratio `3:4`, `object-fit: cover`, subtle zoom on hover (`transform: scale(1.05)`, `overflow: hidden`)
+- Sale badge: small pill top-**right** of image, `--accent` background, white text, `-XX%`. Sold out replaces it with a white "HẾT HÀNG" pill
+- Bottom-right of image: wishlist heart, then the quick-add cart button — white 44px circles, `shadow-1`. Sold out hides the cart button
+- Text area: `12px` above, no side padding (text aligns with the image edges)
 - Product name: `--text-primary`, 14px, 500 weight, max 2 lines with ellipsis
 - Price: `--text-primary`, 16px, 700 weight. Format: `₫XXX.000` (Vietnamese Dong, dot separator)
 - Sale price: accent red, original price in `--text-muted` with line-through beside it
-- Sale badge: Small pill top-left of image, `--accent` background, white text, `-XX%`
-- Quick-view / video icon: appears on hover, centered over image, semi-transparent circle
+- Rating: `--warning` bordered pill, `★ 4,8 (5)` (average of visible reviews, count). Hidden with no reviews or an average below 3
+- No "freeship" label: shipping is charged at SPX rates (ARCHITECTURE.md)
+
 ### Tab switcher (NEW GOODS / BEST SELLER)
 - Horizontal tabs above product grid
 - Active tab: `--text-primary` with bold weight + bottom border or filled background pill
@@ -275,7 +276,7 @@ Border:      #E0E0E0 (default), #CCCCCC (hover)
 "Build a light-mode streetwear e-commerce homepage for Paranoidz. White background, clean layout. Two-row header: Row 1 has black PARANOIDZ logo, wide search bar, hotline number, login/register, cart icon. Row 2 has centered uppercase nav links with red underline on active. Red announcement bar above header. Full-width hero banner with lifestyle photo and dark gradient overlay showing 'NEW COLLECTION 2026' in white text. Below: 4 collection cards with overlaid labels. Then a 3-column product grid on white background with subtle gray image areas. Use #FFFFFF background, #F5F5F5 for product image areas, #FF2D2D for sale badges. Black text, Inter font, uppercase headings. Dark footer at bottom."
  
 **Product card:**
-"Create a product card: white background, 4px border-radius, light gray (#F5F5F5) image area with 3:4 aspect ratio and hover zoom. Product name in black 14px medium weight, price in bold 16px below. Red sale badge pill in top-left showing discount percentage. Subtle border (#E0E0E0), shadow on hover."
+"Create a borderless product card: light gray (#F5F5F5) image area with 8px corners, 3:4 aspect ratio and hover zoom. Red sale badge pill in the top-right showing the discount percentage; white circular heart and add-to-cart buttons in the image's bottom-right corner. Below: product name in black 14px medium weight, price in bold 16px, then a small yellow-bordered pill with ★ average (review count)."
  
 **Navigation:**
 "Build a two-row sticky white header for Paranoidz streetwear. Row 1: black PARANOIDZ italic wordmark logo on left, wide centered search input with placeholder 'Search product...' and search icon, then on the right: 'HOTLINE: 0972 926 956' text, user icon with 'LOGIN / REGISTER' link, and cart icon with red item count badge. Row 2: centered uppercase nav links (HOME, OUTLET 2026, NEW COLLECTION, PRODUCT, CUSTOMER FEEDBACK, BRANDING, POLICY) in 13px gray text, active link has red 2px bottom border. Both rows have bottom border #E0E0E0."
