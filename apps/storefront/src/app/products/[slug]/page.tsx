@@ -24,7 +24,7 @@ const getProduct = cache(async (slug: string) => {
   const { data, error } = await supabase
     .from("products")
     .select(
-      "id, name, description, care_instructions, size_guide, product_variants(id, color, size, price, original_price, stock), product_images(color, storage_path)",
+      "id, name, description, care_instructions, size_guide, product_variants(id, color, color_hex, size, price, original_price, stock), product_images(color, storage_path)",
     )
     .eq("slug", slug)
     .order("color", { referencedTable: "product_variants" })

@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useRef, useState, type ReactNode } from "react";
 import { formatVnd } from "@/lib/format";
+import { ColorOptions } from "./ColorOptions";
 import { ProductTabs } from "./ProductTabs";
 import { PurchaseActions } from "./PurchaseActions";
 import { WishlistButton } from "./WishlistButton";
@@ -10,6 +11,7 @@ import { WishlistButton } from "./WishlistButton";
 export type ProductVariant = {
   id: string;
   color: string;
+  color_hex: string | null;
   size: string;
   price: number;
   original_price: number | null;
@@ -25,7 +27,7 @@ export const sizeRank = (size: string) => {
 const LOW_STOCK = 3; // same threshold as the admin low-stock list
 
 // Only in-stock single-size colourways (e.g. FREE) are preselected.
-export function defaultSize(variants: ProductVariant[], color: string) {
+export function defaultSize(variants: Pick<ProductVariant, "color" | "size" | "stock">[], color: string) {
   const sizes = variants.filter((v) => v.color === color);
   return sizes.length === 1 && sizes[0].stock > 0 ? sizes[0].size : null;
 }
@@ -62,7 +64,11 @@ export function ProductView({
   reviews: ReactNode;
   reviewCount: number;
 }) {
-  const colors = [...new Set(variants.map((v) => v.color))];
+  // First non-null hex per colour (a size added later has none yet).
+  const colors = [...new Set(variants.map((v) => v.color))].map((name) => ({
+    name,
+    hex: variants.find((v) => v.color === name && v.color_hex)?.color_hex ?? null,
+  }));
   const soldOut = variants.every((v) => v.stock === 0);
 
   const [color, setColor] = useState(() => (variants.find((v) => v.stock > 0) ?? variants[0])?.color ?? null);
@@ -155,19 +161,7 @@ export function ProductView({
               <p id="colour-label" className="text-nav uppercase">
                 Màu: <span className="text-text-secondary">{color}</span>
               </p>
-              <div className="flex flex-wrap gap-2">
-                {colors.map((c) => (
-                  <button
-                    key={c}
-                    type="button"
-                    aria-pressed={c === color}
-                    onClick={() => pickColor(c)}
-                    className={optionClass(c === color)}
-                  >
-                    {c}
-                  </button>
-                ))}
-              </div>
+              <ColorOptions colors={colors} selected={color} onPick={pickColor} />
             </div>
 
             <div ref={sizeGroupRef} role="group" aria-labelledby="size-label" className="flex flex-col gap-3">

@@ -8,6 +8,7 @@ import { addToCart, useCart } from "@/lib/cart";
 import { flyToCart } from "@/lib/fly-to-cart";
 import { formatVnd } from "@/lib/format";
 import type { ProductCardData } from "./ProductCard";
+import { ColorOptions } from "./ColorOptions";
 import { defaultSize, optionClass, sizeRank } from "./ProductView";
 import { primaryClass } from "./PurchaseActions";
 
@@ -110,13 +111,7 @@ export function QuickAdd({
             <p id={`${titleId}-colour`} className="text-nav uppercase">
               Màu: <span className="text-text-secondary">{color}</span>
             </p>
-            <div className="flex flex-wrap gap-2">
-              {colors.map(({ name: c }) => (
-                <button key={c} type="button" aria-pressed={c === color} onClick={() => pickColor(c)} className={optionClass(c === color)}>
-                  {c}
-                </button>
-              ))}
-            </div>
+            <ColorOptions colors={colors} selected={color} onPick={pickColor} />
           </div>
 
           <div role="group" aria-labelledby={`${titleId}-size`} className="flex flex-col gap-3">
