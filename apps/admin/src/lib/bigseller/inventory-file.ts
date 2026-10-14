@@ -5,12 +5,23 @@ import { columns, missingColumns, text, wholeNumber, type Cell } from "./sheet.t
 const FILE = "File tồn kho";
 const MAX_ROWS = 5000;
 const REQUIRED = ["SKU Name", "Title", "Image URL", "Warehouse", "Available for whole warehouse", "SKU Type"] as const;
+// Same export with BigSeller in Vietnamese (observed 2026-10-14); the cell values stay the same
+// (SKU Type is still "Single SKU").
+const VIETNAMESE: Record<string, (typeof REQUIRED)[number]> = {
+  "Mã SKU": "SKU Name",
+  "Tên": "Title",
+  "Link hình ảnh": "Image URL",
+  "Tên kho": "Warehouse",
+  "Toàn bộ kho khả dụng": "Available for whole warehouse",
+  "Loại SKU": "SKU Type",
+};
 
 export type InventoryRow = { sku: string; title: string; imageUrl: string | null; warehouse: string; available: number };
 export type InventoryParse = { rows: InventoryRow[]; skipped: string[]; errors: string[] };
 
 export function parseInventorySheet(data: Cell[][]): InventoryParse {
-  const { index, missing } = columns(data[0], REQUIRED);
+  const header = data[0]?.map((c) => VIETNAMESE[text(c).normalize("NFC")] ?? c);
+  const { index, missing } = columns(header, REQUIRED);
   if (!data.length) return { rows: [], skipped: [], errors: [`${FILE} trống.`] };
   if (missing.length) return { rows: [], skipped: [], errors: [missingColumns(FILE, missing)] };
   if (data.length - 1 > MAX_ROWS) return { rows: [], skipped: [], errors: [`${FILE}: tối đa ${MAX_ROWS} dòng.`] };
@@ -41,8 +52,9 @@ export function parseInventorySheet(data: Cell[][]): InventoryParse {
 }
 
 // Inventory_List20261012172745857.xlsx → 2026-10-12T17:27:45.857Z (BigSeller names exports in UTC).
+// Vietnamese UI: Danh_sách_tồn_kho20261014023733453.xlsx.
 export function fileTimestamp(name: string): Date | null {
-  const m = /Inventory_List(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})(\d{3})/.exec(name);
+  const m = /(?:Inventory_List|Danh_sách_tồn_kho)(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})(\d{3})/.exec(name.normalize("NFC"));
   if (!m) return null;
   const [y, mo, d, h, mi, s, ms] = m.slice(1).map(Number);
   const date = new Date(Date.UTC(y, mo - 1, d, h, mi, s, ms));

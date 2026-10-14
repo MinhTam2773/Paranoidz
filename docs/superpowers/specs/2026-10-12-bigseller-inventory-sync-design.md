@@ -139,8 +139,11 @@ New sidebar item **"Tồn kho"** (`/inventory`), after "Sản phẩm". Full page
 
 1. Upload the Inventory List export (`.xlsx`, ≤ 5,000 rows) and, optionally, the **Shopee listings
    export** (used only for new products: suggested price and colour names). Both are parsed on the
-   server by **header name**; an unknown layout (e.g. BigSeller switched to Vietnamese) fails with a
-   clear message. Without the listings file, new products get no suggested price.
+   server by **header name**; an unknown layout fails with a clear message. The Inventory List is
+   also read with BigSeller in Vietnamese (`Danh_sách_tồn_kho<UTC time>.xlsx`, sheet "SKU đơn độc",
+   headers `Mã SKU`, `Tên`, `Link hình ảnh`, `Tên kho`, `Toàn bộ kho khả dụng`, `Loại SKU`; values
+   unchanged — added 2026-10-14); the listings file is still English-only. Without the listings
+   file, new products get no suggested price.
 2. Validation: stale-file guard; one warehouse only; `SKU Type` other than `Single SKU` skipped with a
    warning; duplicate SKUs and non-integer quantities rejected.
 3. Preview, three groups:
@@ -279,4 +282,5 @@ Consequences to know:
 - BigSeller manual-order export (with addresses / SPX via BigSeller) — the province names differ
   (`TP. Hồ Chí Minh` vs `Thành phố Hồ Chí Minh`) and would need a mapping.
 - BigSeller Open API (automatic sync) — after launch.
-- Combination SKUs, multiple warehouses, BigSeller in Vietnamese UI.
+- Combination SKUs, multiple warehouses, BigSeller in Vietnamese UI (except the Inventory List
+  import, which accepts it).

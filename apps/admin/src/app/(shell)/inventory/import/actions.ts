@@ -79,7 +79,7 @@ async function load(form: FormData): Promise<Loaded> {
   const empty: Loaded = { errors: [], warnings: [], rows: [], prices: new Map(), fileTime: null, lastSent: null };
   const inventory = fileOf(form, "inventory");
   const listings = fileOf(form, "listings");
-  if (!inventory) return { ...empty, errors: ["Chọn file tồn kho xuất từ BigSeller (Inventory_List….xlsx)."] };
+  if (!inventory) return { ...empty, errors: ["Chọn file tồn kho xuất từ BigSeller (Inventory_List….xlsx hoặc Danh_sách_tồn_kho….xlsx)."] };
   if (inventory.size > MAX_FILE_BYTES || (listings && listings.size > MAX_FILE_BYTES)) return { ...empty, errors: ["File tối đa 1 MB."] };
 
   let inv, lst;

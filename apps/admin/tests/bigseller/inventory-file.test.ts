@@ -50,6 +50,19 @@ test("bad quantities, duplicates and several warehouses are errors", () => {
   );
 });
 
+test("reads the Vietnamese-UI export the same way", () => {
+  const VI = [
+    "Link hình ảnh", "Mã SKU", "Tên", "GTIN", "Cân nặng(g)", "Tên kho", "Tổng số", "Đơn hàng đã khóa",
+    "Toàn bộ kho khả dụng", "Loại SKU", "Chú thích",
+  ];
+  const res = parseInventorySheet([VI, row("pdz08-Gray-XL", "27.0"), row("combo-1", "5.0", { type: "Combination SKU" })]);
+  assert.deepEqual(res.errors, []);
+  assert.deepEqual(res.skipped, ["combo-1"]);
+  assert.deepEqual(res.rows, [
+    { sku: "pdz08-Gray-XL", title: "Áo pdz08-Gray-XL", imageUrl: IMG, warehouse: "Default Warehouse", available: 27 },
+  ]);
+});
+
 test("empty sheet is an error", () => {
   assert.ok(parseInventorySheet([]).errors.length);
   assert.ok(parseInventorySheet([HEADER]).errors.length);
@@ -59,4 +72,7 @@ test("fileTimestamp reads BigSeller's UTC export time from the name", () => {
   assert.equal(fileTimestamp("Inventory_List20261012172745857.xlsx")?.toISOString(), "2026-10-12T17:27:45.857Z");
   assert.equal(fileTimestamp("inventory.xlsx"), null);
   assert.equal(fileTimestamp("Inventory_List20261012172745857 (1).xlsx")?.toISOString(), "2026-10-12T17:27:45.857Z");
+  assert.equal(fileTimestamp("Danh_sách_tồn_kho20261014023733453.xlsx")?.toISOString(), "2026-10-14T02:37:33.453Z");
+  // macOS uploads can carry a decomposed (NFD) file name.
+  assert.equal(fileTimestamp("Danh_sách_tồn_kho20261014023733453.xlsx".normalize("NFD"))?.toISOString(), "2026-10-14T02:37:33.453Z");
 });
