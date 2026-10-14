@@ -1,6 +1,7 @@
 import { createAdminClient } from "@paranoidz/db/admin";
 import { formatVnd } from "@/lib/format";
 import { HOTLINE } from "@/lib/site";
+import { TEST_PREFIX } from "@/lib/test-label";
 
 // Order emails via Resend (ARCHITECTURE.md §4 step 4): the customer's confirmation (only if they
 // gave an email) + the shop's new-order alert (ORDER_ALERT_EMAIL, also the reply-to). Called from
@@ -41,7 +42,7 @@ const layout = (title: string, body: string) =>
   `<div style="background:#f5f5f5;padding:24px 12px;font-family:Arial,Helvetica,sans-serif;color:#111111">
   <div style="max-width:560px;margin:0 auto;background:#ffffff;padding:24px;border-radius:8px">
   <p style="margin:0 0 16px;font-size:20px;font-weight:800;font-style:italic">PARANOIDZ</p>
-  <h1 style="margin:0 0 16px;font-size:18px">${title}</h1>${body}
+  <h1 style="margin:0 0 16px;font-size:18px">${TEST_PREFIX}${title}</h1>${body}
   <p style="margin:24px 0 0;font-size:12px;color:#999999">Hotline ${HOTLINE} · ${SITE_URL.replace("https://", "")}</p></div></div>`;
 
 function customerEmail(o: Order) {
@@ -88,11 +89,13 @@ export async function sendOrderEmails(orderId: string) {
   const o = data as Order;
 
   await Promise.all([
-    o.email && send(key, `${o.order_number}-customer`, {
-      to: [o.email], subject: `Xác nhận đơn hàng ${o.order_number}`, html: customerEmail(o), ...(alertTo && { reply_to: alertTo }),
+    // Test and prod order numbers come from separate sequences, so the prefix also keeps their
+    // idempotency keys apart (Resend drops a repeated key within 24 h).
+    o.email && send(key, `${TEST_PREFIX}${o.order_number}-customer`, {
+      to: [o.email], subject: `${TEST_PREFIX}Xác nhận đơn hàng ${o.order_number}`, html: customerEmail(o), ...(alertTo && { reply_to: alertTo }),
     }),
-    alertTo && send(key, `${o.order_number}-alert`, {
-      to: [alertTo], subject: `Đơn mới ${o.order_number} — ${formatVnd(o.total)}`, html: alertEmail(o),
+    alertTo && send(key, `${TEST_PREFIX}${o.order_number}-alert`, {
+      to: [alertTo], subject: `${TEST_PREFIX}Đơn mới ${o.order_number} — ${formatVnd(o.total)}`, html: alertEmail(o),
     }),
   ]);
 }

@@ -1,5 +1,6 @@
 import { createAdminClient } from "@paranoidz/db/admin";
 import { formatVnd } from "@/lib/format";
+import { TEST_PREFIX } from "@/lib/test-label";
 
 // New-order alert to the client's Zalo (ARCHITECTURE.md §4 step 4) via the Zalo Bot Platform
 // (bot.zapps.me). Called from after() like the order emails: unset env or a failed send is only
@@ -25,7 +26,7 @@ export function zaloAlertText(o: Order) {
     `Ship ${formatVnd(o.shipping_fee)}`,
   ].filter(Boolean).join(" · ");
   return [
-    `🛒 ĐƠN MỚI ${o.order_number}`,
+    `${TEST_PREFIX}🛒 ĐƠN MỚI ${o.order_number}`,
     `${o.recipient_name} · ${[o.phone, o.secondary_phone].filter(Boolean).join(" / ")}`,
     [o.address, o.ward, o.city].filter(Boolean).join(", "),
     "─────", ...items, "─────",
