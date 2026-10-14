@@ -203,7 +203,8 @@ to its photos **by name** (`product_images.color` = `product_variants.color`; th
     SKU are listed as blocked.
 - **TẢI FILE XUẤT KHO** / **TẢI FILE NHẬP KHO**: `.xlsx` files with exactly BigSeller's template
   headers (sheet "SKU"), one row per SKU with the quantities summed. Empty side → no file. More than
-  2,000 lines → split into several files.
+  2,000 lines → split into several files. Since 2026-10-14 the headers are the **Vietnamese** templates'
+  (client's BigSeller runs in Tiếng Việt; same columns and order) — not yet confirmed by a real upload.
 - Instructions on the page: upload the stock-out file at Manual Stock-Out → Import & Update (type
   Ordinary), the stock-in file at Manual Stock-In → Import & Update (type Ordinary), note = the batch
   label shown on the page.

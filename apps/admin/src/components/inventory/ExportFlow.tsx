@@ -62,8 +62,8 @@ export function ExportFlow({ empty }: { empty: boolean }) {
               <li key={f.name}>
                 <strong>{f.name}</strong> ({f.lines} SKU) —{" "}
                 {f.name.includes("xuat-kho")
-                  ? "BigSeller → Inventory → Manual Stock-Out → Import & Export → Import & Update, loại \"Stock-Out / Ordinary\"."
-                  : "BigSeller → Inventory → Manual Stock-In → Import & Export → Import & Update, loại \"Stock-In / Ordinary\"."}{" "}
+                  ? "BigSeller → Tồn kho → Xuất kho thủ công → Nhập & Xuất → Nhập & Cập nhật, loại \"Xuất kho bình thường\"."
+                  : "BigSeller → Tồn kho → Nhập kho thủ công → Nhập & Xuất → Nhập & Cập nhật, loại \"Nhập kho thông thường\"."}{" "}
                 <button type="button" onClick={() => download(f)} className="underline">Tải lại</button>
               </li>
             ))}

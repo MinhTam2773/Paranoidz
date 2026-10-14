@@ -1,11 +1,13 @@
 // Website → BigSeller: files for Inventory → Manual Stock-Out / Manual Stock-In → Import & Update.
-// Headers are copied from BigSeller's own templates (sheet "SKU"), byte for byte.
+// Headers are copied from BigSeller's own templates (sheet "SKU"), byte for byte — the Vietnamese-UI
+// ones (nhập_phiếu_xuất_kho_vn.xlsx / nhập_phiếu_nhập_kho_vn.xlsx, 2026-10-14). Same columns and order
+// as the English templates. Not yet confirmed by a real upload (TODO.md).
 import writeXlsxFile from "write-excel-file/node";
 
-export const STOCK_OUT_HEADER = ["*SKU Name", "*Stock-Out Qty", "Serial Number"] as const;
+export const STOCK_OUT_HEADER = ["*Mã SKU", "*Số lượng xuất kho", "Số seri"] as const;
 export const STOCK_IN_HEADER = [
-  "*SKU Name (Either SKU or GTIN is required)", "*GTIN (Either SKU or GTIN is required)", "*Stock-In Qty",
-  "Unit Price", "Production Date", "Expiry Date", "Serial Number",
+  "*Mã SKU\n(Điều SKU hoặc GTIN)", "*GTIN\n(Điều SKU hoặc GTIN)", "*Số lượng nhập kho",
+  "Đơn giá", "Ngày sản xuất", "Ngày hết hạn", "Số seri",
 ] as const;
 export const MAX_LINES = 2000; // BigSeller: up to 2,000 lines per file
 
