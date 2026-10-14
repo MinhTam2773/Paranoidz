@@ -92,12 +92,12 @@ export function ImportFlow() {
           <div className="flex flex-col gap-2">
             <label htmlFor="inventory" className="text-label uppercase">File tồn kho (bắt buộc)</label>
             <input id="inventory" type="file" accept=".xlsx" onChange={resetFiles(setInventory)} className="text-base md:text-input" />
-            <p className="text-stat-label text-text-secondary">BigSeller → Inventory → Inventory List → Import &amp; Export → Export All. Xuất ngay trước khi nhập.</p>
+            <p className="text-stat-label text-text-secondary">BigSeller → Tồn kho → Danh sách tồn kho → Nhập &amp; Xuất → Xuất theo tất cả các trang. Xuất ngay trước khi nhập.</p>
           </div>
           <div className="flex flex-col gap-2">
             <label htmlFor="listings" className="text-label uppercase">File sản phẩm Shopee (để gợi ý giá)</label>
             <input id="listings" type="file" accept=".xlsx" onChange={resetFiles(setListings)} className="text-base md:text-input" />
-            <p className="text-stat-label text-text-secondary">BigSeller → Products → Shopee → Active → Import &amp; Export → Export by Page. Chỉ dùng cho sản phẩm mới.</p>
+            <p className="text-stat-label text-text-secondary">BigSeller → Sản phẩm → Shopee → Sản phẩm online → Đang bán → Nhập &amp; Xuất → Xuất theo trang. Chỉ dùng cho sản phẩm mới.</p>
           </div>
           <div className="flex flex-col gap-2">
             <label htmlFor="percent" className="text-label uppercase">Giá web = % giá Shopee (pdz01-SP)</label>
