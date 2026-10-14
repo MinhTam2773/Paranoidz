@@ -13,6 +13,13 @@ test("parses listing rows", () => {
   assert.deepEqual(res.rows, [{ shop: "pdz01-SP", sku: "pdz03-Black-M", variation: "Đen,M:40-55kg", price: 385000, specialPrice: 199000 }]);
 });
 
+test("reads the Vietnamese-UI export the same way", () => {
+  const VI = ["Tên nick gian hàng", "Tên gian hàng", "Item ID", "Parent SKU", "Phân loại", "SKU", "Tồn kho", "Giá cả", "Giá khuyến mãi"];
+  const res = parseListingsSheet([VI, row("pdz01-SP", "pdz03-Black-M", "Đen,M:40-55kg", "385000.0", "199000.0")]);
+  assert.deepEqual(res.errors, []);
+  assert.deepEqual(res.rows, [{ shop: "pdz01-SP", sku: "pdz03-Black-M", variation: "Đen,M:40-55kg", price: 385000, specialPrice: 199000 }]);
+});
+
 test("missing column → error", () => {
   assert.match(parseListingsSheet([HEADER.filter((h) => h !== "Special Price")]).errors.join(" "), /Special Price/);
 });

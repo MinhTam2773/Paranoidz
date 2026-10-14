@@ -142,8 +142,9 @@ New sidebar item **"Tồn kho"** (`/inventory`), after "Sản phẩm". Full page
    server by **header name**; an unknown layout fails with a clear message. The Inventory List is
    also read with BigSeller in Vietnamese (`Danh_sách_tồn_kho<UTC time>.xlsx`, sheet "SKU đơn độc",
    headers `Mã SKU`, `Tên`, `Link hình ảnh`, `Tên kho`, `Toàn bộ kho khả dụng`, `Loại SKU`; values
-   unchanged — added 2026-10-14); the listings file is still English-only. Without the listings
-   file, new products get no suggested price.
+   unchanged — added 2026-10-14). The listings file too: Vietnamese headers `Tên nick gian hàng`,
+   `Phân loại`, `Giá cả`, `Giá khuyến mãi` (`SKU` unchanged), same file name pattern and sheet.
+   Without the listings file, new products get no suggested price.
 2. Validation: stale-file guard; one warehouse only; `SKU Type` other than `Single SKU` skipped with a
    warning; duplicate SKUs and non-integer quantities rejected.
 3. Preview, three groups:
@@ -283,5 +284,6 @@ Consequences to know:
 - BigSeller manual-order export (with addresses / SPX via BigSeller) — the province names differ
   (`TP. Hồ Chí Minh` vs `Thành phố Hồ Chí Minh`) and would need a mapping.
 - BigSeller Open API (automatic sync) — after launch.
-- Combination SKUs, multiple warehouses, BigSeller in Vietnamese UI (except the Inventory List
-  import, which accepts it).
+- Combination SKUs, multiple warehouses. (BigSeller in Vietnamese UI is supported since 2026-10-14:
+  both import files are read in either language; the stock files are written with the Vietnamese
+  headers.)

@@ -1,10 +1,19 @@
-// BigSeller Products → Shopee → Active → Import & Export → Export by Page (standard template).
+// BigSeller Products → Shopee → Active → Import & Export → Export by Page (standard template);
+// Vietnamese UI: Sản phẩm → Shopee → Sản phẩm online → Đang bán → Nhập & Xuất → Xuất theo trang.
 // Used only to suggest prices and colour names for products the import creates.
 import { normalizeSku } from "./sku.ts";
 import { columns, missingColumns, text, type Cell } from "./sheet.ts";
 
 const FILE = "File sản phẩm Shopee";
 const REQUIRED = ["Store Nickname", "SKU", "Variation", "Price", "Special Price"] as const;
+// Same export with BigSeller in Vietnamese (observed 2026-10-14, Online_products_20261014738674.xlsx);
+// "SKU" keeps its name and the cell values are unchanged.
+const VIETNAMESE: Record<string, (typeof REQUIRED)[number]> = {
+  "Tên nick gian hàng": "Store Nickname",
+  "Phân loại": "Variation",
+  "Giá cả": "Price",
+  "Giá khuyến mãi": "Special Price",
+};
 
 // Client, 2026-10-12: website price = 70 % of the promotion price in this shop.
 export const PRICING_SHOP = "pdz01-SP";
@@ -13,7 +22,8 @@ export const DEFAULT_PERCENT = 70;
 export type ListingRow = { shop: string; sku: string; variation: string; price: number; specialPrice: number };
 
 export function parseListingsSheet(data: Cell[][]): { rows: ListingRow[]; errors: string[] } {
-  const { index, missing } = columns(data[0], REQUIRED);
+  const header = data[0]?.map((c) => VIETNAMESE[text(c).normalize("NFC")] ?? c);
+  const { index, missing } = columns(header, REQUIRED);
   if (!data.length) return { rows: [], errors: [`${FILE} trống.`] };
   if (missing.length) return { rows: [], errors: [missingColumns(FILE, missing)] };
 
