@@ -6,8 +6,9 @@ import { TEST_PREFIX } from "@/lib/test-label";
 // Order emails via Resend (ARCHITECTURE.md §4 step 4): the customer's confirmation (only if they
 // gave an email) + the shop's new-order alert (ORDER_ALERT_EMAIL, also the reply-to). Called from
 // after() so a slow or failed send never touches the order — failures are only logged.
-const SITE_URL = "https://paranoidz.vn";
-const ADMIN_URL = "https://admin.paranoidz.vn";
+// Overridden only in test environments, so test-order links open the preview / localhost.
+const SITE_URL = process.env.SITE_URL || "https://paranoidz.vn";
+const ADMIN_URL = process.env.ADMIN_URL || "https://admin.paranoidz.vn";
 const FROM = "Paranoidz <donhang@paranoidz.vn>"; // not "noreply" (Resend deliverability insight); replies go to reply_to
 
 type Order = {

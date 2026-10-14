@@ -5,7 +5,7 @@ import { TEST_PREFIX } from "@/lib/test-label";
 // New-order alert to the client's Zalo (ARCHITECTURE.md §4 step 4) via the Zalo Bot Platform
 // (bot.zapps.me). Called from after() like the order emails: unset env or a failed send is only
 // logged, never touches the order. Plain text (no parse_mode) so customer-typed text needs no escaping.
-const ADMIN_URL = "https://admin.paranoidz.vn";
+const ADMIN_URL = process.env.ADMIN_URL || "https://admin.paranoidz.vn"; // overridden only in test environments
 const MAX_TEXT = 2000; // sendMessage limit
 
 type Order = {
