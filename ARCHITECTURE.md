@@ -139,7 +139,7 @@ Valid transitions: pending→confirmed→shipped→delivered; pending/confirmed�
 2. Order form: full name, phone, street address, ward/commune, city/province, secondary phone, email, note, voucher code. Province = one of Vietnam's 34 units since 1 July 2025 (searchable list, `apps/storefront/src/lib/provinces.ts`); districts no longer exist, so `orders.district` stays NULL. Field rules live in `lib/checkout-validation.ts`, run live in the form AND again in the server action.
 3. Server route validates voucher, recomputes ALL prices from DB (items, discount, shipping fee — §5), calls `place_order()`.
 4. Customer gets Resend confirmation email; client gets Zalo + email alert.
-5. Client calls to confirm (standard VN COD practice) → `confirmed` (from then on the order is in the next BigSeller stock-out export, §3.1) → creates the SPX order by hand on spx.vn (COD amount = `orders.total`, weight = 0.3 kg × units; the admin order page shows both), prints the label, drops the parcel at the post office → `shipped` → `delivered`.
+5. Client calls to confirm (standard VN COD practice) → `confirmed` (from then on the order is in the next BigSeller stock-out export, §3.1) → creates the SPX order by hand on spx.vn (COD amount = `orders.total`, weight = 0.3 kg × units; the admin order page shows both), prints the label, hands the parcel to SPX → `shipped` → `delivered`. **Being replaced by the SPX Open API (§5 "SPX Open API"):** "Tạo đơn SPX" + "In phiếu" on the admin order page, SPX picks the parcel up.
 6. Cancel/refusal → stock restored, refusals tracked.
 
 Order numbers: `PZ-YYYY-NNNN` from a Postgres sequence (concurrency-safe, 4+ digits).
@@ -182,7 +182,17 @@ Order numbers: `PZ-YYYY-NNNN` from a Postgres sequence (concurrency-safe, 4+ dig
 - `place_order()` computes it before any stock lock and stores it in `orders.shipping_fee`; `total = subtotal − discount + shipping_fee` (`orders_total_math`). Discounts apply to the subtotal only. Unknown city → `SHIPPING_UNAVAILABLE`.
 - Checkout previews the fee as soon as a province is picked (`quoteShipping` server action → `shipping_fee()`, service role). Display only; `place_order()` recomputes.
 - The quote is final for the customer. If SPX charges the shop a little differently (account rates, driver re-weighing), the shop absorbs it.
-- When SPX changes prices, update `shipping_rates` rows (no code change). No SPX API: SPX has no self-serve API (access via their sales form), and live rates aren't needed for a table this simple.
+- When SPX changes prices, update `shipping_rates` rows (no code change). Superseded by the live SPX quote ("SPX Open API" below) once that ships; the table stays as its fallback.
+
+### SPX Open API — decided 2026-10-15 (being built on `feat/spx-open-api`)
+The client wants SPX's **live** price at checkout (SPX runs promotions, so a fixed table drifts) and to **print the shipping label inside the Paranoidz admin** instead of typing each order on spx.vn. Docs: `https://spx.vn/integration` (guide + API reference).
+- **Accounts and keys.** Two pairs, all server-only env vars, never `NEXT_PUBLIC_`, never in git: `SPX_APP_ID` / `SPX_APP_SECRET` (our integration, issued by SPX) and `SPX_USER_ID` / `SPX_USER_SECRET` (the seller account). Production uses the **client's existing SPX account** (its COD payouts and balance live there) — never create a new seller account in production. Test uses an account made with the API's Create Account call on `test-stable.spx.vn`. `SPX_API_HOST` picks the environment.
+- **Signing.** Every call is a POST with JSON and headers `app-id`, `timestamp` (seconds), `random-num` (int64), `check-sign` = hex HMAC-SHA256(app-secret, `<app-id>_<timestamp>_<random-num>_<body>`), computed over the exact body string that is sent.
+- **Checkout fee.** The storefront server asks SPX's Check Shipping Fee for the delivery address and parcel, with the best currently valid account voucher from List Voucher (SPX promotions arrive as vouchers that only apply when their code is passed). That quote is shown and saved in `orders.shipping_fee`; the same voucher code is sent again when the SPX order is created. If SPX errors or is slow, checkout falls back to `shipping_fee()` (the §5 table), so checkout never blocks on SPX. The customer's quoted fee is final; differences at order creation or re-weighing are the shop's (same rule as §5). Prices stay server-computed: the browser never sends a fee.
+- **Addresses.** SPX needs its own province / ward names (2-level address, `address_version` 2). Checkout's ward becomes a picker of SPX's ward list for the chosen province (the free-text ward goes). Orders placed before that keep their typed ward; the admin picks the matching SPX ward when creating the shipment.
+- **Fulfilment.** After the confirmation call, the admin order page offers **Tạo đơn SPX**: pick an SPX pickup slot, then create the order — sender = the shop (pickup address in `SPX_SENDER_*` env), receiver = the order snapshot, COD amount = `orders.total`, payment role = sender pays, weight = 0.3 kg × units, declared value = subtotal (high-value service only at ≥ ₫3.000.000), our order number as SPX's `order_id`. SPX returns a tracking number, stored on the order. **In phiếu** asks SPX for the label link on each click (it is valid 30 minutes / 10 opens — never stored) and opens it for printing. Cancelling a confirmed order that has an SPX shipment cancels the shipment too.
+- **Status.** Phase 1 keeps the status buttons manual. A later phase takes SPX's tracking webhook to move orders to `shipped` / `delivered` / `delivery_failed` through `transition_order_status()`.
+- **One shipper per order.** Website orders get SPX shipments only from our admin; BigSeller keeps handling Shopee / TikTok orders. Never both for the same order.
 
 ### Loyalty program
 - Counter = lifetime `customers.delivered_count` for the order's **phone**. Never resets.
@@ -257,4 +267,4 @@ Order numbers: `PZ-YYYY-NNNN` from a Postgres sequence (concurrency-safe, 4+ dig
 
 ## 9. Out of Scope
 
-Payment gateways, Shopee integration (stock reaches Shopee through BigSeller, §3.1; BigSeller's Open API comes after launch), carrier APIs (SPX order creation / live rates — fulfilment is manual, §4), newsletter/email marketing, mobile apps, multi-language (the site is Vietnamese-only, not bilingual), multi-admin roles, analytics dashboards.
+Payment gateways, Shopee integration (stock reaches Shopee through BigSeller, §3.1; BigSeller's Open API comes after launch), carrier APIs other than SPX (§5 "SPX Open API"), newsletter/email marketing, mobile apps, multi-language (the site is Vietnamese-only, not bilingual), multi-admin roles, analytics dashboards.
