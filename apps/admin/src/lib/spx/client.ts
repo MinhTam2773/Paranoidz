@@ -15,7 +15,7 @@ export class SpxError extends Error {
 
 const TIMEOUT_MS = 15_000;
 
-function env(name: string) {
+export function env(name: string) {
   const value = process.env[name];
   if (!value) throw new Error(`${name} is not set`);
   return value;

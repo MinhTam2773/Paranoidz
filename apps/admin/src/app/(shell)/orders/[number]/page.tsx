@@ -1,8 +1,10 @@
 import Image from "next/image";
 import Link from "next/link";
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { createAdminClient } from "@paranoidz/db/admin";
 import { OrderActions } from "@/components/orders/OrderActions";
+import { SpxCard } from "@/components/orders/SpxCard";
 import { StatusBadge } from "@/components/StatusBadge";
 import { requireAdmin } from "@/lib/auth";
 import { formatDateTime, formatPhone, formatVnd } from "@/lib/format";
@@ -21,7 +23,7 @@ export default async function OrderDetailPage({ params }: PageProps<"/orders/[nu
     .from("orders")
     // One literal: supabase-js infers the row type from it.
     .select(
-      "id, order_number, status, created_at, recipient_name, phone, secondary_phone, email, address, ward, district, city, note, subtotal, discount, shipping_fee, total, applied_bundles, order_items(id, name_snapshot, color_snapshot, size_snapshot, price_snapshot, image_snapshot, qty), order_status_history(id, status, note, created_at), voucher_uses(vouchers(code))",
+      "id, order_number, status, created_at, recipient_name, phone, secondary_phone, email, address, ward, district, city, note, subtotal, discount, shipping_fee, total, applied_bundles, spx_tracking_no, spx_ward, spx_fee, spx_created_at, order_items(id, name_snapshot, color_snapshot, size_snapshot, price_snapshot, image_snapshot, qty), order_status_history(id, status, note, created_at), voucher_uses(vouchers(code))",
     )
     .eq("order_number", number)
     .order("created_at", { referencedTable: "order_status_history" })
@@ -128,6 +130,15 @@ export default async function OrderDetailPage({ params }: PageProps<"/orders/[nu
             </p>
           </section>
 
+          {(order.spx_tracking_no || order.status === "pending" || order.status === "confirmed") && (
+            <section className={card}>
+              <h3 className={cardTitle}>Vận chuyển SPX</h3>
+              <Suspense fallback={<p className="text-text-secondary">Đang tải dữ liệu SPX…</p>}>
+                <SpxCard order={order} />
+              </Suspense>
+            </section>
+          )}
+
           <section className={card}>
             <h3 className={cardTitle}>Trạng thái</h3>
             <ol className="mb-5 flex flex-col gap-4 border-l border-border pl-4">
@@ -139,7 +150,7 @@ export default async function OrderDetailPage({ params }: PageProps<"/orders/[nu
                 </li>
               ))}
             </ol>
-            <OrderActions orderId={order.id} orderNumber={order.order_number} status={order.status} />
+            <OrderActions orderId={order.id} orderNumber={order.order_number} status={order.status} spxTrackingNo={order.spx_tracking_no} />
           </section>
         </div>
       </div>

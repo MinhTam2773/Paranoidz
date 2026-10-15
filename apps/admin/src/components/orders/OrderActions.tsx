@@ -12,7 +12,12 @@ const destructiveClass = `${button} border border-accent text-accent enabled:hov
 
 // Next lifecycle step + Cancel / Delivery failed, each confirmed in a modal that
 // names the order (DASHBOARD_DESIGN.md §5 Modal, §7). Result shown as a toast.
-export function OrderActions({ orderId, orderNumber, status }: { orderId: string; orderNumber: string; status: OrderStatus }) {
+export function OrderActions({ orderId, orderNumber, status, spxTrackingNo }: {
+  orderId: string;
+  orderNumber: string;
+  status: OrderStatus;
+  spxTrackingNo: string | null;
+}) {
   const { primary, secondary } = ORDER_ACTIONS[status];
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [action, setAction] = useState<OrderAction | null>(null);
@@ -65,6 +70,9 @@ export function OrderActions({ orderId, orderNumber, status }: { orderId: string
           <div className="flex flex-col gap-4">
             <h2 id="order-action-title" className="text-card-title uppercase">{action.label} {orderNumber}?</h2>
             <p className="text-text-secondary">{action.body}</p>
+            {action.to === "cancelled" && spxTrackingNo && (
+              <p className="text-text-secondary">Vận đơn SPX {spxTrackingNo} cũng được hủy; nếu SPX đã lấy hàng, đơn sẽ không bị hủy.</p>
+            )}
             <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
               <button type="button" onClick={() => dialogRef.current?.close()} disabled={pending} className={`${ghostClass} sm:w-auto`}>
                 Quay lại
