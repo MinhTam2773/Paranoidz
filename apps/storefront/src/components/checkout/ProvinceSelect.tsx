@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
 import { SearchIcon } from "@/components/layout/icons";
-import { PROVINCES, searchKey } from "@/lib/provinces";
+import { PROVINCES, searchKey } from "@paranoidz/db/provinces";
 
 const INDEX = PROVINCES.map((p) => ({
   ...p,

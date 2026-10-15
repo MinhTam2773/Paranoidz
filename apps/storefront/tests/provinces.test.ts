@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createPublicClient } from "@paranoidz/db/public";
-import { PROVINCES } from "../src/lib/provinces.ts";
+import { PROVINCES } from "@paranoidz/db/provinces";
 
 // Reads the database in .env.local as anon (spx_locations is public), after
 // `pnpm --filter @paranoidz/db seed:spx-locations`.

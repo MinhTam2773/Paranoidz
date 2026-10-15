@@ -5,7 +5,7 @@ import { after } from "next/server";
 import { createAdminClient } from "@paranoidz/db/admin";
 import { createClient } from "@paranoidz/db/server";
 import { CHECKOUT_FIELDS, normalizePhone, validateAll, type CheckoutValues, type FieldErrors } from "@/lib/checkout-validation";
-import { PROVINCE_NAMES } from "@/lib/provinces";
+import { PROVINCE_NAMES } from "@paranoidz/db/provinces";
 import { sendOrderEmails } from "@/lib/order-email";
 import { sendZaloAlert } from "@/lib/order-zalo";
 import { hitRateLimit } from "@/lib/rate-limit";

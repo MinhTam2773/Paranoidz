@@ -1,4 +1,4 @@
-import { PROVINCE_NAMES } from "./provinces";
+import { PROVINCE_NAMES } from "@paranoidz/db/provinces";
 
 // Checkout field rules, shared by the form (live, per field) and the placeOrder server action
 // (authoritative). place_order() still re-validates the phone in SQL (normalize_vn_phone).

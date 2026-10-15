@@ -1,7 +1,7 @@
 // Vietnam's 34 provincial-level units since 1 July 2025 (Resolution 202/2025/QH15): 6 centrally
 // run cities + 28 provinces; districts no longer exist. `formerly` lists the merged pre-2025
 // provinces so customers who type an old name ("Bình Dương") still find the right one. `spx` is
-// SPX's name for it (spx_locations.province), checked by tests/provinces.test.ts.
+// SPX's name for it (spx_locations.province), checked by apps/storefront/tests/provinces.test.ts.
 export const PROVINCES: { name: string; spx: string; formerly?: string[]; aliases?: string[] }[] = [
   { name: "An Giang", spx: "Tỉnh An Giang", formerly: ["Kiên Giang"] },
   { name: "Bắc Ninh", spx: "Tỉnh Bắc Ninh", formerly: ["Bắc Giang"] },
