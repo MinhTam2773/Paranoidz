@@ -84,9 +84,14 @@ export default async function ProductsPage({ searchParams }: PageProps<"/product
             Lọc
           </button>
         </form>
-        <Link href="/products/new" className="flex h-10 items-center justify-center rounded-sm bg-accent px-4 text-button uppercase text-text-on-dark hover:bg-accent-hover">
-          Thêm sản phẩm
-        </Link>
+        <div className="flex gap-2">
+          <Link href="/products/categories" className="flex h-10 flex-1 items-center justify-center rounded-sm border border-text-primary px-4 text-button uppercase transition-colors duration-200 hover:bg-text-primary hover:text-text-on-dark md:flex-none">
+            Danh mục
+          </Link>
+          <Link href="/products/new" className="flex h-10 flex-1 items-center justify-center rounded-sm bg-accent px-4 text-button uppercase text-text-on-dark hover:bg-accent-hover md:flex-none">
+            Thêm sản phẩm
+          </Link>
+        </div>
       </div>
 
       {products.length === 0 ? (

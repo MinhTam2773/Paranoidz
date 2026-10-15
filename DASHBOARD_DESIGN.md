@@ -144,7 +144,8 @@ Bottom-right, dark `#111111` background, white text, 3s auto-dismiss. Success pr
 - **Detail**: customer block (name, phones, email, address, note; refusal count + blacklist indicator), items table with snapshots, totals block (subtotal / discount + voucher code / total), status timeline, and a single primary action that advances the lifecycle (pending→CONFIRM, confirmed→SHIP, shipped→DELIVERED) plus secondary Cancel / Delivery failed where valid. Every transition calls `transition_order_status()` — never a raw status write.
 
 ### 6.3 Products
-- **List**: thumbnail, name, category, price range, total stock, active toggle, updated at. Search + category filter. "ADD PRODUCT" primary top-right.
+- **List**: thumbnail, name, category, price range, total stock, active toggle, updated at. Search + category filter. "ADD PRODUCT" primary top-right, "DANH MỤC" secondary next to it.
+- **Categories** (`/products/categories`, under PRODUCTS — no sidebar item; added 2026-10-15): one page, no detail pages (a category is only a name). Add field + button on top; list in `sort_order` (= order of the storefront homepage category rows), drag or ↑ ↓ to reorder, product count per row, inline rename (Sửa → input → Lưu / Hủy), Xóa only when no product uses it (confirmation modal naming the category). Slug is generated from the name on create and never shown (the storefront doesn't link categories).
 - **Edit/Create**: name, slug (auto), category, description, care instructions, size guide, active toggle; variant matrix (color × size → price, original price, stock, SKU per row); image uploader per product with variant assignment. On edit, a "Màu sắc" block renames a colour on all its sizes and photos at once (`rename_product_color()`, saved on its own; SKUs unchanged) and picks its swatch colour for the storefront card dots (native colour picker, "Bỏ màu" clears it; `product_variants.color_hex` on every size of the colour).
 
 ### 6.4 Customers
