@@ -604,6 +604,23 @@ async function main() {
   check("quote: anon and signed-in customers can't call quote_order / order_discount",
     !!anonQuote.error && !!customerQuote.error && !!anonDiscount.error,
     `anon=${anonQuote.error?.message} customer=${customerQuote.error?.message} discount=${anonDiscount.error?.message}`);
+
+  // 18. SPX shipment columns: only the service role writes them, tracking number unique --------
+  const spxOrder = await placeOrder(one(), { phone: QUOTE_PHONE, userId: c1Id });
+  const spxId = spxOrder.data?.order_id ?? "";
+  const [spxOwnTry, spxAnonTry] = await Promise.all(
+    [c1, anon].map((db) => db.from("orders").update({ spx_tracking_no: "SPXVN-SMOKE-HACK" }).eq("id", spxId).select("id")),
+  );
+  const { data: ownRow } = await c1.from("orders").select("id").eq("id", spxId).maybeSingle();
+  const { error: spxWriteErr } = await admin.from("orders").update({
+    spx_tracking_no: "SPXVN-SMOKE-18", spx_ward: "Phường Phú Thạnh", spx_fee: 21, spx_created_at: new Date().toISOString(),
+  }).eq("id", spxId);
+  const { error: spxDupErr } = await admin.from("orders").update({ spx_tracking_no: "SPXVN-SMOKE-18" }).eq("id", createdOrders[0]);
+  const { data: spxRow } = await admin.from("orders").select("spx_tracking_no, spx_ward, spx_fee").eq("id", spxId).maybeSingle();
+  check("spx: customer (own order) and anon can't write SPX columns; service role can; tracking number unique",
+    !spxOrder.error && !!ownRow && (!!spxOwnTry.error || spxOwnTry.data?.length === 0) && (!!spxAnonTry.error || spxAnonTry.data?.length === 0)
+      && !spxWriteErr && spxDupErr?.code === "23505" && spxRow?.spx_tracking_no === "SPXVN-SMOKE-18" && spxRow.spx_fee === 21,
+    `place=${spxOrder.error?.message} own=${JSON.stringify(spxOwnTry.data ?? spxOwnTry.error)} anon=${JSON.stringify(spxAnonTry.data ?? spxAnonTry.error)} write=${spxWriteErr?.message} dup=${spxDupErr?.code} row=${JSON.stringify(spxRow)}`);
 }
 
 async function cleanup() {

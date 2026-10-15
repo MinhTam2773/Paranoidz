@@ -464,6 +464,10 @@ export type Database = {
           recipient_name: string
           secondary_phone: string | null
           shipping_fee: number
+          spx_created_at: string | null
+          spx_fee: number | null
+          spx_tracking_no: string | null
+          spx_ward: string | null
           status: Database["public"]["Enums"]["order_status"]
           subtotal: number
           total: number
@@ -488,6 +492,10 @@ export type Database = {
           recipient_name: string
           secondary_phone?: string | null
           shipping_fee?: number
+          spx_created_at?: string | null
+          spx_fee?: number | null
+          spx_tracking_no?: string | null
+          spx_ward?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           subtotal: number
           total: number
@@ -512,6 +520,10 @@ export type Database = {
           recipient_name?: string
           secondary_phone?: string | null
           shipping_fee?: number
+          spx_created_at?: string | null
+          spx_fee?: number | null
+          spx_tracking_no?: string | null
+          spx_ward?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           subtotal?: number
           total?: number
