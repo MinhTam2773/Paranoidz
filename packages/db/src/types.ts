@@ -889,6 +889,21 @@ export type Database = {
         }
         Relationships: []
       }
+      spx_locations: {
+        Row: {
+          province: string
+          ward: string
+        }
+        Insert: {
+          province: string
+          ward: string
+        }
+        Update: {
+          province?: string
+          ward?: string
+        }
+        Relationships: []
+      }
       stock_adjustments: {
         Row: {
           created_at: string
