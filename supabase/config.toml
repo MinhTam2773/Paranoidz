@@ -222,10 +222,31 @@ otp_expiry = 3600
 # admin_email = "admin@email.com"
 # sender_name = "Admin"
 
-# Uncomment to customize email template
-# [auth.email.template.invite]
-# subject = "You have been invited"
-# content_path = "./supabase/templates/invite.html"
+# Vietnamese auth emails (CLAUDE.md §5). Hosted projects don't read this file: the same
+# subjects + HTML are pasted into Dashboard → Authentication → Emails → Templates.
+[auth.email.template.confirmation]
+subject = "Xác nhận email đăng ký Paranoidz"
+content_path = "./supabase/templates/confirmation.html"
+
+[auth.email.template.recovery]
+subject = "Đặt lại mật khẩu Paranoidz"
+content_path = "./supabase/templates/recovery.html"
+
+[auth.email.template.email_change]
+subject = "Xác nhận đổi email Paranoidz"
+content_path = "./supabase/templates/email_change.html"
+
+[auth.email.template.magic_link]
+subject = "Liên kết đăng nhập Paranoidz"
+content_path = "./supabase/templates/magic_link.html"
+
+[auth.email.template.invite]
+subject = "Lời mời tạo tài khoản Paranoidz"
+content_path = "./supabase/templates/invite.html"
+
+[auth.email.template.reauthentication]
+subject = "Mã xác thực Paranoidz"
+content_path = "./supabase/templates/reauthentication.html"
 
 # Uncomment to customize notification email template
 # [auth.email.notification.password_changed]
