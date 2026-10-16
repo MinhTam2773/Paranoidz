@@ -13,7 +13,9 @@
     "./types": "./src/types.ts",
     "./provinces": "./src/provinces.ts",
     "./spx": "./src/spx/client.ts",
-    "./spx/order-body": "./src/spx/order-body.ts"
+    "./spx/order-body": "./src/spx/order-body.ts",
+    "./spx/sign": "./src/spx/sign.ts",
+    "./spx/webhook": "./src/spx/webhook.ts"
   },
   "scripts": {
     "gen:types": "supabase gen types typescript --linked --schema public > src/types.ts",
