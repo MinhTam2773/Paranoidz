@@ -34,9 +34,9 @@ jobs:
         with:
           version: 2.72.7
 
-      # All migrations + seeds apply from zero. Unused services skipped to start faster.
+      # All migrations + seeds apply from zero. Unused services skipped to start faster; Mailpit stays (S11, S12).
       - name: Start local Supabase
-        run: supabase start -x studio,realtime,imgproxy,edge-runtime,logflare,vector,mailpit,supavisor
+        run: supabase start -x studio,realtime,imgproxy,edge-runtime,logflare,vector,supavisor
 
       # The smoke scripts read apps/admin/.env.local. The e2e tests read `supabase status` themselves.
       - name: Point the smoke scripts at local Supabase
