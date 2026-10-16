@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { createPublicClient } from "@paranoidz/db/public";
 import { HomeTabs } from "@/components/home/HomeTabs";
 import { Marquee, Lookbook } from "@/components/home/HomepageV2";
+import { Faq } from "@/components/home/Faq";
 import { ProductRow } from "@/components/home/ProductRow";
 import { HeroCarousel } from "@/components/home/HeroCarousel";
 import { ProductCard, type ProductCardData } from "@/components/product/ProductCard";
@@ -146,6 +147,8 @@ export default async function HomePage() {
             </div>
           ))}
         </section>
+
+        <Faq />
       </div>
     </>
   );
