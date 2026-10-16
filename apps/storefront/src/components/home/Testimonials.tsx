@@ -25,6 +25,9 @@ export function Testimonials() {
         {TESTIMONIALS.map((t) => (
           <li key={`${t.name}-${t.date}`} className="flex flex-col gap-3 bg-bg-primary p-6">
             <p aria-label="5 trên 5 sao" className="text-warning tracking-[0.15em]">★★★★★</p>
+            {t.image && (
+              <img src={t.image} alt={`Ảnh đánh giá của ${t.name}`} className="aspect-square w-full rounded-sm object-cover" loading="lazy" />
+            )}
             <blockquote className="flex-1 text-body leading-relaxed text-text-primary">
               “{t.content}”
             </blockquote>

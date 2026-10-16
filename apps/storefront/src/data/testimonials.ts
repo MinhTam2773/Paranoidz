@@ -6,6 +6,8 @@ export type Testimonial = {
   date: string;
   product: string;
   content: string;
+  /** Optional customer photo (Shopee review screenshot crop). Add later via Admin. */
+  image?: string;
 };
 
 export const TESTIMONIALS: Testimonial[] = [

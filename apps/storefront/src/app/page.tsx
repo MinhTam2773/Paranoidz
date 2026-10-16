@@ -56,11 +56,11 @@ export default async function HomePage() {
     flashState?.active && flashState.discountPercent > 0
       ? onSale.map((c) => ({
           ...c,
-          originalPrice: c.price,
+          // Stacked: flash price vs the TRUE original, so the badge shows the total % off.
           price: flashPrice(c.price, flashState.discountPercent),
           variants: c.variants.map((v) => ({
             ...v,
-            original_price: v.price,
+            original_price: v.original_price,
             price: flashPrice(v.price, flashState.discountPercent),
           })),
         }))

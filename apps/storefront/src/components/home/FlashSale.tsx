@@ -47,8 +47,8 @@ export function FlashSale({ state, cards }: { state: FlashSaleState; cards: Prod
         <h2 className="flex items-center gap-3 text-h2 uppercase">
           <span aria-hidden className="text-accent">⚡</span>
           Flash sale
-          <span className="rounded-sm bg-accent px-2 py-0.5 text-caption font-bold uppercase text-text-on-dark">
-            -{state.discountPercent}%
+          <span className="rounded-sm bg-warning px-2 py-0.5 text-caption font-bold uppercase text-text-primary">
+            Sắp cháy hàng
           </span>
         </h2>
         <div className="flex items-center gap-3">
