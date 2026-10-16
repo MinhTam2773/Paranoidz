@@ -41,7 +41,7 @@ export function ProductCard({ product, eager = false }: { product: ProductCardDa
 
   return (
     <div className="group flex flex-col">
-      <div className="relative aspect-3/4 overflow-hidden rounded-sm bg-bg-secondary">
+      <div className="relative aspect-square overflow-hidden rounded-sm bg-bg-secondary">
         <Link href={href} tabIndex={-1} aria-hidden className="absolute inset-0">
           {shownImage && (
             <Image

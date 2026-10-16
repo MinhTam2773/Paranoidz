@@ -146,7 +146,7 @@ export function SearchForm({
                 onPointerMove={() => setActive(i)}
                 className={`flex items-center gap-3 px-3 py-2 ${optionClass(i)}`}
               >
-                <span className="relative aspect-3/4 w-9 shrink-0 overflow-hidden rounded-sm bg-bg-secondary">
+                <span className="relative aspect-square w-9 shrink-0 overflow-hidden rounded-sm bg-bg-secondary">
                   {p.imageUrl && <Image src={p.imageUrl} alt="" fill sizes="36px" className="object-cover" />}
                 </span>
                 <span className="min-w-0 flex-1 truncate text-product-name text-text-primary">{p.name}</span>

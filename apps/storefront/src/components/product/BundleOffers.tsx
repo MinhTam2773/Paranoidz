@@ -65,7 +65,7 @@ export function BundleOffers({ offers }: { offers: Offer[] }) {
                   <li key={p.id} className="min-w-0">
                     <Link href={`/products/${p.slug}`} className="group flex flex-col gap-2">
                       <span className="relative">
-                        <span className="relative block aspect-3/4 overflow-hidden rounded-sm bg-bg-secondary">
+                        <span className="relative block aspect-square overflow-hidden rounded-sm bg-bg-secondary">
                           {p.imageUrl && (
                             <Image src={p.imageUrl} alt="" fill sizes="(min-width: 1024px) 180px, 30vw" className="object-cover transition-transform duration-300 group-hover:scale-105" />
                           )}

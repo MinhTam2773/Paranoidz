@@ -108,7 +108,7 @@ export function ProductView({
     <>
       <div className="grid gap-8 lg:grid-cols-12 lg:gap-12">
         <div className="flex flex-col gap-2 lg:col-span-7">
-          <div className="relative aspect-3/4 overflow-hidden rounded-sm bg-bg-secondary">
+          <div className="relative aspect-square overflow-hidden rounded-sm bg-bg-secondary">
             {mainImage && (
               <Image
                 ref={mainImageRef}
@@ -130,7 +130,7 @@ export function ProductView({
                   onClick={() => setActiveImage(i)}
                   aria-label={`Xem ảnh ${i + 1} / ${gallery.length}`}
                   aria-current={i === activeImage}
-                  className={`relative aspect-3/4 overflow-hidden rounded-sm border bg-bg-secondary transition-colors duration-200 ${
+                  className={`relative aspect-square overflow-hidden rounded-sm border bg-bg-secondary transition-colors duration-200 ${
                     i === activeImage ? "border-text-primary" : "border-transparent hover:border-border-hover"
                   }`}
                 >
