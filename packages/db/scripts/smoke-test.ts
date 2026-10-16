@@ -28,6 +28,7 @@ const BUNDLE_PREFIX = "SMOKE-BUNDLE"; // assumes no other active bundle holds th
 const PHONES = Array.from({ length: 9 }, (_, i) => `090000000${i + 1}`);
 const QUOTE_PHONE = "0900000010"; // case 17's promo order: no history from earlier cases
 const FEE_PHONE = "0900000011"; // case 19: up to 3 pending orders of its own
+const LOST_PHONE = "0900000012"; // case 20: refusal count from this case only
 const AUTH_EMAILS = [1, 2, 3].map((i) => `smoke-auth-${i}@paranoidz.test`);
 
 let failures = 0;
@@ -666,13 +667,14 @@ async function main() {
   // 20. SPX-side failure (lost, damaged, pickup failed): stock back, no refusal for the customer --------
   const lostItems = one();
   const lostStock = (await variant(lostItems[0].variant_id)).stock;
-  const lost = await placeOrder(lostItems, { phone: PHONES[4] });
-  await transition(lost.data!.order_id, "confirmed", "shipped");
-  const refusalsBefore = (await customer(PHONES[4]))?.refusal_count;
+  const lost = await placeOrder(lostItems, { phone: LOST_PHONE });
+  if (!lost.data) throw new Error(`case 20 place_order: ${lost.error?.message}`);
+  await transition(lost.data.order_id, "confirmed", "shipped");
+  const refusalsBefore = (await customer(LOST_PHONE))?.refusal_count;
   const { error: lostError } = await admin.rpc("transition_order_status", {
-    p_order_id: lost.data!.order_id, p_new_status: "delivery_failed", p_count_refusal: false,
+    p_order_id: lost.data.order_id, p_new_status: "delivery_failed", p_count_refusal: false,
   });
-  const refusalsAfter = (await customer(PHONES[4]))?.refusal_count;
+  const refusalsAfter = (await customer(LOST_PHONE))?.refusal_count;
   const lostStockAfter = (await variant(lostItems[0].variant_id)).stock;
   check("delivery_failed with p_count_refusal false: stock restored, refusal_count unchanged",
     !lostError && refusalsAfter === refusalsBefore && lostStockAfter === lostStock,
@@ -693,7 +695,7 @@ async function cleanup() {
     await admin.from("product_variants").update({ stock: stock + qty }).eq("id", variant_id);
   }
   if (createdOrders.length) await admin.from("orders").delete().in("id", createdOrders);
-  await admin.from("customers").delete().in("phone", [...PHONES, QUOTE_PHONE, FEE_PHONE]);
+  await admin.from("customers").delete().in("phone", [...PHONES, QUOTE_PHONE, FEE_PHONE, LOST_PHONE]);
   await admin.from("rate_limits").delete().in("bucket", PHONES.flatMap((p) => [`order:phone:${p}`, `lookup:phone:${p}`]));
   await admin.from("rate_limits").delete().or("bucket.like.order:ip:192.0.2.%,bucket.like.order:ip:2001:db8:%");
   await admin.from("vouchers").delete().in("code", [VOUCHER, BUNDLE_VOUCHER, QUOTE_VOUCHER]);
