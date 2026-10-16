@@ -35,3 +35,17 @@ test("S1 browse: home → listing → product page, pick colour + size", async (
   await sizes.getByRole("button", { name: "L", exact: true }).click();
   await expect(page.getByText("₫250.000").first()).toBeVisible();
 });
+
+// S13 (regression, 2026-10-16). The header's backdrop-blur made it the containing block for the
+// mobile menu's `fixed inset-0`: closed, the off-screen panel widened the page to 750 px (taps
+// landed off target — the mobile S3 timeout); open, the menu was only header-tall.
+test("S13 mobile: no sideways scroll, the open menu covers the screen @mobile", async ({ page, isMobile }) => {
+  test.skip(!isMobile, "phone layout only");
+  await page.goto("/");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(375);
+
+  await page.getByRole("button", { name: "Mở menu" }).click();
+  const menu = page.getByRole("dialog", { name: "Menu" });
+  await expect(menu).toBeVisible();
+  await expect.poll(async () => (await menu.boundingBox())?.height).toBe(812);
+});
