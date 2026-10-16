@@ -3,7 +3,7 @@ import Image from "next/image";
 // Homepage v2 2026-10-16: big marquee band (Hydra-style) + lookbook grid
 // with the shop's real-life photos from Drive.
 
-const MARQUEE_ITEMS = ["Paranoidz", "Streetwear Việt Nam", "BST 2026", "Mặc kệ thiên hạ"];
+const MARQUEE_ITEMS = ["Paranoidz", "Streetwear Việt Nam", "BST 2026", "Back to Basicz"];
 
 export function Marquee() {
   const row = [...MARQUEE_ITEMS, ...MARQUEE_ITEMS, ...MARQUEE_ITEMS];
