@@ -5,7 +5,7 @@ import { createPublicClient } from "@paranoidz/db/public";
 import { HomeTabs } from "@/components/home/HomeTabs";
 import { Marquee, Lookbook } from "@/components/home/HomepageV2";
 import { ProductRow } from "@/components/home/ProductRow";
-import { PhotoHero } from "@/components/home/VideoHero";
+import { HeroCarousel } from "@/components/home/HeroCarousel";
 import { ProductCard, type ProductCardData } from "@/components/product/ProductCard";
 import { productCardQuery, toProductCard } from "@/lib/catalog";
 
@@ -64,7 +64,7 @@ export default async function HomePage() {
 
   return (
     <>
-      <PhotoHero />
+      <HeroCarousel />
       <Marquee />
 
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-14 px-4 py-14 lg:gap-20 lg:px-6 lg:py-20">
