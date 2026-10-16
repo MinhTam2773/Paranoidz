@@ -64,7 +64,7 @@ export async function createUser({ admin = false } = {}) {
 export async function placeOrder({ variantId, qty = 1, phone = uniquePhone() }: { variantId: string; qty?: number; phone?: string }) {
   const { data, error } = await db.rpc("place_order", {
     p_items: [{ variant_id: variantId, qty }],
-    p_recipient_name: "Khách E2E",
+    p_recipient_name: "Khách Hàng Thử",
     p_phone: phone,
     p_address: "1 Lê Lợi",
     p_ward: "Phường Bến Thành",
