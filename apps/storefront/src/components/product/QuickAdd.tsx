@@ -114,7 +114,7 @@ export function QuickAdd({
         >
           <div className="flex max-h-[85dvh] flex-col gap-5 overflow-y-auto p-4 md:p-6">
             <div className="flex gap-3">
-              <div className="relative aspect-3/4 w-20 shrink-0 overflow-hidden rounded-sm bg-bg-secondary">
+              <div className="relative aspect-square w-20 shrink-0 overflow-hidden rounded-sm bg-bg-secondary">
                 {thumb && <Image ref={thumbRef} src={thumb} alt="" fill sizes="80px" className="object-cover" />}
               </div>
               <div className="flex flex-1 flex-col gap-2">
@@ -203,7 +203,7 @@ export function QuickAdd({
       >
         <div className="flex max-h-[85dvh] flex-col gap-5 overflow-y-auto p-4 md:p-6">
           <div className="flex gap-3">
-            <div className="relative aspect-3/4 w-20 shrink-0 overflow-hidden rounded-sm bg-bg-secondary">
+            <div className="relative aspect-square w-20 shrink-0 overflow-hidden rounded-sm bg-bg-secondary">
               {thumb && <Image ref={thumbRef} src={thumb} alt="" fill sizes="80px" className="object-cover" />}
             </div>
             <div className="flex flex-1 flex-col gap-2">

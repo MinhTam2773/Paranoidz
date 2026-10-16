@@ -19,7 +19,7 @@ export function OrderSummary({ items, subtotal, discount, shippingFee, total, ch
       <ul className="flex flex-col gap-4 rounded-sm bg-bg-secondary p-6">
         {items.map((item, i) => (
           <li key={i} className="flex gap-3">
-            <div className="relative aspect-3/4 w-16 shrink-0 overflow-hidden rounded-sm bg-bg-tertiary">
+            <div className="relative aspect-square w-16 shrink-0 overflow-hidden rounded-sm bg-bg-tertiary">
               {item.imageUrl && <Image src={item.imageUrl} alt={item.name} fill sizes="64px" className="object-cover" />}
             </div>
             <div className="flex min-w-0 flex-1 flex-col gap-1">

@@ -71,7 +71,7 @@ export function CartView() {
             <li key={line.variantId} className="flex gap-4 border-b border-border py-6 first:pt-0">
               <Link
                 href={item ? `/products/${item.slug}` : "/products"}
-                className="relative aspect-3/4 w-24 shrink-0 overflow-hidden rounded-sm bg-bg-secondary sm:w-28"
+                className="relative aspect-square w-24 shrink-0 overflow-hidden rounded-sm bg-bg-secondary sm:w-28"
               >
                 {item?.imageUrl && <Image src={item.imageUrl} alt={item.name} fill sizes="112px" className="object-cover" />}
               </Link>
