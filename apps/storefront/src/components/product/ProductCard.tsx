@@ -31,9 +31,11 @@ export type ProductCardData = {
 // The buttons and dots sit beside the links, not inside them (a button inside <a> is invalid HTML);
 // the image link is a mouse/touch shortcut only, the text link is the one in the tab order.
 export function ProductCard({ product, eager = false }: { product: ProductCardData; eager?: boolean }) {
-  const { id, name, slug, imageUrl, imageColor, price, originalPrice, soldOut, colors, reviewCount, ratingAverage } = product;
+  const { id, name, slug, imageUrl, imageColor, price, originalPrice, soldOut, colors, variants, reviewCount, ratingAverage } = product;
   const [color, setColor] = useState(() => (colors.some((c) => c.name === imageColor) ? imageColor : null));
   const onSale = originalPrice !== null && originalPrice > price;
+  // Scarcity cue (Chuột Trắng-style): any size down to its last few units.
+  const lowStock = !soldOut && variants.some((v) => v.stock > 0 && v.stock <= 3);
   const href = `/products/${slug}`;
   const shownImage = colors.find((c) => c.name === color)?.imageUrl ?? imageUrl;
 
@@ -53,25 +55,32 @@ export function ProductCard({ product, eager = false }: { product: ProductCardDa
           )}
         </Link>
         {/* Redesign 2026-10-16: badges top-left, wishlist top-right, quick-add as a
-            full-width bar — always visible on touch, slides up on desktop hover. */}
+            full-width bar — always visible on touch, slides up on hover-capable devices. */}
         <div className="pointer-events-none absolute left-0 top-3 flex flex-col items-start gap-2">
           {soldOut ? (
             <span className="bg-bg-dark px-2.5 py-1 text-caption font-semibold uppercase tracking-[0.06em] text-text-on-dark">
               Hết hàng
             </span>
           ) : (
-            onSale && (
-              <span className="bg-accent px-2.5 py-1 text-caption font-semibold uppercase tracking-[0.06em] text-text-on-dark">
-                -{Math.round(((originalPrice - price) / originalPrice) * 100)}%
-              </span>
-            )
+            <>
+              {onSale && (
+                <span className="bg-accent px-2.5 py-1 text-caption font-semibold uppercase tracking-[0.06em] text-text-on-dark">
+                  -{Math.round(((originalPrice - price) / originalPrice) * 100)}%
+                </span>
+              )}
+              {lowStock && (
+                <span className="bg-warning px-2.5 py-1 text-caption font-semibold uppercase tracking-[0.06em] text-text-primary">
+                  Sắp hết hàng
+                </span>
+              )}
+            </>
           )}
         </div>
         <div className="absolute right-2 top-2">
           <WishlistButton productId={id} className="rounded-full bg-bg-primary/90 shadow-1 backdrop-blur-sm" />
         </div>
         {!soldOut && (
-          <div className="absolute inset-x-0 bottom-0 lg:translate-y-full lg:transition-transform lg:duration-300 lg:group-hover:translate-y-0">
+          <div className="absolute inset-x-0 bottom-0 hoverable:translate-y-full hoverable:transition-transform hoverable:duration-300 hoverable:group-hover:translate-y-0 hoverable:group-focus-within:translate-y-0">
             <QuickAdd product={product} color={color} onColor={setColor} barTrigger />
           </div>
         )}

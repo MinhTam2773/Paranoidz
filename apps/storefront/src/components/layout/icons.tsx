@@ -74,4 +74,18 @@ export const TikTokIcon = (p: P) => (
   <Icon {...p}><path d="M14 3v11.5a3.5 3.5 0 1 1-3.5-3.5" /><path d="M14 3a5 5 0 0 0 5 5" /></Icon>
 );
 
+// Trust-row icons (product page): same 24px stroke grid.
+export const TruckIcon = (p: P) => (
+  <Icon {...p}><path d="M1 5h13v11H1zM14 9h4l4 4v3h-8" /><circle cx="6" cy="18.5" r="1.8" /><circle cx="17.5" cy="18.5" r="1.8" /></Icon>
+);
+export const CashIcon = (p: P) => (
+  <Icon {...p}><rect x="2" y="6" width="20" height="12" rx="2" /><circle cx="12" cy="12" r="2.5" /><path d="M5.5 9.5h.01M18.5 14.5h.01" /></Icon>
+);
+export const ReturnIcon = (p: P) => (
+  <Icon {...p}><path d="M3 12a9 9 0 1 0 3-6.7" /><path d="M3 4v5h5" /></Icon>
+);
+export const PhoneIcon = (p: P) => (
+  <Icon {...p}><path d="M5 4h4l2 5-2.5 1.5a12 12 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2Z" /></Icon>
+);
+
 export const SOCIAL_ICONS = { facebook: FacebookIcon, instagram: InstagramIcon, tiktok: TikTokIcon };
