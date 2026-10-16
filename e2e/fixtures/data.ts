@@ -15,6 +15,7 @@ export function uniquePhone() {
 }
 
 export const CITY = "TP. Hồ Chí Minh";
+export const WARD = "Phường Bến Thành"; // in supabase/seed.sql's spx_locations rows
 
 type VariantSeed = { color?: string; size: string; price?: number; originalPrice?: number; stock: number };
 
@@ -67,7 +68,7 @@ export async function placeOrder({ variantId, qty = 1, phone = uniquePhone() }: 
     p_recipient_name: "Khách Hàng Thử",
     p_phone: phone,
     p_address: "1 Lê Lợi",
-    p_ward: "Phường Bến Thành",
+    p_ward: WARD,
     p_city: CITY,
   });
   if (error) throw error;
