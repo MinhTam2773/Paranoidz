@@ -38,21 +38,26 @@ export function ProductCard({ product, eager = false }: { product: ProductCardDa
   const lowStock = !soldOut && variants.some((v) => v.stock > 0 && v.stock <= 3);
   const href = `/products/${slug}`;
   const shownImage = colors.find((c) => c.name === color)?.imageUrl ?? imageUrl;
+  // Only the shown photo loads until the card is hovered, touched or focused; from then on every
+  // colour's photo is mounted underneath (hidden), so a dot swaps instantly instead of fetching on click.
+  const [warm, setWarm] = useState(false);
+  const images = warm ? [...new Set([shownImage, imageUrl, ...colors.map((c) => c.imageUrl)])] : [shownImage];
 
   return (
-    <div className="group flex flex-col">
+    <div className="group flex flex-col" onPointerEnter={() => setWarm(true)} onFocus={() => setWarm(true)}>
       <div className="relative aspect-square overflow-hidden rounded-sm bg-bg-secondary">
         <Link href={href} tabIndex={-1} aria-hidden className="absolute inset-0">
-          {shownImage && (
+          {images.filter((src) => src !== null).map((src) => (
             <Image
-              src={shownImage}
+              key={src}
+              src={src}
               alt=""
               fill
-              loading={eager ? "eager" : undefined}
+              loading={eager || warm ? "eager" : undefined}
               sizes="(min-width: 1280px) 411px, (min-width: 1024px) 33vw, 50vw"
-              className="object-cover transition-transform duration-300 group-hover:scale-[1.04]"
+              className={`object-cover transition-[transform,opacity] duration-300 group-hover:scale-[1.04] ${src === shownImage ? "" : "opacity-0"}`}
             />
-          )}
+          ))}
         </Link>
         {/* Redesign 2026-10-16: badges top-left, wishlist top-right, quick-add as a
             full-width bar — always visible on touch, slides up on hover-capable devices. */}
