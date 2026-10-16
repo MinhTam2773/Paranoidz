@@ -438,13 +438,19 @@ export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; acc
             <div className="flex justify-between gap-4">
               <dt className="min-w-0 wrap-break-word text-text-secondary">{discountLabel}</dt>
               {priced ? (
-                <dd className={`shrink-0 ${priced.discount > 0 ? "text-accent" : ""}`}>
-                  {priced.discount > 0 ? `−${formatVnd(priced.discount)}` : formatVnd(0)}
+                <dd className={`shrink-0 ${(priced.discount - (priced.flashDiscount ?? 0)) > 0 ? "text-accent" : ""}`}>
+                  {(priced.discount - (priced.flashDiscount ?? 0)) > 0 ? `−${formatVnd(priced.discount - (priced.flashDiscount ?? 0))}` : formatVnd(0)}
                 </dd>
               ) : (
                 <dd className="text-right text-caption text-text-secondary">{quote ? "Áp dụng khi đặt hàng" : "Đang tính…"}</dd>
               )}
             </div>
+            {!!priced?.flashDiscount && (
+              <div className="flex justify-between gap-4">
+                <dt className="min-w-0 wrap-break-word text-text-secondary">⚡ Flash sale (−{priced.flashPct}%)</dt>
+                <dd className="shrink-0 text-accent">−{formatVnd(priced.flashDiscount)}</dd>
+              </div>
+            )}
             {priced?.source === "auto_first5" && !priced.phoneKnown && (
               <p className="-mt-1 text-caption text-text-muted">Áp dụng cho 5 đơn đầu tiên của mỗi số điện thoại — kiểm tra lại khi bạn nhập số.</p>
             )}

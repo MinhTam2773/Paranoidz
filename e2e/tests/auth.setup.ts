@@ -1,10 +1,13 @@
 import { expect, test as setup } from "@playwright/test";
 import { ADMIN_STATE, ADMIN_URL } from "../env";
-import { createUser } from "../fixtures/data";
+import { createUser, disableFlashSale } from "../fixtures/data";
 
 // One admin for the run, signed in through the real login form. The password lives only in
 // memory; the admin tests reuse the saved session.
 setup("admin session", async ({ page }) => {
+  // Flash sale would add a time-dependent extra discount and break the exact-amount
+  // assertions in the checkout tests — deterministic pricing for the whole run.
+  await disableFlashSale();
   const admin = await createUser({ admin: true });
   await page.goto(`${ADMIN_URL}/login`);
   await page.getByLabel("Email").fill(admin.email);

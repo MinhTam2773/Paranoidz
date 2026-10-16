@@ -1,20 +1,59 @@
 import Link from "next/link";
-import { HOTLINE, POLICY_LINKS, SOCIAL_LINKS, STORE_ADDRESSES } from "@/lib/site";
-import { SOCIAL_ICONS } from "./icons";
+import { HOTLINE, POLICY_LINKS } from "@/lib/site";
+import { Logo } from "./Logo";
 
 const heading = "text-caption font-semibold uppercase tracking-[0.06em] text-text-on-dark";
 const muted = "text-caption text-text-on-dark/70";
 
-// DESIGN.md §4 footer: dark, 4 columns (About / Policy / Store info / Fanpage),
-// single column on mobile. COD is the only payment method (ARCHITECTURE.md §1).
+// Social links (2026-10-16, Tủn supplied).
+const SOCIALS = [
+  { label: "TIKTOK", href: "https://www.tiktok.com/@paranoidz.vn" },
+  { label: "FANPAGE", href: "https://www.facebook.com/paranoidz.vn/" },
+  { label: "ZALO", href: "https://zalo.me/0345267709" },
+] as const;
+
+// Footer (2026-10-16): logo image, business info (Hộ kinh doanh COOLSHIRTZ),
+// social rows like the Hydra reference, contact, policies.
 export function Footer() {
   return (
     <footer className="bg-bg-dark text-text-on-dark">
-      <div className="mx-auto grid max-w-7xl gap-8 px-4 py-12 sm:grid-cols-2 lg:grid-cols-4 lg:px-6">
+      <div className="mx-auto grid max-w-7xl gap-10 px-4 py-12 sm:grid-cols-2 lg:grid-cols-4 lg:px-6">
         <div className="flex flex-col gap-4">
-          <Link href="/" className="font-logo text-h2 italic uppercase tracking-[0.05em]">
-            Paranoidz
-          </Link>
+          <Logo dark />
+          <div className={muted}>
+            <p className="font-semibold uppercase text-text-on-dark">Hộ kinh doanh COOLSHIRTZ</p>
+            <p className="mt-1">Mã số doanh nghiệp: 042097005182</p>
+          </div>
+        </div>
+
+        <nav aria-label="Kết nối với Paranoidz" className="flex flex-col gap-4">
+          <h2 className={heading}>Kết nối với Paranoidz</h2>
+          <ul className="flex flex-col">
+            {SOCIALS.map(({ label, href }) => (
+              <li key={label} className="border-b border-text-on-dark/10">
+                <a
+                  href={href}
+                  target={href.startsWith("http") ? "_blank" : undefined}
+                  rel={href.startsWith("http") ? "noopener noreferrer" : undefined}
+                  className="flex items-center justify-between py-2.5 text-caption uppercase tracking-[0.06em] text-text-on-dark/80 hover:text-text-on-dark"
+                >
+                  {label}
+                  <span aria-hidden>↗</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+
+        <div className="flex flex-col gap-4">
+          <h2 className={heading}>Liên hệ</h2>
+          <p className={muted}>
+            <a href="mailto:support@paranoidz.vn" className="hover:text-text-on-dark">
+              support@paranoidz.vn
+            </a>
+          </p>
+          <p className={muted}>57/41/17 Tô Hiệu, P. Phú Thạnh, TP.HCM</p>
+          <p className="text-button">Hotline: {HOTLINE}</p>
         </div>
 
         <nav aria-label="Chính sách" className="flex flex-col gap-4">
@@ -25,32 +64,6 @@ export function Footer() {
             </Link>
           ))}
         </nav>
-
-        <div className="flex flex-col gap-4">
-          <h2 className={heading}>Thông tin cửa hàng</h2>
-          {STORE_ADDRESSES.map(({ name, address }) => (
-            <p key={name} className={muted}>
-              {name}
-              <br />
-              {address}
-            </p>
-          ))}
-          <p className="text-button">Hotline: {HOTLINE}</p>
-        </div>
-
-        <div className="flex flex-col gap-4">
-          <h2 className={heading}>Fanpage</h2>
-          <div className="flex gap-3">
-            {SOCIAL_LINKS.map(({ label, href, icon }) => {
-              const Icon = SOCIAL_ICONS[icon];
-              return (
-                <a key={label} href={href} aria-label={label} className="text-text-on-dark hover:opacity-70">
-                  <Icon />
-                </a>
-              );
-            })}
-          </div>
-        </div>
       </div>
 
       <div className="border-t border-text-on-dark/10">

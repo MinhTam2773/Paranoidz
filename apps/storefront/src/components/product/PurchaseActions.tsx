@@ -99,7 +99,7 @@ export function PurchaseActions({
 
   return (
     <>
-      <div ref={inlineRef} className="flex flex-col gap-3">
+      <div ref={inlineRef} className="flex flex-col gap-3 scroll-mb-24">
         <div className="flex gap-3">
           <QuantityStepper
             value={qty}

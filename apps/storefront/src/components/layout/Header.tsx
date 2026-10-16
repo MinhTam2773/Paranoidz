@@ -8,6 +8,7 @@ import { CartLink } from "./CartLink";
 import { MobileNav } from "./MobileNav";
 import { SearchForm } from "./SearchForm";
 import { isActive } from "./NavLinks";
+import { Logo } from "./Logo";
 
 // Redesign 2026-10-16: one sticky row instead of two — wordmark left, nav inline
 // center, search + account + cart right. Frees vertical space and reads more
@@ -22,12 +23,7 @@ export function Header() {
           header and, closed, widened the page to 750 px on phones. */}
       <div aria-hidden className="absolute inset-0 -z-10 bg-bg-primary/95 backdrop-blur" />
       <div className="mx-auto flex h-16 max-w-7xl items-center gap-4 px-4 lg:h-[72px] lg:gap-8 lg:px-6">
-        <Link
-          href="/"
-          className="font-logo text-[26px] italic uppercase leading-none tracking-[0.05em] text-text-primary lg:text-[32px]"
-        >
-          Paranoidz
-        </Link>
+        <Logo />
 
         <nav aria-label="Menu chính" className="hidden items-center gap-7 lg:flex">
           {NAV_LINKS.slice(1, 5).map(({ label, href }) => {

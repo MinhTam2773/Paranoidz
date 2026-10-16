@@ -179,6 +179,8 @@ export type OrderQuote = {
   source: "auto_first5" | "promo" | "bundle" | null;
   pct: number | null;
   code: string | null;
+  flashPct: number | null;
+  flashDiscount: number | null;
   bundles: { name: string; sets: number }[];
   phoneKnown: boolean;
   voucherError: string | null;
@@ -213,6 +215,7 @@ export async function quoteOrder(input: { items: CheckoutInput["items"]; phone: 
   }
   const q = data as {
     subtotal: number; discount: number; source: OrderQuote["source"]; pct: number | null; code: string | null;
+    flash_pct: number | null; flash_discount: number | null;
     bundles: { name: string; sets: number }[] | null; phone_known: boolean; voucher_error: string | null;
   };
   return {
@@ -221,6 +224,8 @@ export async function quoteOrder(input: { items: CheckoutInput["items"]; phone: 
     source: q.source,
     pct: q.pct,
     code: q.code,
+    flashPct: q.flash_pct,
+    flashDiscount: q.flash_discount,
     bundles: (q.bundles ?? []).map((b) => ({ name: b.name, sets: b.sets })),
     phoneKnown: q.phone_known,
     voucherError: q.voucher_error ? voucherMessage(q.voucher_error) : null,
