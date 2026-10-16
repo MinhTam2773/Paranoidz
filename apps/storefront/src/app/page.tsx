@@ -5,6 +5,8 @@ import { createPublicClient } from "@paranoidz/db/public";
 import { HomeTabs } from "@/components/home/HomeTabs";
 import { Marquee, Lookbook } from "@/components/home/HomepageV2";
 import { Faq } from "@/components/home/Faq";
+import { FlashSale } from "@/components/home/FlashSale";
+import { getFlashSaleState, flashPrice, type FlashSaleWindow } from "@/lib/flash-sale";
 import { ProductRow } from "@/components/home/ProductRow";
 import { HeroCarousel } from "@/components/home/HeroCarousel";
 import { ProductCard, type ProductCardData } from "@/components/product/ProductCard";
@@ -23,7 +25,7 @@ export default async function HomePage() {
   const supabase = createPublicClient();
   // RLS: active products / collections only. Every active product is loaded once and the sections
   // are cut from it — fine at this catalog size.
-  const [products, categories, collections, bestSellers] = await Promise.all([
+  const [products, categories, collections, bestSellers, flashWindows] = await Promise.all([
     productCardQuery(supabase).order("created_at", { ascending: false }).order("name"),
     supabase.from("categories").select("id, name").order("sort_order").order("name"),
     supabase
@@ -35,6 +37,7 @@ export default async function HomePage() {
       .limit(1, { referencedTable: "collection_items.products.product_images" })
       .limit(4),
     supabase.rpc("best_seller_ids", { p_limit: GRID_SIZE }),
+    supabase.from("flash_sale_windows").select("start_hour, duration_minutes, discount_percent"),
   ]);
   for (const r of [products, categories, collections, bestSellers]) if (r.error) throw r.error;
 
@@ -46,6 +49,21 @@ export default async function HomePage() {
     .map(({ card }) => card)
     .filter((c) => !c.soldOut && c.originalPrice !== null && c.originalPrice > c.price)
     .slice(0, ROW_SIZE);
+  // Flash sale: extra discount on the selling price during an active window.
+  const flashState = getFlashSaleState((flashWindows.data ?? []) as FlashSaleWindow[]);
+  const flashCards =
+    flashState?.active && flashState.discountPercent > 0
+      ? onSale.map((c) => ({
+          ...c,
+          originalPrice: c.price,
+          price: flashPrice(c.price, flashState.discountPercent),
+          variants: c.variants.map((v) => ({
+            ...v,
+            original_price: v.price,
+            price: flashPrice(v.price, flashState.discountPercent),
+          })),
+        }))
+      : onSale;
   const categoryRows = categories
     .data!.map((c) => ({
       name: c.name,
@@ -106,13 +124,7 @@ export default async function HomePage() {
           ]}
         />
 
-        {onSale.length > 0 && (
-          <RowSection index="01" title="Đang khuyến mãi" href="/products">
-            <ProductRow label="Sản phẩm đang khuyến mãi">
-              {onSale.map((card) => <ProductCard key={card.slug} product={card} />)}
-            </ProductRow>
-          </RowSection>
-        )}
+        {flashState && <FlashSale state={flashState} cards={flashCards} />}
 
         {categoryRows.map((row, i) => (
           <RowSection key={row.name} index={String(i + 2).padStart(2, "0")} title={row.name} href="/products">

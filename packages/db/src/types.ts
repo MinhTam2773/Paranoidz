@@ -1083,6 +1083,33 @@ export type Database = {
           },
         ]
       }
+      flash_sale_windows: {
+        Row: {
+          id: string
+          start_hour: number
+          duration_minutes: number
+          discount_percent: number
+          enabled: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          start_hour: number
+          duration_minutes?: number
+          discount_percent?: number
+          enabled?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          start_hour?: number
+          duration_minutes?: number
+          discount_percent?: number
+          enabled?: boolean
+          created_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
