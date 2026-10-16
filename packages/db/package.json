@@ -9,6 +9,7 @@
     "./admin": "./src/admin.ts",
     "./proxy": "./src/proxy.ts",
     "./public": "./src/public.ts",
+    "./testing": "./src/testing.ts",
     "./types": "./src/types.ts"
   },
   "scripts": {
