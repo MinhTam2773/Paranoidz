@@ -45,7 +45,7 @@ async function spxQuote(province: string, ward: string, units: number, value: nu
 }
 
 // `value` = the order's subtotal from database prices (SPX's COD amount + declared value).
-// live = false skips SPX (rate-limited previews).
+// live = false skips SPX (rate-limited previews); so does an environment without SPX keys (CI).
 export async function quoteShipping(city: string, ward: string, units: number, value: number, live = true): Promise<ShippingQuote | null> {
   const province = PROVINCES.find((p) => p.name === city)?.spx;
   const key = `${province}|${ward}|${units}|${value}`;
@@ -54,7 +54,7 @@ export async function quoteShipping(city: string, ward: string, units: number, v
 
   const [{ data: table, error }, spx] = await Promise.all([
     createAdminClient().rpc("shipping_fee", { p_city: city, p_units: units }),
-    live && province && ward ? spxQuote(province, ward, units, value).catch((e) => (console.error("SPX quote failed", e), null)) : null,
+    live && process.env.SPX_API_HOST && province && ward ? spxQuote(province, ward, units, value).catch((e) => (console.error("SPX quote failed", e), null)) : null,
   ]);
   if (error) return null;
   const fallback: ShippingQuote = { fee: table, voucherCode: null, source: "table" };
