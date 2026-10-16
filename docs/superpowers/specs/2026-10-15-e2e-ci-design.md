@@ -51,7 +51,7 @@ New workspace package `e2e/` (added to `pnpm-workspace.yaml`): `@playwright/test
 `tests/storefront/`, `tests/admin/`. Chromium only. Projects: `setup`, `desktop` (1280 px, all tests),
 `mobile` (375 px, tests tagged `@mobile` — S3 only). Root script `pnpm test:e2e`.
 
-## Tests (12)
+## Tests — round 1 (12)
 
 | # | Flow | Proves |
 |---|------|--------|
@@ -68,15 +68,44 @@ New workspace package `e2e/` (added to `pnpm-workspace.yaml`): `@playwright/test
 | A4 | Create product with variant + stock | It renders on the storefront product page |
 | A5 | Inventory − / + | Adjusts stock; can't go below 0 |
 
-Later: search, reviews, bundles, collections, BigSeller import/export, sign-up / reset emails, admin
-customers / promo codes / categories. Tampered prices stay with `smoke` (server-side pricing is checked
-there directly; an e2e test can't easily forge a server action payload).
+Tampered prices stay with `smoke` (server-side pricing is checked there directly; an e2e test can't
+easily forge a server action payload).
+
+## Round 2 (owner approved 2026-10-16)
+
+| # | Flow | Proves |
+|---|------|--------|
+| S8 | Header search → `/search?q=` → a no-match query | Suggestion + result for the product; empty-state message |
+| S9 | Bundle of 2 products (−₫50.000) in the cart | Offer on the product page; "Combo: …" beats first-5 (−₫40.000); `applied_bundles` on the order |
+| S10 | Reviews | No delivered order → "Chỉ khách hàng đã nhận…"; delivered → 5★ review posted and shown |
+| S11 | Forgot password → Mailpit email → link → new password | The new password logs in |
+| S12 | Sign-up → confirmation email → link | Account confirmed (`email_confirmed_at`) |
+| A6 | Promo code created, then switched off | Prices at checkout; then "Mã không hợp lệ…" |
+| A7 | Collection with a product | Renders at `/collections/<slug>` |
+| A8 | Bundle created in the admin | Offer on the storefront product page |
+| A9 | Categories add / rename / delete | Xóa disabled while a product uses it; unused one deleted |
+| A10 | Customer detail → blacklist | That phone's next storefront order is refused |
+| A11 | Hide a review, brand reply | Stored (`is_visible`, `is_brand_reply` as PARANOIDZ); storefront not checked (ISR) |
+| A12 | Confirmed order → `/inventory/export` → Đã nhập vào BigSeller | SKU + qty in the stock-out file; nothing left unsent |
+| A13 | Generated Inventory List `.xlsx` upload | Preview target, then stock set (via `set_variant_stocks()`) |
+
+- **Local auth matches production for the email tests** (`supabase/config.toml`, local stack + CI only):
+  `enable_confirmations = true`, `http://localhost:3100/**` allowed as a redirect, Mailpit no longer
+  skipped. Emails are read from Mailpit's API (`e2e/fixtures/mail.ts`, URL from `supabase status`).
+  The `email_sent = 2` hourly cap doesn't apply without custom SMTP (4 sends in a row passed).
+- **A12 → A13 run serially** (`bigseller.spec.ts`): the import refuses a file exported before the last
+  "Đã nhập vào BigSeller", so A13's file name carries a timestamp taken after A12 (+60 s for clock drift).
+  A12's batch holds every unsent change in the database; only its own SKU is asserted.
+- **Orders delivered by fixture** (`deliverOrder()`): service role may call `transition_order_status()`,
+  so S10 doesn't need the admin UI to make a buyer eligible.
+- **`expect` timeout 10 s**: under the full parallel suite on a laptop, auth and server-action round
+  trips passed 5 s.
 
 ## CI — `.github/workflows/ci.yml`
 
 One job on `ubuntu-latest`, on pull requests to `master` and pushes to `master`: checkout → pnpm + Node →
 `pnpm install` → Supabase CLI (pinned 2.72.7, same as local) → `supabase start` without Studio,
-Realtime, Mailpit, imgproxy, edge runtime, logflare / vector, supavisor → write
+Realtime, imgproxy, edge runtime, logflare / vector, supavisor (Mailpit stays, for S11 / S12) → write
 `apps/admin/.env.local` → admin unit tests → `smoke` +
 `smoke:inventory` → build both apps → install Chromium (cached) → Playwright → on failure upload the
 HTML report + traces.

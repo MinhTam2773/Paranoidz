@@ -21,6 +21,9 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [["list"], ["html", { open: "never" }]] : [["list"]],
+  // Server round trips (auth, server actions) under the full parallel suite on a laptop can pass
+  // 5 s (2026-10-16: sign-up and a listing click); 10 s still fails a real hang.
+  expect: { timeout: 10_000 },
   use: {
     baseURL: STOREFRONT_URL,
     locale: "vi-VN",
