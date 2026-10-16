@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { createOrderBody, matchWard } from "../../src/spx/order-body.ts";
+import { checkOrderBody, cheapestQuote, createOrderBody, matchWard } from "../../src/spx/order-body.ts";
 
 const sender = { name: "Paranoidz", phone: "0909000000", address: "1 Shop St", ward: "Phường Phú Thạnh", province: "Thành phố Hồ Chí Minh" };
 const order = {
@@ -53,4 +53,30 @@ test("matchWard: ignores accents, case and the Phường / Xã prefix", () => {
   assert.equal(matchWard("Hat Mon", wards), "Xã Hát Môn");
   assert.equal(matchWard(null, wards), null);
   assert.equal(matchWard("Bến Nghé", wards), null);
+});
+
+test("check-fee body: same parcel as create (300 g per unit, COD + declared value), voucher only when given", () => {
+  const plain = checkOrderBody("none", "Thành phố Hà Nội", "Phường Ba Đình", 3, 450_000, sender);
+  assert.equal(plain.order_id, "none");
+  assert.deepEqual(plain.fulfillment_info, { cod_collection: 1, cod_amount: 450_000, high_value_processing_collection: 0, collect_type: 1 });
+  assert.deepEqual(plain.parcel_info, { parcel_weight: 0.9, parcel_item_quantity: 3, express_insured_value: 450_000 });
+  assert.deepEqual(plain.deliver_info, { deliver_state: "Thành phố Hà Nội", deliver_city: "Phường Ba Đình", deliver_address_version: 2 });
+  assert.deepEqual(plain.sender_info, { sender_state: "Thành phố Hồ Chí Minh", sender_city: "Phường Phú Thạnh", sender_address_version: 2 });
+  const discounted = checkOrderBody("v0", "Thành phố Hà Nội", "Phường Ba Đình", 1, 3_000_000, sender, "SHIP10");
+  assert.equal(discounted.fulfillment_info.voucher_code, "SHIP10");
+  assert.equal(discounted.fulfillment_info.high_value_processing_collection, 1);
+});
+
+test("cheapestQuote: lowest fee wins, rounded; a tie keeps no voucher; nothing usable → null", () => {
+  const voucherOf = (id: string) => (id === "none" ? null : `CODE-${id}`);
+  assert.deepEqual(
+    cheapestQuote([{ order_id: "none", estimated_shipping_fee: 22000 }, { order_id: "v0", estimated_shipping_fee: 15999.6 }], voucherOf),
+    { fee: 16000, voucherCode: "CODE-v0" },
+  );
+  assert.deepEqual(
+    cheapestQuote([{ order_id: "v0", estimated_shipping_fee: 22000 }, { order_id: "none", estimated_shipping_fee: 22000 }], voucherOf),
+    { fee: 22000, voucherCode: null },
+  );
+  assert.equal(cheapestQuote([{ order_id: "none", estimated_shipping_fee: Number.NaN }, { order_id: "v0", estimated_shipping_fee: -1 }], voucherOf), null);
+  assert.equal(cheapestQuote([], voucherOf), null);
 });

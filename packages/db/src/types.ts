@@ -467,6 +467,7 @@ export type Database = {
           spx_created_at: string | null
           spx_fee: number | null
           spx_tracking_no: string | null
+          spx_voucher: string | null
           spx_ward: string | null
           status: Database["public"]["Enums"]["order_status"]
           subtotal: number
@@ -495,6 +496,7 @@ export type Database = {
           spx_created_at?: string | null
           spx_fee?: number | null
           spx_tracking_no?: string | null
+          spx_voucher?: string | null
           spx_ward?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           subtotal: number
@@ -523,6 +525,7 @@ export type Database = {
           spx_created_at?: string | null
           spx_fee?: number | null
           spx_tracking_no?: string | null
+          spx_voucher?: string | null
           spx_ward?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           subtotal?: number
@@ -1151,6 +1154,8 @@ export type Database = {
           p_phone: string
           p_recipient_name: string
           p_secondary_phone?: string
+          p_shipping_fee?: number
+          p_spx_voucher?: string
           p_user_id?: string
           p_voucher_code?: string
           p_ward?: string
