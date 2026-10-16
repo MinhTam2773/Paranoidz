@@ -8,7 +8,7 @@ export type CheckoutValues = Record<CheckoutField, string>;
 export type FieldErrors = Partial<Record<CheckoutField, string>>;
 
 export const CHECKOUT_FIELDS: CheckoutField[] = [
-  "name", "phone", "address", "ward", "city", "secondaryPhone", "email", "note", "voucher",
+  "name", "phone", "address", "city", "ward", "secondaryPhone", "email", "note", "voucher",
 ];
 
 export const MAX_LENGTH: Record<CheckoutField, number> = {
@@ -60,7 +60,7 @@ export function validateField(field: CheckoutField, raw: string, all: Partial<Ch
       if (!v) return "Nhập số nhà và tên đường.";
       return v.length < 5 ? "Địa chỉ có vẻ quá ngắn." : undefined;
     case "ward":
-      return v ? undefined : "Nhập phường hoặc xã.";
+      return v ? undefined : "Chọn phường / xã.";
     case "city":
       if (!v) return "Chọn tỉnh / thành phố.";
       return PROVINCE_NAMES.has(v) ? undefined : "Chọn tỉnh / thành phố trong danh sách.";

@@ -9,7 +9,9 @@ import { PROVINCE_NAMES } from "@paranoidz/db/provinces";
 import { sendOrderEmails } from "@/lib/order-email";
 import { sendZaloAlert } from "@/lib/order-zalo";
 import { hitRateLimit } from "@/lib/rate-limit";
+import { quoteShipping } from "@/lib/shipping-quote";
 import { HOTLINE } from "@/lib/site";
+import { isSpxWard, spxWards } from "@/lib/wards";
 
 // addressId: the saved address the form was filled from, if untouched (links orders.address_id).
 export type CheckoutInput = { items: { variantId: string; qty: number }[]; addressId?: string } & CheckoutValues;
@@ -25,6 +27,15 @@ function validItems(value: unknown) {
   const ok = items.length > 0 && items.length <= 20 &&
     items.every((i) => typeof i?.variantId === "string" && UUID.test(i.variantId) && Number.isInteger(i.qty) && i.qty >= 1 && i.qty <= 20);
   return ok ? items : null;
+}
+
+const unitsOf = (items: CheckoutInput["items"]) => items.reduce((sum, i) => sum + i.qty, 0);
+
+// Subtotal from database prices: SPX's fee quote takes the parcel value (never the browser's).
+async function subtotalOf(items: CheckoutInput["items"]) {
+  const { data } = await createAdminClient().from("product_variants").select("id, price").in("id", items.map((i) => i.variantId));
+  const price = new Map((data ?? []).map((v) => [v.id, v.price]));
+  return items.reduce((sum, i) => sum + (price.get(i.variantId) ?? 0) * i.qty, 0);
 }
 
 const PHONE_HELP = "Nhập số di động Việt Nam: 10 chữ số, bắt đầu bằng 03, 05, 07, 08 hoặc 09.";
@@ -55,7 +66,8 @@ function explain(code: string): CheckoutResult {
 // COD order submission (ARCHITECTURE.md §2.2, §4). Guests welcome (§8.2); the session user, if any,
 // is attached for order history only — every per-customer rule keys on the phone inside
 // place_order(), which also recomputes all prices, stock and vouchers. Nothing the browser sends
-// about money is trusted: only variant ids, quantities and delivery details go in.
+// about money is trusted: only variant ids, quantities and delivery details go in. The shipping
+// fee is SPX's live quote, asked here again (lib/shipping-quote), or the table inside place_order().
 // Rate limited per IP + phone (lib/rate-limit) before any order work.
 export async function placeOrder(input: CheckoutInput): Promise<CheckoutResult> {
   const items = validItems(input?.items);
@@ -82,6 +94,11 @@ export async function placeOrder(input: CheckoutInput): Promise<CheckoutResult> 
   }
   if (!allowed) return { ok: false, message: `Bạn đã thử đặt hàng quá nhiều lần. Vui lòng đợi một giờ rồi thử lại, hoặc gọi ${HOTLINE}.` };
 
+  const [wardOk, subtotal] = await Promise.all([isSpxWard(f.city, f.ward), subtotalOf(items)]);
+  if (!wardOk) return { ok: false, fieldErrors: { ward: "Chọn phường / xã trong danh sách." } };
+  const shipping = await quoteShipping(f.city, f.ward, unitsOf(items), subtotal);
+  if (!shipping) return explain("SHIPPING_UNAVAILABLE");
+
   const { data, error } = await admin.rpc("place_order", {
     p_items: items.map((i) => ({ variant_id: i.variantId, qty: i.qty })),
     p_recipient_name: f.name,
@@ -95,6 +112,9 @@ export async function placeOrder(input: CheckoutInput): Promise<CheckoutResult> 
     p_voucher_code: f.voucher || undefined,
     p_user_id: claims?.claims.sub,
     p_address_id: addressId,
+    // A table quote is left to place_order() (NULL), which computes the same fee itself.
+    p_shipping_fee: shipping.source === "spx" ? shipping.fee : undefined,
+    p_spx_voucher: shipping.voucherCode ?? undefined,
   });
   if (error) {
     if (!/^[A-Z_]+(:|$)/.test(error.message)) console.error("place_order failed", error);
@@ -125,12 +145,24 @@ export async function placeOrder(input: CheckoutInput): Promise<CheckoutResult> 
   };
 }
 
-// Checkout preview of the shipping fee (ARCHITECTURE.md §5). Display only: place_order() charges
-// shipping_fee() itself from the submitted city and quantities. null = can't quote.
-export async function quoteShipping(city: string, units: number): Promise<number | null> {
-  if (typeof city !== "string" || !PROVINCE_NAMES.has(city) || !Number.isInteger(units) || units < 1 || units > 20) return null;
-  const { data, error } = await createAdminClient().rpc("shipping_fee", { p_city: city, p_units: units });
-  return error ? null : data;
+// SPX's wards for a province, for the checkout and address-book ward pickers.
+export async function listWards(city: string): Promise<string[]> {
+  return typeof city === "string" && PROVINCE_NAMES.has(city) ? spxWards(city) : [];
+}
+
+// Checkout preview of the shipping fee (ARCHITECTURE.md §5): the same quote placeOrder asks for
+// (cached, so normally the same fee). Each SPX call costs, so previews are rate limited per IP;
+// over the limit, the table fee is shown. null = can't quote.
+export async function previewShipping(input: { city: string; ward: string; items: CheckoutInput["items"] }): Promise<number | null> {
+  const items = validItems(input?.items);
+  const city = input?.city, ward = input?.ward;
+  if (!items || typeof city !== "string" || !PROVINCE_NAMES.has(city) || typeof ward !== "string" || unitsOf(items) > 20) return null;
+  const [live, subtotal] = await Promise.all([
+    hitRateLimit("shipping", "", { ip: 60, phone: 0 }).catch((limitError) => (console.error("hit_rate_limit failed", limitError), false)),
+    subtotalOf(items),
+  ]);
+  const quote = await quoteShipping(city, ward.slice(0, 100), unitsOf(items), subtotal, live);
+  return quote?.fee ?? null;
 }
 
 // The voucher field error place_order() would give for this code (same wording at submit).
