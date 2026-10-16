@@ -1,7 +1,7 @@
 // Site-wide content for the layout shell. Hardcoded until the client decides
 // how it is managed (ARCHITECTURE.md §8.6, §8.7).
 
-export const HOTLINE = "0972 926 956";
+export const HOTLINE = "0345 267 709";
 
 // DESIGN.md §4, Row 2 — order matters.
 export const NAV_LINKS = [

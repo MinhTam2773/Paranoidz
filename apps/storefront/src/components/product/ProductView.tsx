@@ -222,7 +222,7 @@ export function ProductView({
                 [TruckIcon, "SPX Express", "Giao nhanh toàn quốc"],
                 [CashIcon, "Thanh toán COD", "Nhận hàng rồi trả tiền"],
                 [ReturnIcon, "Đổi trả 7 ngày", "Nếu sản phẩm lỗi do shop"],
-                [PhoneIcon, "Hotline", "0972 926 956"],
+                [PhoneIcon, "Hotline", "0345 267 709"],
               ].map(([Icon, title, sub]) => {
                 const I = Icon as (p: { width?: number; height?: number }) => ReactNode;
                 return (
