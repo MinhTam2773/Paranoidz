@@ -122,3 +122,9 @@ export async function createCategory(name = `Danh Mục Thử ${uid()}`) {
   if (error) throw error;
   return { id: data.id, name };
 }
+
+/** Disable all flash sale windows so pricing assertions stay deterministic. */
+export async function disableFlashSale() {
+  const { error } = await db.from("flash_sale_windows").update({ enabled: false }).neq("id", "00000000-0000-0000-0000-000000000000");
+  if (error) throw error;
+}
