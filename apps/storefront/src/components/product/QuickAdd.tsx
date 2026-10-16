@@ -20,10 +20,14 @@ export function QuickAdd({
   product: { name, slug, imageUrl, colors, variants },
   color,
   onColor,
+  barTrigger = false,
 }: {
   product: ProductCardData;
   color: string | null; // the card's selected colour, kept in step with the sheet's
   onColor: (color: string) => void;
+  // Redesign 2026-10-16: full-width slide-up bar trigger (desktop card hover)
+  // instead of the floating round button.
+  barTrigger?: boolean;
 }) {
   const titleId = useId();
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -69,9 +73,17 @@ export function QuickAdd({
         type="button"
         onClick={open}
         aria-label={`Chọn size và thêm vào giỏ: ${name}`}
-        className="flex size-11 items-center justify-center rounded-full bg-bg-primary text-text-primary shadow-1 transition-transform duration-200 hover:scale-110"
+        className={
+          barTrigger
+            ? "flex h-12 w-full items-center justify-center gap-2 bg-bg-dark text-button uppercase text-text-on-dark transition-colors duration-200 hover:bg-accent"
+            : "flex size-11 items-center justify-center rounded-full bg-bg-primary text-text-primary shadow-1 transition-transform duration-200 hover:scale-110"
+        }
       >
-        <BagPlusIcon width={22} height={22} />
+        {barTrigger ? (
+          <>Thêm nhanh <BagPlusIcon width={20} height={20} /></>
+        ) : (
+          <BagPlusIcon width={22} height={22} />
+        )}
       </button>
       <dialog
         ref={dialogRef}

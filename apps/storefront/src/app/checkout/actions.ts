@@ -153,7 +153,9 @@ export async function listWards(city: string): Promise<string[]> {
 // Checkout preview of the shipping fee (ARCHITECTURE.md §5): the same quote placeOrder asks for
 // (cached, so normally the same fee). Each SPX call costs, so previews are rate limited per IP;
 // over the limit, the table fee is shown. null = can't quote.
-export async function previewShipping(input: { city: string; ward: string; items: CheckoutInput["items"] }): Promise<number | null> {
+// Returns the fee AND its source so the UI can show the SPX Express carrier card honestly:
+// "spx" = SPX's live price, "table" = the shop's standard rate table.
+export async function previewShipping(input: { city: string; ward: string; items: CheckoutInput["items"] }): Promise<{ fee: number; source: "spx" | "table" } | null> {
   const items = validItems(input?.items);
   const city = input?.city, ward = input?.ward;
   if (!items || typeof city !== "string" || !PROVINCE_NAMES.has(city) || typeof ward !== "string" || unitsOf(items) > 20) return null;
@@ -162,7 +164,7 @@ export async function previewShipping(input: { city: string; ward: string; items
     subtotalOf(items),
   ]);
   const quote = await quoteShipping(city, ward.slice(0, 100), unitsOf(items), subtotal, live);
-  return quote?.fee ?? null;
+  return quote ? { fee: quote.fee, source: quote.source } : null;
 }
 
 // The voucher field error place_order() would give for this code (same wording at submit).

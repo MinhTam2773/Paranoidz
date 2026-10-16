@@ -39,7 +39,7 @@ export function ProductCard({ product, eager = false }: { product: ProductCardDa
 
   return (
     <div className="group flex flex-col">
-      <div className="relative aspect-3/4 overflow-hidden rounded-lg bg-bg-secondary">
+      <div className="relative aspect-3/4 overflow-hidden rounded-sm bg-bg-secondary">
         <Link href={href} tabIndex={-1} aria-hidden className="absolute inset-0">
           {shownImage && (
             <Image
@@ -48,25 +48,33 @@ export function ProductCard({ product, eager = false }: { product: ProductCardDa
               fill
               loading={eager ? "eager" : undefined}
               sizes="(min-width: 1280px) 411px, (min-width: 1024px) 33vw, 50vw"
-              className="object-cover transition-transform duration-200 group-hover:scale-105"
+              className="object-cover transition-transform duration-300 group-hover:scale-[1.04]"
             />
           )}
         </Link>
-        {soldOut ? (
-          <span className="pointer-events-none absolute right-2 top-2 rounded-sm border border-border bg-bg-primary px-2 py-1 text-caption font-semibold uppercase text-text-primary">
-            Hết hàng
-          </span>
-        ) : (
-          onSale && (
-            <span className="pointer-events-none absolute right-2 top-2 rounded-sm bg-accent px-2 py-1 text-caption font-semibold text-text-on-dark">
-              -{Math.round(((originalPrice - price) / originalPrice) * 100)}%
+        {/* Redesign 2026-10-16: badges top-left, wishlist top-right, quick-add as a
+            full-width bar — always visible on touch, slides up on desktop hover. */}
+        <div className="pointer-events-none absolute left-0 top-3 flex flex-col items-start gap-2">
+          {soldOut ? (
+            <span className="bg-bg-dark px-2.5 py-1 text-caption font-semibold uppercase tracking-[0.06em] text-text-on-dark">
+              Hết hàng
             </span>
-          )
-        )}
-        <div className="absolute bottom-2 right-2 flex gap-2">
-          <WishlistButton productId={id} className="rounded-full bg-bg-primary shadow-1" />
-          {!soldOut && <QuickAdd product={product} color={color} onColor={setColor} />}
+          ) : (
+            onSale && (
+              <span className="bg-accent px-2.5 py-1 text-caption font-semibold uppercase tracking-[0.06em] text-text-on-dark">
+                -{Math.round(((originalPrice - price) / originalPrice) * 100)}%
+              </span>
+            )
+          )}
         </div>
+        <div className="absolute right-2 top-2">
+          <WishlistButton productId={id} className="rounded-full bg-bg-primary/90 shadow-1 backdrop-blur-sm" />
+        </div>
+        {!soldOut && (
+          <div className="absolute inset-x-0 bottom-0 lg:translate-y-full lg:transition-transform lg:duration-300 lg:group-hover:translate-y-0">
+            <QuickAdd product={product} color={color} onColor={setColor} barTrigger />
+          </div>
+        )}
       </div>
       {colors.length > 0 && (
         <ul aria-label="Màu sắc" className="-mx-1.5 mt-1 flex flex-wrap">
@@ -96,11 +104,11 @@ export function ProductCard({ product, eager = false }: { product: ProductCardDa
           ))}
         </ul>
       )}
-      <Link href={href} className={`flex flex-1 flex-col gap-2 ${colors.length ? "pt-1" : "pt-3"}`}>
-        <h2 className="line-clamp-2 text-product-name text-text-primary">{name}</h2>
+      <Link href={href} className={`flex flex-1 flex-col gap-1.5 ${colors.length ? "pt-2" : "pt-3"}`}>
+        <h2 className="line-clamp-2 text-[15px] font-medium leading-snug text-text-primary">{name}</h2>
         <p className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-          <span className={`text-price ${onSale ? "text-accent" : "text-text-primary"}`}>{formatVnd(price)}</span>
-          {onSale && <s className="text-price-old text-text-muted">{formatVnd(originalPrice)}</s>}
+          <span className={`text-[17px] font-bold tracking-[0.01em] ${onSale ? "text-accent" : "text-text-primary"}`}>{formatVnd(price)}</span>
+          {onSale && <s className="text-[13px] text-text-muted">{formatVnd(originalPrice)}</s>}
         </p>
         {reviewCount > 0 && ratingAverage >= 3 && (
           <p className="flex w-fit items-center gap-1 rounded-sm border border-warning px-1.5 py-0.5 text-caption text-text-secondary">

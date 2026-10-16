@@ -98,9 +98,10 @@ export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; acc
   const linesKey = lines.map((l) => `${l.variantId}:${l.qty}`).toSorted().join(",");
   // Shipping quote (SPX live, else the table) for the chosen province + ward and the lines:
   // undefined while loading, null if it can't be quoted.
-  const [shipping, setShipping] = useState<{ key: string; fee: number | null } | null>(null);
+  const [shipping, setShipping] = useState<{ key: string; quote: { fee: number; source: "spx" | "table" } | null } | null>(null);
   const shippingKey = `${city}|${ward}|${linesKey}`;
-  const shippingFee = shipping?.key === shippingKey ? shipping.fee : undefined;
+  const shippingQuote = shipping?.key === shippingKey ? shipping.quote : undefined;
+  const shippingFee = shippingQuote?.fee;
   // Live discount (quoteOrder): re-asked when the lines, the phone or the code change. The last
   // answer stays on screen while the next one loads; null = couldn't quote.
   const [phone, setPhone] = useState(initial?.phone ?? account?.phone ?? "");
@@ -124,8 +125,8 @@ export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; acc
     if (!city || !ward || !linesKey) return;
     let cancelled = false;
     const items = linesKey.split(",").map((s) => ({ variantId: s.split(":")[0], qty: Number(s.split(":")[1]) }));
-    previewShipping({ city, ward, items }).then((fee) => {
-      if (!cancelled) setShipping({ key: `${city}|${ward}|${linesKey}`, fee });
+    previewShipping({ city, ward, items }).then((quote) => {
+      if (!cancelled) setShipping({ key: `${city}|${ward}|${linesKey}`, quote });
     });
     return () => {
       cancelled = true;
@@ -287,7 +288,7 @@ export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; acc
   return (
     <div onInput={onInput} onBlur={onBlur} className="grid gap-8 lg:grid-cols-12 lg:gap-12">
       <form ref={formRef} id="checkout-form" onSubmit={submit} noValidate className="flex flex-col gap-6 lg:col-span-7">
-        <h2 className="text-h3 uppercase">Thông tin giao hàng</h2>
+        <h2 className="text-h3 uppercase"><span className="mr-2 text-accent">01</span>Thông tin giao hàng</h2>
         {!!account?.addresses.length && (
           <div className="flex flex-col gap-2">
             <label htmlFor="checkout-saved" className="text-nav uppercase text-text-secondary">Địa chỉ đã lưu</label>
@@ -372,6 +373,41 @@ export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; acc
             {(p) => <textarea {...p} className={`${p.className} py-3`} rows={3} placeholder="Hướng dẫn giao hàng" maxLength={MAX_LENGTH.note} />}
           </Field>
         </div>
+
+        {/* 02 — Shipping method: the SPX Express carrier card. The fee is SPX's live
+            quote for this address when available, else the shop's standard table. */}
+        <h2 className="text-h3 uppercase"><span className="mr-2 text-accent">02</span>Phương thức vận chuyển</h2>
+        <div className="border border-border bg-bg-primary">
+          <div className="flex items-center gap-4 p-4">
+            <span aria-hidden className="flex h-11 w-11 shrink-0 items-center justify-center bg-bg-dark text-text-on-dark">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M5 12h14M5 12a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2M5 12v7a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-7" />
+                <circle cx="9" cy="20" r="1.6" /><circle cx="17" cy="20" r="1.6" />
+              </svg>
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-nav font-bold uppercase">SPX Express</p>
+              <p className="mt-0.5 text-caption text-text-secondary">Giao hàng nhanh toàn quốc · Thanh toán khi nhận hàng (COD)</p>
+            </div>
+            <div className="shrink-0 text-right">
+              {shippingKnown ? (
+                <>
+                  <p className="text-price">{formatVnd(shippingFee)}</p>
+                  <p className="mt-0.5 text-caption text-text-muted">
+                    {shippingQuote?.source === "spx" ? "Giá trực tiếp từ SPX" : "Theo bảng giá chuẩn"}
+                  </p>
+                </>
+              ) : (
+                <p className="text-caption text-text-secondary">
+                  {!city || !ward ? "Nhập địa chỉ để tính phí" : "Đang tính…"}
+                </p>
+              )}
+            </div>
+          </div>
+          <p className="border-t border-border px-4 py-2.5 text-caption text-text-muted">
+            Phí ship tính theo địa chỉ giao hàng và khối lượng đơn — mức bạn thấy là mức bạn trả, shop không thu thêm.
+          </p>
+        </div>
       </form>
 
       <aside className="lg:col-span-5">
@@ -413,7 +449,7 @@ export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; acc
               <p className="-mt-1 text-caption text-text-muted">Áp dụng cho 5 đơn đầu tiên của mỗi số điện thoại — kiểm tra lại khi bạn nhập số.</p>
             )}
             <div className="flex justify-between gap-4">
-              <dt className="text-text-secondary">Phí vận chuyển</dt>
+              <dt className="text-text-secondary">Phí vận chuyển <span className="text-caption text-text-muted">(SPX Express)</span></dt>
               {shippingKnown ? (
                 <dd>{formatVnd(shippingFee)}</dd>
               ) : (

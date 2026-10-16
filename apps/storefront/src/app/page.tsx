@@ -64,82 +64,110 @@ export default async function HomePage() {
 
   return (
     <>
-      <section className="relative aspect-video w-full overflow-hidden bg-bg-dark lg:aspect-21/9">
+      {/* Redesign 2026-10-16: full-viewport editorial hero — the giant wordmark
+          overlapping the photo, meta row on top, CTAs bottom-left. */}
+      <section className="relative flex min-h-[92svh] flex-col overflow-hidden bg-bg-dark text-text-on-dark">
         <Image src={heroImage} alt="" fill preload sizes="100vw" placeholder="blur" className="object-cover object-[50%_30%]" />
-        <div className="absolute inset-0 bg-linear-to-t from-bg-dark/70 via-bg-dark/20 to-transparent" />
-        <div className="absolute inset-x-0 bottom-0 mx-auto flex w-full max-w-7xl flex-col items-start gap-2 px-4 pb-4 text-text-on-dark sm:gap-3 sm:pb-6 lg:gap-4 lg:px-6 lg:pb-16">
-          <h1 className="text-h1-mobile uppercase lg:text-h1">Bộ sưu tập mới 2026</h1>
-          <p className="hidden opacity-80 sm:block">Những thiết kế mới nhất từ Paranoidz.</p>
-          <Link
-            href="/collections/new-collection"
-            className="mt-1 flex h-12 items-center justify-center rounded-sm bg-accent px-8 text-button uppercase transition-all duration-200 hover:-translate-y-px hover:bg-accent-hover hover:shadow-accent"
-          >
-            Mua ngay
-          </Link>
+        <div className="absolute inset-0 bg-linear-to-t from-bg-dark/80 via-bg-dark/10 to-bg-dark/30" />
+        <div className="relative mx-auto flex w-full max-w-7xl flex-1 flex-col justify-between px-4 pb-8 pt-6 lg:px-6 lg:pb-12">
+          <div className="flex items-center justify-between text-caption uppercase tracking-[0.14em] opacity-80">
+            <span>BST 2026</span>
+            <span className="hidden sm:inline">Streetwear — Việt Nam</span>
+          </div>
+          <div>
+            <h1 className="font-logo text-display uppercase italic leading-[0.9]">Paranoidz</h1>
+            <div className="mt-6 flex flex-wrap items-center gap-4">
+              <Link
+                href="/collections/new-collection"
+                className="flex h-12 items-center justify-center bg-accent px-8 text-button uppercase text-text-on-dark transition-colors duration-200 hover:bg-accent-hover"
+              >
+                Mua ngay
+              </Link>
+              <Link href="/products" className="text-button uppercase text-text-on-dark/80 underline underline-offset-8 hover:text-text-on-dark">
+                Xem tất cả sản phẩm
+              </Link>
+            </div>
+          </div>
         </div>
       </section>
 
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-12 px-4 py-12 lg:gap-16 lg:px-6 lg:py-16">
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-14 px-4 py-14 lg:gap-20 lg:px-6 lg:py-20">
         {collectionCards.length > 0 && (
-          <section aria-label="Bộ sưu tập" className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-            {collectionCards.map((c) => (
+          <section aria-label="Bộ sưu tập" className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {collectionCards.slice(0, 2).map((c) => (
               <Link
                 key={c.slug}
                 href={`/collections/${c.slug}`}
-                className="group relative aspect-3/4 overflow-hidden rounded-sm bg-bg-dark"
+                className="group relative aspect-[16/10] overflow-hidden bg-bg-dark"
               >
                 {c.imageUrl && (
                   <Image
                     src={c.imageUrl}
                     alt=""
                     fill
-                    sizes="(min-width: 1280px) 308px, (min-width: 1024px) 25vw, 50vw"
-                    className="object-cover transition-transform duration-200 group-hover:scale-105"
+                    sizes="(min-width: 1024px) 50vw, 100vw"
+                    className="object-cover opacity-80 transition-all duration-300 group-hover:scale-[1.03] group-hover:opacity-100"
                   />
                 )}
-                <div className="absolute inset-0 bg-linear-to-t from-bg-dark/70 to-transparent to-60%" />
-                <div className="absolute inset-x-0 bottom-0 p-4 uppercase text-text-on-dark">
-                  <p className="text-h3">{c.name}</p>
-                  <p className="text-caption opacity-80">{c.year}</p>
-                  <p className="mt-2 translate-y-2 text-button opacity-0 transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100">
-                    Mua ngay
-                  </p>
+                <div className="absolute inset-0 bg-linear-to-t from-bg-dark/70 to-transparent" />
+                <div className="absolute inset-x-0 bottom-0 flex items-end justify-between p-5 uppercase text-text-on-dark">
+                  <div>
+                    <p className="text-h3">{c.name}</p>
+                    <p className="text-caption opacity-70">{c.year}</p>
+                  </div>
+                  <span className="text-button opacity-0 transition-opacity duration-200 group-hover:opacity-100">Xem →</span>
                 </div>
               </Link>
             ))}
           </section>
         )}
 
-        <div className="flex flex-col gap-8">
-          <HomeTabs
-            tabs={[
-              { id: "new", label: "Hàng mới", content: <CardGrid cards={newGoods} empty="Chưa có sản phẩm nào." /> },
-              { id: "best", label: "Bán chạy", content: <CardGrid cards={best} empty="Chưa có sản phẩm bán chạy." /> },
-            ]}
-          />
-          <Link
-            href="/products"
-            className="flex h-12 items-center justify-center self-center rounded-sm border border-text-primary px-8 text-button uppercase text-text-primary transition-colors duration-200 hover:bg-text-primary hover:text-text-on-dark"
-          >
-            Xem tất cả sản phẩm
-          </Link>
-        </div>
+        <HomeTabs
+          tabs={[
+            { id: "new", label: "Hàng mới", content: <CardGrid cards={newGoods} empty="Chưa có sản phẩm nào." /> },
+            { id: "best", label: "Bán chạy", content: <CardGrid cards={best} empty="Chưa có sản phẩm bán chạy." /> },
+          ]}
+        />
 
         {onSale.length > 0 && (
-          <RowSection title="Sản phẩm đang khuyến mãi">
+          <RowSection index="01" title="Đang khuyến mãi" href="/products">
             <ProductRow label="Sản phẩm đang khuyến mãi">
               {onSale.map((card) => <ProductCard key={card.slug} product={card} />)}
             </ProductRow>
           </RowSection>
         )}
 
-        {categoryRows.map((row) => (
-          <RowSection key={row.name} title={row.name}>
+        {categoryRows.map((row, i) => (
+          <RowSection key={row.name} index={String(i + 2).padStart(2, "0")} title={row.name} href="/products">
             <ProductRow label={row.name}>
               {row.cards.map((card) => <ProductCard key={card.slug} product={card} />)}
             </ProductRow>
           </RowSection>
         ))}
+
+        {/* Dark manifesto — the Paranoidz edge (DESIGN.md: inverted sections ok). */}
+        <section className="bg-bg-dark px-6 py-14 text-text-on-dark lg:px-12 lg:py-20">
+          <p className="text-caption uppercase tracking-[0.14em] text-text-on-dark/60">Paranoidz</p>
+          <p className="mt-4 max-w-3xl text-h2 uppercase leading-tight lg:text-h1 lg:leading-[1.1]">
+            Mặc kệ thiên hạ.<br />Mặc đẹp cho chính mình.
+          </p>
+          <p className="mt-4 max-w-xl text-body text-text-on-dark/70">
+            Streetwear Việt Nam — thiết kế táo bạo, chất liệu nghiêm túc, giá không trên trời.
+          </p>
+        </section>
+
+        <section className="grid grid-cols-1 gap-px border border-border bg-border sm:grid-cols-3">
+          {[
+            ["Thanh toán COD", "Nhận hàng rồi mới trả tiền"],
+            ["SPX Express", "Giao hàng nhanh toàn quốc"],
+            ["Đổi trả 7 ngày", "Nếu sản phẩm lỗi do shop"],
+          ].map(([t, d]) => (
+            <div key={t} className="bg-bg-primary p-6">
+              <p className="text-nav font-bold uppercase">{t}</p>
+              <p className="mt-1 text-caption text-text-secondary">{d}</p>
+            </div>
+          ))}
+        </section>
       </div>
     </>
   );
@@ -154,11 +182,20 @@ function CardGrid({ cards, empty }: { cards: ProductCardData[]; empty: string })
   );
 }
 
-// Section title with the vertical accent bar (DESIGN.md §4 promotion / category sections).
-function RowSection({ title, children }: { title: string; children: ReactNode }) {
+// Numbered editorial section header (redesign 2026-10-16): replaces the old
+// vertical-accent-bar style.
+function RowSection({ index, title, href, children }: { index: string; title: string; href: string; children: ReactNode }) {
   return (
     <section>
-      <h2 className="mb-6 border-l-4 border-accent pl-3 text-h2 uppercase">{title}</h2>
+      <div className="mb-8 flex items-end justify-between border-b border-border pb-4">
+        <h2 className="text-h2 uppercase">
+          <span className="mr-3 text-accent">{index}</span>
+          {title}
+        </h2>
+        <Link href={href} className="shrink-0 text-nav uppercase text-text-secondary hover:text-text-primary">
+          Xem tất cả →
+        </Link>
+      </div>
       {children}
     </section>
   );
