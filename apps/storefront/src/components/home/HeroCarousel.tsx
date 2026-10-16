@@ -7,14 +7,13 @@ type Slide =
   | { type: "image"; src: string; alt: string }
   | { type: "video"; src: string; alt: string };
 
-// Hero carousel 2026-10-16: 5 slides, all 16:9. Slide 1 = brand logo sting,
-// the rest = lookbook photos.
+// Hero carousel 2026-10-16: 5 slides, all 16:9 — Tủn's product shots.
 const SLIDES: Slide[] = [
-  { type: "video", src: "/home/hero-logo-sting.mp4", alt: "Paranoidz — Back to Basicz" },
-  { type: "image", src: "/home/look-1.jpg", alt: "Áo thun Paranoidz màu be phối quần jeans" },
-  { type: "image", src: "/home/look-2.jpg", alt: "Áo thun Paranoidz chụp ngoài phố" },
-  { type: "image", src: "/home/look-4.jpg", alt: "Áo thun Paranoidz màu xám ngồi quán cà phê" },
-  { type: "image", src: "/home/look-5.jpg", alt: "Áo thun đen Paranoidz" },
+  { type: "image", src: "/home/slide-duck.jpg", alt: "Họa tiết vịt thêu trên vải be" },
+  { type: "image", src: "/home/slide-eagle.jpg", alt: "Họa tiết đại bàng thêu 3 màu" },
+  { type: "image", src: "/home/slide-polo.jpg", alt: "Áo polo trắng thêu đại bàng" },
+  { type: "image", src: "/home/slide-sweatshirt.jpg", alt: "Áo nỉ be thêu logo pdz" },
+  { type: "image", src: "/home/slide-minimalism.jpg", alt: "Áo nỉ thêu minimalism" },
 ];
 
 const AUTOPLAY_MS = 6000;
