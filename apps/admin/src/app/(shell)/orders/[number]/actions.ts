@@ -9,12 +9,13 @@ import { isOrderStatus } from "@/lib/order-status";
 import { env, spxUserCall } from "@/lib/spx/client";
 import { createOrderBody } from "@/lib/spx/order-body";
 
-type SpxFailure = { message: string; debug_msg?: string };
+type SpxFailure = { message: string };
 
 // "<what failed> (SPX: <SPX's own reason>)"; timeouts and network errors get a plain sentence.
 function spxError(what: string, e: unknown) {
   if (e instanceof Error && (e.name === "TimeoutError" || e.name === "TypeError")) return `${what}: SPX không phản hồi. Vui lòng thử lại.`;
-  const reason = e instanceof Error ? e.message : (e as SpxFailure | undefined)?.debug_msg || (e as SpxFailure | undefined)?.message;
+  // fail_list's debug_msg is a dump of the whole request, so only `message` is shown.
+  const reason = e instanceof Error ? e.message : (e as SpxFailure | undefined)?.message;
   return `${what} (SPX: ${reason || "không rõ lý do"})`;
 }
 
