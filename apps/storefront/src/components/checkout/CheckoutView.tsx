@@ -239,8 +239,8 @@ export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; acc
         <div className="flex flex-col gap-2">
           <h2 className="text-h3 uppercase">Cảm ơn bạn — đã đặt hàng thành công</h2>
           <p className="text-text-secondary">
-            Mã đơn hàng của bạn là <strong className="text-text-primary">{placed.orderNumber}</strong>. Chúng tôi sẽ gọi số{" "}
-            <strong className="text-text-primary">{placed.phone}</strong> để xác nhận trước khi giao. Bạn thanh toán bằng tiền mặt khi nhận hàng.
+            Mã đơn hàng của bạn là <strong className="text-text-primary">{placed.orderNumber}</strong>. Chúng tôi sẽ chuẩn bị và giao hàng
+            đến bạn. Bạn thanh toán bằng tiền mặt khi nhận hàng.
           </p>
           <p className="text-text-secondary">
             Theo dõi trạng thái bất cứ lúc nào tại trang{" "}
@@ -454,7 +454,7 @@ export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; acc
                 <dd>{formatVnd(shippingFee)}</dd>
               ) : (
                 <dd className="text-right text-caption text-text-secondary">
-                  {!city ? "Chọn tỉnh / thành phố" : !ward ? "Chọn phường / xã" : shippingFee === undefined ? "Đang tính…" : "Xác nhận qua điện thoại"}
+                  {!city ? "Chọn tỉnh / thành phố" : !ward ? "Chọn phường / xã" : shippingFee === undefined ? "Đang tính…" : "Tính khi đặt hàng"}
                 </dd>
               )}
             </div>

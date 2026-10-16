@@ -74,7 +74,7 @@ test.describe("S5 checkout guards", () => {
     await placeOrderButton(page).click();
     for (const message of [
       "Nhập họ tên người nhận.",
-      "Nhập số điện thoại để chúng tôi xác nhận đơn hàng.",
+      "Nhập số điện thoại để chúng tôi giao hàng.",
       "Nhập số nhà và tên đường.",
       "Chọn phường / xã.",
       "Chọn tỉnh / thành phố.",
@@ -118,5 +118,5 @@ test("S6 order lookup: wrong phone → not found, right phone → status", async
 
   await page.getByLabel("Số điện thoại").fill(order.phone);
   await page.getByRole("button", { name: "Tra cứu đơn hàng" }).click();
-  await expect(page.getByRole("heading", { name: "Chờ xác nhận" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Đã tiếp nhận" })).toBeVisible();
 });

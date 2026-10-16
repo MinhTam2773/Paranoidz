@@ -5,8 +5,8 @@ export type OrderStatus = Database["public"]["Enums"]["order_status"];
 
 // ARCHITECTURE.md §4 statuses, in the customer's words (labels match the admin's). Shared by guest lookup and "My orders".
 export const STATUS: Record<OrderStatus, { label: string; detail: string }> = {
-  pending: { label: "Chờ xác nhận", detail: "Chúng tôi sẽ gọi cho bạn để xác nhận đơn trước khi giao." },
-  confirmed: { label: "Đã xác nhận", detail: "Đơn hàng đã được xác nhận và đang được đóng gói." },
+  pending: { label: "Đã tiếp nhận", detail: "Chúng tôi đã nhận đơn và đang chuẩn bị hàng." },
+  confirmed: { label: "Đã tạo vận đơn", detail: "Đơn đã được đóng gói, chờ SPX đến lấy hàng." },
   shipped: { label: "Đang giao", detail: "Đơn hàng đang trên đường đến bạn. Vui lòng chuẩn bị tiền mặt để thanh toán khi nhận hàng." },
   delivered: { label: "Đã giao", detail: "Đã giao và thanh toán. Cảm ơn bạn đã mua sắm tại Paranoidz." },
   cancelled: { label: "Đã hủy", detail: `Đơn hàng này đã bị hủy. Cần hỗ trợ? Gọi ${HOTLINE}.` },

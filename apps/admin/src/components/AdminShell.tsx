@@ -70,7 +70,7 @@ export function AdminShell({ email, pendingCount, children }: { email: string; p
                 <span className="flex-1">{label}</span>
                 {href === "/orders" && pendingCount > 0 && (
                   <span
-                    aria-label={`${pendingCount} đơn chờ xác nhận`}
+                    aria-label={`${pendingCount} đơn mới`}
                     className="min-w-6 rounded-sm bg-accent px-1.5 py-1 text-center text-badge text-text-on-dark"
                   >
                     {pendingCount}

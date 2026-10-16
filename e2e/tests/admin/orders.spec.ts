@@ -13,12 +13,19 @@ async function act(page: Page, orderNumber: string, action: string, statusLabel:
 }
 
 // A2. Every step goes through transition_order_status(); delivery counts toward loyalty.
+// A pending order has no confirm button: creating the SPX shipment confirms it, and CI has no
+// SPX keys, so the service role stands in for that step.
 test("A2 order lifecycle: pending → confirmed → shipped → delivered", async ({ page }) => {
   const product = await seedProduct([{ size: "M", stock: 5 }]);
   const order = await placeOrder({ variantId: product.variants[0].id });
 
   await page.goto(`/orders/${order.number}`);
-  await act(page, order.number, "Xác nhận đơn", "Đã xác nhận");
+  await expect(page.getByRole("button", { name: "Hủy đơn", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Xác nhận đơn", exact: true })).toHaveCount(0);
+
+  const { error } = await db.rpc("transition_order_status", { p_order_id: order.id, p_new_status: "confirmed" });
+  expect(error).toBeNull();
+  await page.reload();
   await act(page, order.number, "Đánh dấu đang giao", "Đang giao");
   await act(page, order.number, "Đánh dấu đã giao", "Đã giao");
   await expect(page.getByText("Đơn đã kết thúc, không còn thao tác nào.")).toBeVisible();

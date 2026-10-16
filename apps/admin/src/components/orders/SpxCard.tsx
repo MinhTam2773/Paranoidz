@@ -19,7 +19,7 @@ type Order = {
 };
 
 // Body of the "Vận chuyển SPX" card (DASHBOARD_DESIGN.md §6.2). Rendered under <Suspense>:
-// a confirmed order without a shipment waits for SPX's pickup slots.
+// an order without a shipment waits for SPX's pickup slots. Creating the shipment confirms it.
 export async function SpxCard({ order }: { order: Order }) {
   if (order.spx_tracking_no) {
     return (
@@ -35,11 +35,10 @@ export async function SpxCard({ order }: { order: Order }) {
           <Row label="Phí đã thu">{formatVnd(order.shipping_fee)}</Row>
           {order.spx_created_at && <Row label="Tạo lúc">{formatDateTime(order.spx_created_at)}</Row>}
         </dl>
-        {(order.status === "confirmed" || order.status === "shipped") && <SpxLabelButton orderId={order.id} />}
+        {(order.status === "pending" || order.status === "confirmed" || order.status === "shipped") && <SpxLabelButton orderId={order.id} />}
       </div>
     );
   }
-  if (order.status === "pending") return <p className="text-text-secondary">Xác nhận đơn trước khi tạo đơn SPX.</p>;
 
   const province = PROVINCES.find((p) => p.name === order.city)?.spx ?? "";
   const [{ data: rows, error }, slots] = await Promise.all([
@@ -53,7 +52,7 @@ export async function SpxCard({ order }: { order: Order }) {
   return <SpxCreateForm orderId={order.id} wards={wards} defaultWard={matchWard(order.ward, wards)} typedWard={order.ward} slots={slots} />;
 }
 
-async function pickupSlots() {
+export async function pickupSlots() {
   type Day = { date: string; pickup_time: number; slots: { pickup_time_range_id: number; pickup_time_range: string }[] };
   try {
     const days = await spxUserCall<Day[]>("v1/order/get_pickup_time", { service_type: 1 });

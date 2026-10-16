@@ -49,8 +49,8 @@ const layout = (title: string, body: string) =>
 function customerEmail(o: Order) {
   const lookup = `${SITE_URL}/order-lookup?order=${encodeURIComponent(o.order_number)}`;
   return layout(`CẢM ƠN BẠN ĐÃ ĐẶT HÀNG — ${o.order_number}`,
-    `<p style="font-size:14px;line-height:1.5">Chào ${esc(o.recipient_name)}, chúng tôi đã nhận đơn của bạn và sẽ gọi số
-    <b>${esc(o.phone)}</b> để xác nhận trước khi giao. Bạn thanh toán bằng tiền mặt khi nhận hàng (COD).</p>
+    `<p style="font-size:14px;line-height:1.5">Chào ${esc(o.recipient_name)}, chúng tôi đã nhận đơn của bạn và sẽ chuẩn bị,
+    giao hàng đến bạn. Bạn thanh toán bằng tiền mặt khi nhận hàng (COD).</p>
     ${summary(o)}
     <p style="font-size:14px;line-height:1.5">Giao đến: ${address(o)}</p>
     ${button(lookup, "THEO DÕI ĐƠN HÀNG")}
