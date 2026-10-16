@@ -56,6 +56,21 @@ export function OrderLookup({ defaultOrderNumber }: { defaultOrderNumber: string
           <p className="text-text-secondary">{status.detail}</p>
         </div>
 
+        {order.spxTrackingNo && (
+          <div className="rounded-sm border border-border bg-bg-secondary p-4">
+            <p className="text-nav uppercase text-text-secondary">Mã vận đơn SPX</p>
+            <p className="mt-1 text-h3 font-bold tracking-wide">{order.spxTrackingNo}</p>
+            <a
+              href="https://spx.vn/tra-cuu-van-don"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-2 inline-block text-nav uppercase text-text-primary underline hover:text-accent"
+            >
+              Tra cứu hành trình trên SPX ↗
+            </a>
+          </div>
+        )}
+
         <OrderSummary items={order.items} subtotal={order.subtotal} discount={order.discount} shippingFee={order.shippingFee} total={order.total}>
           <p className="text-caption text-text-muted">
             Giao đến {[order.ward, order.city].filter(Boolean).join(", ")}. Cần thay đổi thông tin, vui lòng gọi {HOTLINE}.
