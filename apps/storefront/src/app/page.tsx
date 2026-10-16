@@ -3,15 +3,15 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { createPublicClient } from "@paranoidz/db/public";
 import { HomeTabs } from "@/components/home/HomeTabs";
+import { Marquee, Lookbook } from "@/components/home/HomepageV2";
 import { ProductRow } from "@/components/home/ProductRow";
+import { VideoHero } from "@/components/home/VideoHero";
 import { ProductCard, type ProductCardData } from "@/components/product/ProductCard";
 import { productCardQuery, toProductCard } from "@/lib/catalog";
-import heroImage from "../../public/hero.jpg";
 
 // Homepage (DESIGN.md §5 page structure, items 5–10). ISR like /products: rebuilt at most once a
-// minute. The hero is hardcoded until the CMS question (ARCHITECTURE.md §8.6) is settled; its photo
-// is the client's (Drive pdz04/4, square): cropped at 30% from the top so the face stays in at 21:9.
-// Below sm the 16:9 hero only fits the title + CTA (no subtitle).
+// minute. Homepage v2 2026-10-16: video hero (shop's own TikTok clip) + marquee band +
+// lookbook with real-life photos — inspired by hydrashop.vn / chuottrang.vn.
 // No newsletter block — out of scope per ARCHITECTURE.md §9.
 export const revalidate = 60;
 
@@ -64,32 +64,8 @@ export default async function HomePage() {
 
   return (
     <>
-      {/* Redesign 2026-10-16: full-viewport editorial hero — the giant wordmark
-          overlapping the photo, meta row on top, CTAs bottom-left. */}
-      <section className="relative flex min-h-[92svh] flex-col overflow-hidden bg-bg-dark text-text-on-dark">
-        <Image src={heroImage} alt="" fill preload sizes="100vw" placeholder="blur" className="object-cover object-[50%_30%]" />
-        <div className="absolute inset-0 bg-linear-to-t from-bg-dark/80 via-bg-dark/10 to-bg-dark/30" />
-        <div className="relative mx-auto flex w-full max-w-7xl flex-1 flex-col justify-between px-4 pb-8 pt-6 lg:px-6 lg:pb-12">
-          <div className="flex items-center justify-between text-caption uppercase tracking-[0.14em] opacity-80">
-            <span>BST 2026</span>
-            <span className="hidden sm:inline">Streetwear — Việt Nam</span>
-          </div>
-          <div>
-            <h1 className="font-logo text-display uppercase italic leading-[0.9]">Paranoidz</h1>
-            <div className="mt-6 flex flex-wrap items-center gap-4">
-              <Link
-                href="/collections/new-collection"
-                className="flex h-12 items-center justify-center bg-accent px-8 text-button uppercase text-text-on-dark transition-colors duration-200 hover:bg-accent-hover"
-              >
-                Mua ngay
-              </Link>
-              <Link href="/products" className="text-button uppercase text-text-on-dark/80 underline underline-offset-8 hover:text-text-on-dark">
-                Xem tất cả sản phẩm
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
+      <VideoHero />
+      <Marquee />
 
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-14 px-4 py-14 lg:gap-20 lg:px-6 lg:py-20">
         {collectionCards.length > 0 && (
@@ -144,6 +120,8 @@ export default async function HomePage() {
             </ProductRow>
           </RowSection>
         ))}
+
+        <Lookbook />
 
         {/* Dark manifesto — the Paranoidz edge (DESIGN.md: inverted sections ok). */}
         <section className="bg-bg-dark px-6 py-14 text-text-on-dark lg:px-12 lg:py-20">
