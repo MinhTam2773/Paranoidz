@@ -49,7 +49,7 @@ export function validateField(field: CheckoutField, raw: string, all: Partial<Ch
       if (v.length < 2 || !NAME.test(v)) return "Chỉ dùng chữ cái (không có số hoặc ký hiệu).";
       return;
     case "phone":
-      if (!v) return "Nhập số điện thoại để chúng tôi xác nhận đơn hàng.";
+      if (!v) return "Nhập số điện thoại để chúng tôi giao hàng.";
       return normalizePhone(v) ? undefined : PHONE_HELP;
     case "secondaryPhone":
       if (!v) return;

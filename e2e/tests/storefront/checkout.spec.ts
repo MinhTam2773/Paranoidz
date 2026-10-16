@@ -118,5 +118,5 @@ test("S6 order lookup: wrong phone → not found, right phone → status", async
 
   await page.getByLabel("Số điện thoại").fill(order.phone);
   await page.getByRole("button", { name: "Tra cứu đơn hàng" }).click();
-  await expect(page.getByRole("heading", { name: "Chờ xác nhận" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Đã tiếp nhận" })).toBeVisible();
 });

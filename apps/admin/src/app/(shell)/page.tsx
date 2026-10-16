@@ -41,7 +41,7 @@ export default async function DashboardPage() {
   const cancelled = lost.data!.filter((h) => h.status === "cancelled").length;
   const failed = lost.data!.length - cancelled;
   const stats = [
-    { label: "Chờ xác nhận", value: String(pending.count ?? 0), href: "/orders?status=pending" },
+    { label: "Đơn mới", value: String(pending.count ?? 0), href: "/orders?status=pending" },
     { label: "Đơn hôm nay", value: String(today.count ?? 0) },
     { label: "Doanh thu tháng này", value: formatVnd(revenue), hint: "Đơn đã giao trong tháng" },
     { label: "Tổng khách hàng", value: String(customers.count ?? 0), hint: "Số điện thoại đã đặt hàng" },

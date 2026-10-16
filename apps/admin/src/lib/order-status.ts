@@ -3,8 +3,8 @@ import type { Database } from "@paranoidz/db/types";
 export type OrderStatus = Database["public"]["Enums"]["order_status"];
 
 export const STATUS_LABEL: Record<OrderStatus, string> = {
-  pending: "Chờ xác nhận",
-  confirmed: "Đã xác nhận",
+  pending: "Đã tiếp nhận",
+  confirmed: "Đã tạo vận đơn",
   shipped: "Đang giao",
   delivered: "Đã giao",
   cancelled: "Đã hủy",
@@ -25,11 +25,9 @@ const CANCEL: OrderAction = {
 };
 
 // Mirrors the valid transitions in transition_order_status(), which re-checks them.
+// pending → confirmed has no button: creating the SPX shipment confirms the order.
 export const ORDER_ACTIONS: Record<OrderStatus, { primary?: OrderAction; secondary: OrderAction[] }> = {
-  pending: {
-    primary: { to: "confirmed", label: "Xác nhận đơn", body: "Đã gọi xác nhận với khách. Đơn chuyển sang Đã xác nhận." },
-    secondary: [CANCEL],
-  },
+  pending: { secondary: [CANCEL] },
   confirmed: {
     primary: { to: "shipped", label: "Đánh dấu đang giao", body: "Đơn đã được giao cho đơn vị vận chuyển." },
     secondary: [CANCEL],

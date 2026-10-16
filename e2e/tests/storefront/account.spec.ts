@@ -26,5 +26,5 @@ test("S7 signed-in customer: order appears in /account history", async ({ page }
   await page.goto("/account");
   const history = page.getByRole("region", { name: "Lịch sử đơn hàng" });
   await expect(history.getByText(number)).toBeVisible();
-  await expect(history.getByText("Chờ xác nhận").first()).toBeVisible();
+  await expect(history.getByText("Đã tiếp nhận").first()).toBeVisible();
 });

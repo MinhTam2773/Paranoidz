@@ -7,7 +7,7 @@
 
 ## 1. System Overview
 
-Self-contained headless e-commerce for a Vietnamese streetwear brand. COD only — no payment gateway. Customer browses → submits order form → client confirms by phone → delivers and collects cash.
+Self-contained headless e-commerce for a Vietnamese streetwear brand. COD only — no payment gateway. Customer browses → submits order form → client creates the SPX shipment (no confirmation call, decided 2026-10-16) → SPX delivers and collects cash.
 
 | Layer               | Technology                       |
 | ------------------- | -------------------------------- |
@@ -125,8 +125,8 @@ The client runs Shopee (2 shops) and TikTok Shop through BigSeller, which holds 
 
 | Status            | Meaning                                   | Stock effect            | Set by |
 | ----------------- | ----------------------------------------- | ----------------------- | ------ |
-| `pending`         | Submitted, awaiting confirmation call     | Decremented (atomic)    | System |
-| `confirmed`       | Client called customer, order verified    | —                       | Client |
+| `pending`         | Submitted, awaiting SPX shipment (admin: "Đã tiếp nhận") | Decremented (atomic) | System |
+| `confirmed`       | SPX shipment created ("Đã tạo vận đơn")   | —                       | Client (by creating the shipment) |
 | `shipped`         | Handed to carrier                         | —                       | Client |
 | `delivered`       | Customer received & paid                  | `delivered_count` +1    | Client |
 | `cancelled`       | Cancelled before shipping                 | Restored automatically  | Client |
@@ -139,7 +139,7 @@ Valid transitions: pending→confirmed→shipped→delivered; pending/confirmed�
 2. Order form: full name, phone, street address, ward/commune, city/province, secondary phone, email, note, voucher code. Province = one of Vietnam's 34 units since 1 July 2025 (searchable list, `apps/storefront/src/lib/provinces.ts`); districts no longer exist, so `orders.district` stays NULL. Field rules live in `lib/checkout-validation.ts`, run live in the form AND again in the server action.
 3. Server route validates voucher, recomputes ALL prices from DB (items, discount, shipping fee — §5), calls `place_order()`.
 4. Customer gets Resend confirmation email; client gets Zalo + email alert.
-5. Client calls to confirm (standard VN COD practice) → `confirmed` (from then on the order is in the next BigSeller stock-out export, §3.1) → creates the SPX order by hand on spx.vn (COD amount = `orders.total`, weight = 0.3 kg × units; the admin order page shows both), prints the label, hands the parcel to SPX → `shipped` → `delivered`. **Being replaced by the SPX Open API (§5 "SPX Open API"):** "Tạo đơn SPX" + "In phiếu" on the admin order page, SPX picks the parcel up.
+5. No confirmation call (client, 2026-10-16: "không muốn làm phiền khách"). The client looks over new orders and creates their SPX shipments — one on the order page, or many at once from `/orders` with the labels printed together (§5 "SPX Open API"). Creating the shipment moves the order `pending → confirmed`; there is no other way to confirm (from then on the order is in the next BigSeller stock-out export, §3.1). SPX picks the parcel up; its tracking webhook moves the order to `shipped` → `delivered` / `delivery_failed` (manual buttons stay as a fallback).
 6. Cancel/refusal → stock restored, refusals tracked.
 
 Order numbers: `PZ-YYYY-NNNN` from a Postgres sequence (concurrency-safe, 4+ digits).
@@ -193,8 +193,9 @@ The client wants SPX's **live** price at checkout (SPX runs promotions, so a fix
   - `place_order(p_shipping_fee, p_spx_voucher)`: NULL fee = the table; otherwise a whole amount within 0 … 3 × the table fee, else `INVALID_SHIPPING_FEE` (the server falls back to the table before that). Still service-role only. The voucher is stored in `orders.spx_voucher` only with a fee. When creating the shipment, a voucher SPX refuses by then (expired, min spend) is dropped and the shipment created without it.
   - Previews (`previewShipping`) are rate limited per IP (§6, `shipping` scope, 60 / hour); over the limit the table fee is shown.
 - **Addresses.** SPX needs its own province / ward names (2-level address, `address_version` 2). Checkout's ward becomes a picker of SPX's ward list for the chosen province (the free-text ward goes). Orders placed before that keep their typed ward; the admin picks the matching SPX ward when creating the shipment. Built 2026-10-16: checkout and the address book share the picker (province first, ward disabled until then); `placeOrder` and `saveAddress` refuse a ward that isn't in `spx_locations` for the province. A saved address with a typed ward is matched to SPX's name (accents, case and the "Phường" / "Xã" prefix ignored) or left empty for the customer to pick; the stored address only changes when the customer saves it.
-- **Fulfilment.** After the confirmation call, the admin order page offers **Tạo đơn SPX**: pick an SPX pickup slot, then create the order — sender = the shop (pickup address in `SPX_SENDER_*` env), receiver = the order snapshot, COD amount = `orders.total`, payment role = sender pays, weight = 0.3 kg × units, declared value = subtotal (high-value service only at ≥ ₫3.000.000), our order number as SPX's `order_id`. SPX returns a tracking number, stored on the order. **In phiếu** asks SPX for the label link on each click (it is valid 30 minutes / 10 opens — never stored) and opens it for printing. Cancelling a confirmed order that has an SPX shipment cancels the shipment too.
-- **Status.** Phase 1 keeps the status buttons manual. A later phase takes SPX's tracking webhook to move orders to `shipped` / `delivered` / `delivery_failed` through `transition_order_status()`.
+- **Fulfilment.** For a `pending` order (or a `confirmed` one from before 2026-10-16 without a shipment), the admin order page offers **Tạo đơn SPX**: pick an SPX pickup slot, then create the order — sender = the shop (pickup address in `SPX_SENDER_*` env), receiver = the order snapshot, COD amount = `orders.total`, payment role = sender pays, weight = 0.3 kg × units, declared value = subtotal (high-value service only at ≥ ₫3.000.000), our order number as SPX's `order_id`. SPX returns a tracking number, stored on the order. **In phiếu** asks SPX for the label link on each click (it is valid 30 minutes / 10 opens — never stored) and opens it for printing. Creating the shipment confirms a `pending` order (if that status change fails, the shipment stays and the webhook moves the order on). Cancelling an order that has an SPX shipment cancels the shipment too.
+- **Bulk (2026-10-16).** On `/orders`, the Đã tiếp nhận tab takes up to 20 ticked orders, one pickup slot, and **Tạo đơn SPX & in phiếu**: each order is created as above with its typed ward matched to SPX's list (no match → skipped, created from its own page), then one label call returns the labels of every new shipment. The Đã tạo vận đơn tab reprints ticked orders' labels.
+- **Status.** SPX's tracking webhook (`apps/storefront/src/app/api/spx/webhook/route.ts`) moves orders to `shipped` / `delivered` / `delivery_failed` through `transition_order_status()`; the manual buttons stay as a fallback.
 - **One shipper per order.** Website orders get SPX shipments only from our admin; BigSeller keeps handling Shopee / TikTok orders. Never both for the same order.
 
 ### Loyalty program
@@ -209,9 +210,9 @@ The client wants SPX's **live** price at checkout (SPX runs promotions, so a fix
 
 - **Customer identity = normalized phone** (`normalize_vn_phone()`: VN mobile, `0xxxxxxxxx`), for guests and accounts alike — every per-customer rule (first-5, promo once, loyalty, refusals, blacklist) keys on it ONLY, so switching guest ↔ account dodges nothing. Phone is also unique per account.
 - Abuse limits inside `place_order()`: max 20 units per order, max 3 open `pending` orders per phone (row-locked per phone, so not raceable).
-- `pending → confirmed` phone call verifies every order before shipping.
+- No confirmation call since 2026-10-16 (client: don't disturb customers). Accepted trade-off: fake COD orders and addresses SPX doesn't serve are no longer caught by a call; what remains is the rate limits, the blacklist, the 20-unit cap and the client looking at each order before creating its shipment. A refused parcel costs the shop SPX's return fee.
 - `delivery_failed` increments `customers.refusal_count`; client can set `customers.is_blacklisted` (blocks new orders from that phone at `place_order()`, whatever format it's typed in).
-- Order and order-lookup endpoints rate-limited per phone and IP: `apps/storefront/src/lib/rate-limit.ts` → `hit_rate_limit(scope, …)` (service role only), called before any order / lookup work as a separate statement so rejected attempts still count. Every attempt that passes form validation counts; 1-hour fixed windows, separate counters per scope. Orders: 5 per normalized phone, 10 per IP. Lookups: 10 per phone, 20 per IP. Shipping-fee previews (`shipping`, they call SPX): 60 per IP; over it the table fee is shown instead. IPv6 per /64, IPv4-mapped unwrapped. IP = `x-real-ip` / first `x-forwarded-for`, trustworthy only because Vercel overwrites them; no IP → phone limit only. Shared mobile-carrier IPs (CGNAT) are why the IP limits are loose. A residential-proxy botnet is not stopped by this — the confirmation call is the backstop.
+- Order and order-lookup endpoints rate-limited per phone and IP: `apps/storefront/src/lib/rate-limit.ts` → `hit_rate_limit(scope, …)` (service role only), called before any order / lookup work as a separate statement so rejected attempts still count. Every attempt that passes form validation counts; 1-hour fixed windows, separate counters per scope. Orders: 5 per normalized phone, 10 per IP. Lookups: 10 per phone, 20 per IP. Shipping-fee previews (`shipping`, they call SPX): 60 per IP; over it the table fee is shown instead. IPv6 per /64, IPv4-mapped unwrapped. IP = `x-real-ip` / first `x-forwarded-for`, trustworthy only because Vercel overwrites them; no IP → phone limit only. Shared mobile-carrier IPs (CGNAT) are why the IP limits are loose. A residential-proxy botnet is not stopped by this — the client reviewing new orders before creating shipments is the backstop.
 
 ---
 

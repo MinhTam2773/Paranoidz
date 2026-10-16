@@ -40,7 +40,7 @@ export default async function InventoryExportPage() {
         </div>
       )}
 
-      {data.outOrders.length > 0 && <section className={card}><h3 className="text-card-title uppercase">Đơn đã xác nhận ({data.outOrders.length})</h3>{orderList(data.outOrders)}</section>}
+      {data.outOrders.length > 0 && <section className={card}><h3 className="text-card-title uppercase">Đơn đã tạo vận đơn ({data.outOrders.length})</h3>{orderList(data.outOrders)}</section>}
       {data.backOrders.length > 0 && <section className={card}><h3 className="text-card-title uppercase">Đơn đã gửi rồi bị hủy / giao thất bại ({data.backOrders.length})</h3>{orderList(data.backOrders)}</section>}
       {data.minus.length + data.plus.length > 0 && (
         <section className={card}>
@@ -60,7 +60,7 @@ export default async function InventoryExportPage() {
         </section>
       )}
       {data.pendingOrders > 0 && (
-        <p className="text-text-secondary">{data.pendingOrders} đơn đang chờ xác nhận: sẽ được xuất sau khi xác nhận (tồn kho web đã trừ sẵn).</p>
+        <p className="text-text-secondary">{data.pendingOrders} đơn mới chưa tạo vận đơn: sẽ được xuất sau khi tạo vận đơn (tồn kho web đã trừ sẵn).</p>
       )}
 
       <ExportFlow empty={empty} />

@@ -57,7 +57,7 @@ function explain(code: string): CheckoutResult {
   if (code === "TOO_MANY_ITEMS")
     return { ok: false, message: `Mỗi đơn tối đa 20 sản phẩm. Đặt số lượng lớn hơn, vui lòng gọi ${HOTLINE}.` };
   if (code === "TOO_MANY_PENDING")
-    return { ok: false, message: `Số điện thoại này đã có 3 đơn đang chờ gọi xác nhận. Chúng tôi sẽ sớm gọi cho bạn, hoặc bạn gọi ${HOTLINE}.` };
+    return { ok: false, message: `Số điện thoại này đã có 3 đơn đang được xử lý. Vui lòng chờ các đơn này được gửi đi, hoặc gọi ${HOTLINE}.` };
   if (code === "BLACKLISTED")
     return { ok: false, message: `Chúng tôi không thể nhận đơn online cho số điện thoại này. Vui lòng gọi ${HOTLINE}.` };
   return { ok: false, message: `Đã có lỗi khi đặt hàng. Vui lòng thử lại hoặc gọi ${HOTLINE}.` };

@@ -2,10 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@paranoidz/db/admin";
-import { PROVINCES } from "@paranoidz/db/provinces";
 import { createClient } from "@paranoidz/db/server";
 import { requireAdmin } from "@/lib/auth";
-import { isOrderStatus } from "@/lib/order-status";
+import { isOrderStatus, type OrderStatus } from "@/lib/order-status";
+import { spxProvince } from "@/lib/spx-bulk";
 import { env, spxUserCall } from "@paranoidz/db/spx";
 import { createOrderBody } from "@paranoidz/db/spx/order-body";
 
@@ -55,14 +55,26 @@ export async function transitionOrder(orderId: string, to: string): Promise<{ er
   return stale ? { error: "Trạng thái đơn đã được thay đổi ở nơi khác. Trang đã được cập nhật." } : {};
 }
 
-// Creates the SPX shipment for a confirmed order (DASHBOARD_DESIGN.md §6.2 "Vận chuyển SPX").
-// `slot` = "<pickup_time>:<pickup_time_range_id>" from SPX's 1.1 list. Written with the
-// service role; browsers can't write the spx_* columns.
+// Creates the SPX shipment for an order (DASHBOARD_DESIGN.md §6.2 "Vận chuyển SPX"). Creating it
+// is what confirms a pending order — there is no confirmation call (decided 2026-10-16).
+// `slot` = "<pickup_time>:<pickup_time_range_id>" from SPX's 1.1 list.
 export async function createSpxShipment(orderId: string, ward: string, slot: string): Promise<{ error?: string }> {
   await requireAdmin();
-  const [pickupTime, rangeId] = slot.split(":").map(Number);
-  if (!Number.isSafeInteger(pickupTime) || !Number.isSafeInteger(rangeId)) return { error: "Chọn thời gian lấy hàng." };
+  const pickup = parseSlot(slot);
+  if (!pickup) return { error: "Chọn thời gian lấy hàng." };
+  const { error } = await createShipment(orderId, ward, pickup);
+  revalidatePath("/", "layout");
+  return error ? { error } : {};
+}
 
+function parseSlot(slot: string) {
+  const [pickupTime, rangeId] = slot.split(":").map(Number);
+  return Number.isSafeInteger(pickupTime) && Number.isSafeInteger(rangeId) ? { pickupTime, rangeId } : null;
+}
+
+// Shared by the order page and the bulk action on /orders; callers check the admin and
+// revalidate. Written with the service role; browsers can't write the spx_* columns.
+async function createShipment(orderId: string, ward: string, pickup: { pickupTime: number; rangeId: number }): Promise<{ trackingNo?: string; error?: string }> {
   const admin = createAdminClient();
   const { data: order, error } = await admin
     .from("orders")
@@ -70,12 +82,12 @@ export async function createSpxShipment(orderId: string, ward: string, slot: str
     .eq("id", orderId)
     .maybeSingle();
   if (error) throw error;
-  if (!order || order.status !== "confirmed" || order.spx_tracking_no) {
-    revalidatePath("/", "layout");
-    return { error: "Đơn đã có vận đơn SPX hoặc không còn ở trạng thái Đã xác nhận. Trang đã được cập nhật." };
+  // `confirmed` without a shipment: confirmed by hand before 2026-10-16.
+  if (!order || !SHIPPABLE.includes(order.status) || order.spx_tracking_no) {
+    return { error: "Đơn đã có vận đơn SPX hoặc đã bị hủy. Trang đã được cập nhật." };
   }
 
-  const province = PROVINCES.find((p) => p.name === order.city)?.spx ?? "";
+  const province = spxProvince(order.city);
   const { count } = await admin.from("spx_locations").select("*", { count: "exact", head: true }).eq("province", province).eq("ward", ward);
   if (!count) return { error: "Chọn phường / xã giao hàng." };
 
@@ -83,7 +95,7 @@ export async function createSpxShipment(orderId: string, ward: string, slot: str
     { ...order, items: order.order_items.map((i) => ({ name: i.name_snapshot, qty: i.qty })) },
     province,
     ward,
-    { pickupTime, rangeId },
+    pickup,
     { name: env("SPX_SENDER_NAME"), phone: env("SPX_SENDER_PHONE"), address: env("SPX_SENDER_ADDRESS"), ward: env("SPX_SENDER_WARD"), province: env("SPX_SENDER_PROVINCE") },
     voucher,
   );
@@ -105,22 +117,29 @@ export async function createSpxShipment(orderId: string, ward: string, slot: str
   const created = result.created;
   if (!created) return { error: spxError("Không tạo được đơn SPX", result.failure) };
 
-  // Only the first shipment sticks: one created in parallel by a second click is cancelled at SPX.
+  // Only the first shipment sticks: one created in parallel by a second click, or for an order
+  // cancelled meanwhile, is cancelled at SPX.
   const { data: saved, error: saveError } = await admin
     .from("orders")
     .update({ spx_tracking_no: created.tracking_no, spx_ward: ward, spx_fee: created.estimated_shipping_fee, spx_created_at: new Date().toISOString() })
     .eq("id", orderId)
     .is("spx_tracking_no", null)
+    .in("status", SHIPPABLE)
     .select("id");
   if (saveError || !saved.length) {
     await cancelSpxShipment(created.tracking_no).catch(() => {});
-    revalidatePath("/", "layout");
     return { error: `Không lưu được vận đơn ${created.tracking_no} nên đã hủy nó ở SPX. Trang đã được cập nhật.` };
   }
 
-  revalidatePath("/", "layout");
-  return {};
+  // The shipment is kept even if this fails: the SPX webhook walks the order on from pending.
+  if (order.status === "pending") {
+    const { error: confirmError } = await admin.rpc("transition_order_status", { p_order_id: orderId, p_new_status: "confirmed" });
+    if (confirmError) return { trackingNo: created.tracking_no, error: `Đã tạo vận đơn ${created.tracking_no} nhưng chưa cập nhật được trạng thái đơn; trạng thái sẽ tự cập nhật khi SPX lấy hàng.` };
+  }
+  return { trackingNo: created.tracking_no };
 }
+
+const SHIPPABLE: OrderStatus[] = ["pending", "confirmed"];
 
 // A fresh label link on every click: SPX's link lasts 30 minutes / 10 opens, so it is never stored.
 export async function getSpxLabel(orderId: string): Promise<{ url?: string; error?: string }> {

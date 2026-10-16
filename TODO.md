@@ -106,6 +106,14 @@ Session log and work queue. Read this first (CLAUDE.md §7), update it last (§5
 
 ## Next up
 
+- [ ] **SPX bulk fulfilment + no confirmation call** (client, 2026-10-16; branch `feat/spx-bulk-fulfilment`; spec `docs/superpowers/specs/2026-10-16-spx-bulk-fulfilment-design.md`) — the client prints labels for many orders at once and no longer calls customers. Creating the SPX shipment confirms a `pending` order; the manual "Xác nhận đơn" button goes; labels `pending` = Đã tiếp nhận, `confirmed` = Đã tạo vận đơn; no migration. Steps:
+  - [x] (1) `createSpxShipment` accepts `pending` and moves it to `confirmed` after saving the tracking number (shared `createShipment`); `ORDER_ACTIONS.pending` = cancel only; SpxCard shows the create form on `pending`
+  - [x] (2) Copy: storefront status labels / checkout success / email / pending-limit error / phone hint; admin labels, dashboard tile + sidebar badge ("Đơn mới"), inventory export page
+  - [x] (3) Docs (ARCHITECTURE.md §4 / §5 / §6, DASHBOARD_DESIGN.md §6.2) + tests (admin unit, e2e A2 / account / checkout) → commit
+  - [ ] (4) SPX test host: does one `batch_get_shipping_label` call return one link for several tracking numbers, and its list limit
+  - [ ] (5) `/orders` bulk bar: checkboxes on Đã tiếp nhận / Đã tạo vận đơn, pickup slot + TẠO ĐƠN SPX & IN PHIẾU (n), IN PHIẾU (n), results panel → commit
+  - [ ] (6) Verify on the SPX test host: bulk-create 3 pending orders (1 unmatched ward), reprint, single create from a pending order page; 375 px + 1280 px
+- [ ] **Verify the SPX tracking webhook in production** (noted 2026-10-16) — the code is on `master` (PR #7, `apps/storefront/src/app/api/spx/webhook/route.ts`), but nothing records that `https://paranoidz.vn/api/spx/webhook` is registered with SPX or that a real callback arrived. Check with SPX / the client, then watch one real order move by itself.
 - [ ] **E2E tests + CI** (decided 2026-10-15, branch `feat/e2e-ci`, PR #4; spec `docs/superpowers/specs/2026-10-15-e2e-ci-design.md`) — Playwright on a fresh local Supabase per run, never prod / `paranoidz-test`. **First round merged 2026-10-16** (PR #4, `408924e`); second round in progress (below). Run locally: Docker Desktop + `supabase start` (stop any other local Supabase project on 54321–54324 first), then `pnpm test:e2e` (~2 min: builds both apps; 17 passed twice in a row on 2026-10-15). Data accumulates in the local DB between runs — `supabase db reset` cleans it. One commit per step:
   - [x] (1) `e2e/` package + `playwright.config.ts` + local-URL guard (`@paranoidz/db/testing`) + `setup` project; S1 green locally
   - [x] (2) `.github/workflows/ci.yml`: `supabase start` + admin unit tests (30/30) + `smoke` / `smoke:inventory` + e2e — green on PR #4 (all steps, ~6 min)
