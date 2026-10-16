@@ -1,4 +1,4 @@
-import { searchKey } from "@paranoidz/db/provinces";
+import { searchKey } from "../provinces.ts";
 
 // One order for SPX's 1.2 Create Order (ARCHITECTURE.md §5 "SPX Open API"): standard service,
 // pickup, sender pays shipping, COD = the order total, 300 g per unit (same as shipping_fee()),

@@ -21,7 +21,8 @@ export function env(name: string) {
   return value;
 }
 
-export async function spxCall<T>(path: string, payload: object): Promise<T> {
+// `signal` replaces the 15 s timeout (checkout's fee quote gives SPX 3 s in total).
+export async function spxCall<T>(path: string, payload: object, signal?: AbortSignal): Promise<T> {
   const appId = Number(env("SPX_APP_ID"));
   const timestamp = Math.floor(Date.now() / 1000);
   const random = BigInt.asUintN(63, randomBytes(8).readBigUInt64BE()); // non-negative int64
@@ -36,7 +37,7 @@ export async function spxCall<T>(path: string, payload: object): Promise<T> {
       "check-sign": checkSign(appId, env("SPX_APP_SECRET"), timestamp, random, body),
     },
     body,
-    signal: AbortSignal.timeout(TIMEOUT_MS),
+    signal: signal ?? AbortSignal.timeout(TIMEOUT_MS),
   });
   if (!res.ok) throw new SpxError(-res.status, `SPX HTTP ${res.status}`);
   const json = (await res.json()) as { ret_code: number; message: string; data: T };
@@ -45,8 +46,8 @@ export async function spxCall<T>(path: string, payload: object): Promise<T> {
 }
 
 // Calls made on behalf of the seller account (orders, fees, labels, vouchers).
-export function spxUserCall<T>(path: string, payload: object = {}): Promise<T> {
+export function spxUserCall<T>(path: string, payload: object = {}, signal?: AbortSignal): Promise<T> {
   const userId = Number(env("SPX_USER_ID"));
   if (!Number.isSafeInteger(userId)) throw new Error("SPX_USER_ID is not a safe integer"); // 15 digits today
-  return spxCall<T>(path, { user_id: userId, user_secret: env("SPX_USER_SECRET"), ...payload });
+  return spxCall<T>(path, { user_id: userId, user_secret: env("SPX_USER_SECRET"), ...payload }, signal);
 }

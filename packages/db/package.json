@@ -11,11 +11,14 @@
     "./public": "./src/public.ts",
     "./testing": "./src/testing.ts",
     "./types": "./src/types.ts",
-    "./provinces": "./src/provinces.ts"
+    "./provinces": "./src/provinces.ts",
+    "./spx": "./src/spx/client.ts",
+    "./spx/order-body": "./src/spx/order-body.ts"
   },
   "scripts": {
     "gen:types": "supabase gen types typescript --linked --schema public > src/types.ts",
     "typecheck": "tsc --noEmit",
+    "test": "node --test \"tests/**/*.test.ts\"",
     "smoke": "node --env-file=../../apps/admin/.env.local scripts/smoke-test.ts",
     "smoke:inventory": "node --env-file=../../apps/admin/.env.local scripts/inventory-smoke.ts",
     "seed:images": "node --env-file=../../apps/admin/.env.local scripts/upload-dev-images.ts",

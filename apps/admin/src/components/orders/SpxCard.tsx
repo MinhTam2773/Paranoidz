@@ -2,8 +2,8 @@ import { createAdminClient } from "@paranoidz/db/admin";
 import { PROVINCES } from "@paranoidz/db/provinces";
 import { formatDateTime, formatVnd } from "@/lib/format";
 import type { OrderStatus } from "@/lib/order-status";
-import { spxUserCall } from "@/lib/spx/client";
-import { matchWard } from "@/lib/spx/order-body";
+import { spxUserCall } from "@paranoidz/db/spx";
+import { matchWard } from "@paranoidz/db/spx/order-body";
 import { SpxCreateForm, SpxLabelButton } from "./SpxActions";
 
 type Order = {

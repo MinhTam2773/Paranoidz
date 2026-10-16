@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { checkSign } from "../../src/lib/spx/sign.ts";
+import { checkSign } from "../../src/spx/sign.ts";
 
 // Test vector from SPX's "API authentication guide" (spx.vn/integration).
 test("check-sign matches SPX's documented example", () => {

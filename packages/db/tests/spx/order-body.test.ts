@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { createOrderBody, matchWard } from "../../src/lib/spx/order-body.ts";
+import { createOrderBody, matchWard } from "../../src/spx/order-body.ts";
 
 const sender = { name: "Paranoidz", phone: "0909000000", address: "1 Shop St", ward: "Phường Phú Thạnh", province: "Thành phố Hồ Chí Minh" };
 const order = {

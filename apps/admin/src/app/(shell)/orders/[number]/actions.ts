@@ -6,8 +6,8 @@ import { PROVINCES } from "@paranoidz/db/provinces";
 import { createClient } from "@paranoidz/db/server";
 import { requireAdmin } from "@/lib/auth";
 import { isOrderStatus } from "@/lib/order-status";
-import { env, spxUserCall } from "@/lib/spx/client";
-import { createOrderBody } from "@/lib/spx/order-body";
+import { env, spxUserCall } from "@paranoidz/db/spx";
+import { createOrderBody } from "@paranoidz/db/spx/order-body";
 
 type SpxFailure = { message: string };
 
