@@ -11,6 +11,22 @@ export const STATUS_LABEL: Record<OrderStatus, string> = {
   delivery_failed: "Giao thất bại",
 };
 
+// SPX parcel status codes (integration guide, "Order status code"), for admin messages.
+export const SPX_STATUS_LABEL: Record<number, string> = {
+  1001: "Chờ lấy hàng",
+  2001: "Đang vận chuyển",
+  2006: "Đang giao",
+  3001: "Tạm giữ",
+  4001: "Đã giao",
+  5001: "Lấy hàng thất bại",
+  5002: "Hư hỏng",
+  5003: "Thất lạc",
+  6001: "Đang hoàn hàng",
+  6002: "Hoàn hàng thất bại",
+  6003: "Đã hoàn hàng",
+  7001: "Đã hủy lấy hàng",
+};
+
 export function isOrderStatus(value: unknown): value is OrderStatus {
   return typeof value === "string" && value in STATUS_LABEL;
 }

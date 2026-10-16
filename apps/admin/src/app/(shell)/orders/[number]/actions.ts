@@ -4,10 +4,11 @@ import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@paranoidz/db/admin";
 import { createClient } from "@paranoidz/db/server";
 import { requireAdmin } from "@/lib/auth";
-import { isOrderStatus, type OrderStatus } from "@/lib/order-status";
+import { isOrderStatus, SPX_STATUS_LABEL, type OrderStatus } from "@/lib/order-status";
 import { BULK_LIMIT, planShipments, spxProvince, type BulkFailure } from "@/lib/spx-bulk";
 import { env, spxUserCall } from "@paranoidz/db/spx";
 import { createOrderBody } from "@paranoidz/db/spx/order-body";
+import { spxConfirms } from "@paranoidz/db/spx/webhook";
 
 type SpxFailure = { message: string };
 
@@ -44,6 +45,16 @@ export async function transitionOrder(orderId: string, to: string): Promise<{ er
     }
   }
 
+  // Đã giao / Giao thất bại are final, so a later SPX callback can't correct a wrong click: on an
+  // order with an SPX shipment they need SPX to say so already.
+  if (to === "delivered" || to === "delivery_failed") {
+    const { data: order } = await createAdminClient().from("orders").select("spx_tracking_no").eq("id", orderId).maybeSingle();
+    if (order?.spx_tracking_no) {
+      const spxBlock = await spxStatusError(order.spx_tracking_no, to);
+      if (spxBlock) return { error: spxBlock };
+    }
+  }
+
   const supabase = await createClient();
   const { error } = await supabase.rpc("transition_order_status", { p_order_id: orderId, p_new_status: to });
   const stale = error?.message.startsWith("INVALID_TRANSITION");
@@ -53,6 +64,22 @@ export async function transitionOrder(orderId: string, to: string): Promise<{ er
   // when the status was changed elsewhere, so the page shows the real one.
   revalidatePath("/", "layout");
   return stale ? { error: "Trạng thái đơn đã được thay đổi ở nơi khác. Trang đã được cập nhật." } : {};
+}
+
+// SPX's own status for the parcel (1.3 Track Order); null when it allows `to`.
+async function spxStatusError(trackingNo: string, to: "delivered" | "delivery_failed") {
+  type Parcel = { tracking_no: string; status: string; status_code: string };
+  try {
+    const data = await spxUserCall<{ orders?: Parcel[]; fail_list?: SpxFailure[] }>("v1/order/batch_search_order", { tracking_no_list: [trackingNo] });
+    const parcel = data.orders?.find((o) => o.tracking_no === trackingNo);
+    if (!parcel) return spxError("Không kiểm tra được trạng thái với SPX", data.fail_list?.[0]);
+    const code = Number(parcel.status_code);
+    if (spxConfirms(to, code)) return null;
+    const now = SPX_STATUS_LABEL[code] ?? parcel.status;
+    return `SPX chưa báo ${to === "delivered" ? "đã giao" : "hoàn hàng"} (hiện tại: ${now}). Trạng thái đơn sẽ tự cập nhật khi SPX báo.`;
+  } catch (e) {
+    return spxError("Không kiểm tra được trạng thái với SPX", e);
+  }
 }
 
 // Creates the SPX shipment for an order (DASHBOARD_DESIGN.md §6.2 "Vận chuyển SPX"). Creating it

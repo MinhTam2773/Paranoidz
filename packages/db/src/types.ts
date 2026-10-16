@@ -1212,6 +1212,7 @@ export type Database = {
       short_author_name: { Args: { p_name: string }; Returns: string }
       transition_order_status: {
         Args: {
+          p_count_refusal?: boolean
           p_new_status: Database["public"]["Enums"]["order_status"]
           p_note?: string
           p_order_id: string
