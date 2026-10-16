@@ -7,8 +7,10 @@ type Slide =
   | { type: "image"; src: string; alt: string }
   | { type: "video"; src: string; alt: string };
 
-// Hero carousel 2026-10-16: 5 slides, all 16:9 — Tủn's product shots.
+// Hero carousel 2026-10-16: 6 slides, all 16:9. Slide 1 = brand logo sting,
+// then Tủn's 5 product shots.
 const SLIDES: Slide[] = [
+  { type: "video", src: "/home/hero-logo-sting.mp4", alt: "Paranoidz — Back to Basicz" },
   { type: "image", src: "/home/slide-duck.jpg", alt: "Họa tiết vịt thêu trên vải be" },
   { type: "image", src: "/home/slide-eagle.jpg", alt: "Họa tiết đại bàng thêu 3 màu" },
   { type: "image", src: "/home/slide-polo.jpg", alt: "Áo polo trắng thêu đại bàng" },
