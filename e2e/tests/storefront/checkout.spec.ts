@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "../../fixtures/test";
 import { fillDelivery, placedOrderNumber, placeOrderButton, vnd } from "../../fixtures/checkout";
 import { CITY, createPromo, db, placeOrder, seedProduct, uniquePhone, variantStock } from "../../fixtures/data";
 

@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "../../fixtures/test";
 import { seedProduct } from "../../fixtures/data";
 
 // S2. Guest cart: localStorage-backed, survives a reload, header badge follows it.

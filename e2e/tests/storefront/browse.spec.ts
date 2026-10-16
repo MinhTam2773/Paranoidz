@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "../../fixtures/test";
 import { seedProduct } from "../../fixtures/data";
 
 // S1. The listing is ISR (revalidate 60), so a product seeded after the build isn't in it yet:
