@@ -104,3 +104,21 @@ export async function createBundle(productIds: string[], discountAmount: number)
   if (iErr) throw iErr;
   return { id: data.id, name };
 }
+
+/** A visible review written straight into the table (service role skips the delivered-order check). */
+export async function seedReview(productId: string, content = `Đánh giá thử ${uid()}`) {
+  const user = await createUser();
+  const { data, error } = await db
+    .from("reviews")
+    .insert({ product_id: productId, user_id: user.id, rating: 4, content })
+    .select("id, author_name")
+    .single();
+  if (error) throw error;
+  return { id: data.id, authorName: data.author_name, content };
+}
+
+export async function createCategory(name = `Danh Mục Thử ${uid()}`) {
+  const { data, error } = await db.from("categories").insert({ name, slug: `e2e-${uid()}` }).select("id").single();
+  if (error) throw error;
+  return { id: data.id, name };
+}
