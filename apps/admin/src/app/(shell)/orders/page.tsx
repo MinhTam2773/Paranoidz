@@ -1,6 +1,9 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { createAdminClient } from "@paranoidz/db/admin";
 import { OrdersIcon } from "@/components/icons";
+import { AllCheckbox, BulkBar, BulkProvider, RowCheckbox } from "@/components/orders/BulkOrders";
+import { pickupSlots } from "@/components/orders/SpxCard";
 import { Pagination } from "@/components/Pagination";
 import { StatusBadge } from "@/components/StatusBadge";
 import { requireAdmin } from "@/lib/auth";
@@ -49,7 +52,7 @@ export default async function OrdersPage({ searchParams }: PageProps<"/orders">)
 
   let query = createAdminClient()
     .from("orders")
-    .select("id, order_number, recipient_name, phone, total, status, created_at, order_items(qty)", { count: "exact" })
+    .select("id, order_number, recipient_name, phone, total, status, created_at, spx_tracking_no, order_items(qty)", { count: "exact" })
     .order("created_at", { ascending: false })
     .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
   if (status) query = query.eq("status", status);
@@ -59,8 +62,12 @@ export default async function OrdersPage({ searchParams }: PageProps<"/orders">)
 
   const orders = data.map((o) => ({ ...o, items: o.order_items.reduce((n, i) => n + i.qty, 0) }));
   const pages = Math.ceil((count ?? 0) / PAGE_SIZE);
+  // Bulk SPX (DASHBOARD_DESIGN.md §6.2): create on Đã tiếp nhận, reprint on Đã tạo vận đơn.
+  const bulk = status === "pending" ? "create" : status === "confirmed" ? "print" : null;
+  const selectable = (o: (typeof orders)[number]) => bulk === "create" || (bulk === "print" && !!o.spx_tracking_no);
 
   return (
+    <BulkProvider key={`${status}-${q}-${page}`}>
     <div className="flex flex-col gap-4">
       <nav aria-label="Lọc theo trạng thái" className="-mx-6 overflow-x-auto px-6 [scrollbar-width:none]">
         <ul className="flex min-w-max gap-1 border-b border-border">
@@ -118,6 +125,7 @@ export default async function OrdersPage({ searchParams }: PageProps<"/orders">)
           <table className="hidden w-full overflow-hidden rounded-sm border border-border bg-surface md:table">
             <thead className="bg-bg-secondary text-left">
               <tr className="text-th uppercase text-text-secondary">
+                {bulk && <th scope="col" className="w-11 pl-2"><AllCheckbox ids={orders.filter(selectable).map((o) => o.id)} /></th>}
                 <th scope="col" className="px-4 py-3">Mã đơn</th>
                 <th scope="col" className="px-4 py-3">Khách hàng</th>
                 <th scope="col" className="px-4 py-3">Số điện thoại</th>
@@ -130,6 +138,7 @@ export default async function OrdersPage({ searchParams }: PageProps<"/orders">)
             <tbody>
               {orders.map((o) => (
                 <tr key={o.id} className="relative h-14 border-t border-border hover:bg-bg-secondary">
+                  {bulk && <td className="pl-2">{selectable(o) && <RowCheckbox id={o.id} label={o.order_number} />}</td>}
                   <td className="px-4 font-semibold">
                     <Link href={`/orders/${o.order_number}`} className="after:absolute after:inset-0">
                       {o.order_number}
@@ -149,8 +158,9 @@ export default async function OrdersPage({ searchParams }: PageProps<"/orders">)
           {/* <768px: stacked cards (§4 mobile). */}
           <ul className="flex flex-col gap-2 md:hidden">
             {orders.map((o) => (
-              <li key={o.id}>
-                <Link href={`/orders/${o.order_number}`} className="flex flex-col gap-1 rounded-sm border border-border bg-surface p-4">
+              <li key={o.id} className="flex items-start gap-1 rounded-sm border border-border bg-surface">
+                {bulk && <span className="pt-1.5 pl-1">{selectable(o) && <RowCheckbox id={o.id} label={o.order_number} />}</span>}
+                <Link href={`/orders/${o.order_number}`} className={`flex min-w-0 flex-1 flex-col gap-1 p-4 ${bulk ? "pl-1" : ""}`}>
                   <span className="flex items-start justify-between gap-2">
                     <span className="font-semibold">{o.order_number}</span>
                     <StatusBadge status={o.status} />
@@ -167,6 +177,19 @@ export default async function OrdersPage({ searchParams }: PageProps<"/orders">)
       )}
 
       <Pagination page={page} pages={pages} href={(p) => href(status, q, p)} />
+
+      {bulk === "create" && (
+        <Suspense fallback={<BulkBar mode="create" />}>
+          <CreateBar />
+        </Suspense>
+      )}
+      {bulk === "print" && <BulkBar mode="print" />}
     </div>
+    </BulkProvider>
   );
+}
+
+// SPX's pickup slots load while the list is already on screen.
+async function CreateBar() {
+  return <BulkBar mode="create" slots={await pickupSlots()} />;
 }

@@ -1,6 +1,6 @@
 # SPX bulk fulfilment + no confirmation call — design
 
-Date: 2026-10-16 · Status: approved by the owner, not built
+Date: 2026-10-16 · Status: built and verified on the SPX test host (branch `feat/spx-bulk-fulfilment`); labels: one call, no chunking needed
 
 The client wants two things:
 1. **Print shipping labels for many orders at once.**

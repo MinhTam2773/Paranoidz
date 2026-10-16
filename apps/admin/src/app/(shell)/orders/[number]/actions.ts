@@ -5,7 +5,7 @@ import { createAdminClient } from "@paranoidz/db/admin";
 import { createClient } from "@paranoidz/db/server";
 import { requireAdmin } from "@/lib/auth";
 import { isOrderStatus, type OrderStatus } from "@/lib/order-status";
-import { spxProvince } from "@/lib/spx-bulk";
+import { BULK_LIMIT, planShipments, spxProvince, type BulkFailure } from "@/lib/spx-bulk";
 import { env, spxUserCall } from "@paranoidz/db/spx";
 import { createOrderBody } from "@paranoidz/db/spx/order-body";
 
@@ -150,6 +150,70 @@ export async function getSpxLabel(orderId: string): Promise<{ url?: string; erro
     const data = await spxUserCall<{ awb_link?: string; fail_list?: SpxFailure[] }>("v1/order/batch_get_shipping_label", { tracking_no_list: [order.spx_tracking_no] });
     if (!data.awb_link || data.fail_list?.length) return { error: spxError("Không lấy được phiếu gửi hàng", data.fail_list?.[0]) };
     return { url: data.awb_link };
+  } catch (e) {
+    return { error: spxError("Không lấy được phiếu gửi hàng", e) };
+  }
+}
+
+export type BulkResult = { created: number; failed: BulkFailure[]; url?: string; error?: string };
+
+// Bulk "TẠO ĐƠN SPX & IN PHIẾU" on /orders (DASHBOARD_DESIGN.md §6.2): one pickup slot for every
+// ticked pending order, each created like on its own page, then one label link for all of them.
+export async function createSpxShipments(orderIds: string[], slot: string): Promise<BulkResult> {
+  await requireAdmin();
+  const pickup = parseSlot(slot);
+  if (!pickup) return { created: 0, failed: [], error: "Chọn thời gian lấy hàng." };
+  if (!orderIds.length || orderIds.length > BULK_LIMIT) return { created: 0, failed: [], error: `Chọn từ 1 đến ${BULK_LIMIT} đơn.` };
+
+  const admin = createAdminClient();
+  const { data: orders, error } = await admin.from("orders").select("id, order_number, status, spx_tracking_no, city, ward").in("id", orderIds);
+  if (error) throw error;
+  // One query per province: a province has at most a few hundred wards, under PostgREST's row cap.
+  const provinces = [...new Set(orders.map((o) => spxProvince(o.city)))];
+  const wards = new Map(await Promise.all(provinces.map(async (province) => {
+    const { data, error: wardError } = await admin.from("spx_locations").select("ward").eq("province", province);
+    if (wardError) throw wardError;
+    return [province, data.map((r) => r.ward)] as const;
+  })));
+  const { ready, skipped } = planShipments(orders, wards);
+
+  // A few at a time: each SPX call takes 1–2 s.
+  const results: { orderNumber: string; trackingNo?: string; error?: string }[] = [];
+  let next = 0;
+  await Promise.all(Array.from({ length: 4 }, async () => {
+    while (next < ready.length) {
+      const o = ready[next++];
+      const r = await createShipment(o.id, o.ward, pickup).catch(() => ({ trackingNo: undefined, error: "Không tạo được đơn SPX. Vui lòng thử lại." }));
+      results.push({ orderNumber: o.orderNumber, ...r });
+    }
+  }));
+  revalidatePath("/", "layout");
+
+  const failed = [...skipped, ...results.flatMap((r) => (r.error ? [{ orderNumber: r.orderNumber, reason: r.error }] : []))];
+  const trackingNos = results.flatMap((r) => (r.trackingNo ? [r.trackingNo] : []));
+  if (!trackingNos.length) return { created: 0, failed };
+  const label = await labelLink(trackingNos);
+  return { created: trackingNos.length, failed, ...label };
+}
+
+// IN PHIẾU (n) on the Đã tạo vận đơn tab.
+export async function getSpxLabels(orderIds: string[]): Promise<BulkResult> {
+  await requireAdmin();
+  if (!orderIds.length || orderIds.length > BULK_LIMIT) return { created: 0, failed: [], error: `Chọn từ 1 đến ${BULK_LIMIT} đơn.` };
+  const { data: orders, error } = await createAdminClient().from("orders").select("spx_tracking_no").in("id", orderIds).not("spx_tracking_no", "is", null);
+  if (error) throw error;
+  if (!orders.length) return { created: 0, failed: [], error: "Các đơn đã chọn chưa có vận đơn SPX." };
+  return { created: 0, failed: [], ...(await labelLink(orders.map((o) => o.spx_tracking_no!))) };
+}
+
+// One call, one link for every tracking number SPX knows (checked on the test host 2026-10-16: no
+// limit up to 101; unknown numbers come back in fail_list while the link covers the rest).
+async function labelLink(trackingNos: string[]): Promise<{ url?: string; error?: string }> {
+  try {
+    const data = await spxUserCall<{ awb_link?: string; fail_list?: (SpxFailure & { tracking_no?: string })[] }>("v1/order/batch_get_shipping_label", { tracking_no_list: trackingNos });
+    const missing = data.fail_list?.map((f) => f.tracking_no).join(", ");
+    if (!data.awb_link) return { error: spxError("Không lấy được phiếu gửi hàng", data.fail_list?.[0]) };
+    return { url: data.awb_link, ...(missing && { error: `Phiếu không có vận đơn ${missing} (SPX: ${data.fail_list![0].message}).` }) };
   } catch (e) {
     return { error: spxError("Không lấy được phiếu gửi hàng", e) };
   }

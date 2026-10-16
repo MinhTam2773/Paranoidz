@@ -52,7 +52,7 @@ export async function SpxCard({ order }: { order: Order }) {
   return <SpxCreateForm orderId={order.id} wards={wards} defaultWard={matchWard(order.ward, wards)} typedWard={order.ward} slots={slots} />;
 }
 
-async function pickupSlots() {
+export async function pickupSlots() {
   type Day = { date: string; pickup_time: number; slots: { pickup_time_range_id: number; pickup_time_range: string }[] };
   try {
     const days = await spxUserCall<Day[]>("v1/order/get_pickup_time", { service_type: 1 });
