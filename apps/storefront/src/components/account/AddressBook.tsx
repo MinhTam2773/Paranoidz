@@ -5,6 +5,7 @@ import { deleteAddress, saveAddress, setDefaultAddress, type AddressFields } fro
 import { Field } from "@/components/auth/Field";
 import { errorClass, labelClass, primaryClass, secondaryClass } from "@/components/auth/styles";
 import { ProvinceSelect } from "@/components/checkout/ProvinceSelect";
+import { WardSelect } from "@/components/checkout/WardSelect";
 import { formatPhone, type FieldErrors } from "@/lib/checkout-validation";
 
 export type SavedAddress = AddressFields & { id: string; isDefault: boolean };
@@ -102,6 +103,7 @@ function AddressCard({ address: a, canEdit, onEdit }: { address: SavedAddress; c
 
 function AddressForm({ initial, onDone }: { initial?: SavedAddress; onDone: () => void }) {
   const [city, setCity] = useState(initial?.city ?? "");
+  const [ward, setWard] = useState(initial?.ward ?? "");
   const [errors, setErrors] = useState<FieldErrors>({});
   const [message, setMessage] = useState<string>();
   const [pending, startTransition] = useTransition();
@@ -110,7 +112,7 @@ function AddressForm({ initial, onDone }: { initial?: SavedAddress; onDone: () =
     e.preventDefault();
     const form = new FormData(e.currentTarget);
     const get = (k: string) => String(form.get(k) ?? "");
-    const values: AddressFields = { name: get("addr-name"), phone: get("addr-phone"), address: get("addr-address"), ward: get("addr-ward"), city };
+    const values: AddressFields = { name: get("addr-name"), phone: get("addr-phone"), address: get("addr-address"), ward, city };
     setMessage(undefined);
     startTransition(async () => {
       const res = await saveAddress({ id: initial?.id, ...values });
@@ -118,7 +120,7 @@ function AddressForm({ initial, onDone }: { initial?: SavedAddress; onDone: () =
       if (res.ok) return startTransition(onDone);
       setErrors(res.fieldErrors ?? {});
       setMessage(res.message);
-      const first = (["name", "phone", "address", "ward", "city"] as const).find((k) => res.fieldErrors?.[k]);
+      const first = (["name", "phone", "address", "city", "ward"] as const).find((k) => res.fieldErrors?.[k]);
       if (first) document.getElementById(`addr-${first}`)?.focus();
     });
   }
@@ -127,7 +129,7 @@ function AddressForm({ initial, onDone }: { initial?: SavedAddress; onDone: () =
     <form onSubmit={submit} noValidate className="flex flex-col gap-5 rounded-sm border border-text-primary p-5">
       <h3 className="text-nav uppercase">{initial ? "Sửa địa chỉ" : "Địa chỉ mới"}</h3>
       <div className="grid gap-5 sm:grid-cols-2">
-        <Field id="addr-name" label="Họ tên" error={errors.name} defaultValue={initial?.name} autoComplete="name" maxLength={100} />
+        <Field id="addr-name" label="Họ tên" error={errors.name} defaultValue={initial?.name} autoComplete="name" maxLength={64} />
         <Field
           id="addr-phone"
           label="Số điện thoại"
@@ -150,18 +152,34 @@ function AddressForm({ initial, onDone }: { initial?: SavedAddress; onDone: () =
             maxLength={200}
           />
         </div>
-        <Field id="addr-ward" label="Phường / xã" error={errors.ward} defaultValue={initial?.ward} placeholder="Ví dụ: Phường Bến Thành" maxLength={100} />
         <div className="flex flex-col gap-2">
           <label htmlFor="addr-city" className={labelClass}>Tỉnh / thành phố</label>
           <ProvinceSelect
             id="addr-city"
             name="addr-city"
             value={city}
-            onChange={setCity}
+            onChange={(v) => {
+              if (v !== city) setWard("");
+              setCity(v);
+            }}
             invalid={!!errors.city}
             describedBy={errors.city ? "addr-city-error" : undefined}
           />
           {errors.city && <p id="addr-city-error" className={errorClass}>{errors.city}</p>}
+        </div>
+        <div className="flex flex-col gap-2">
+          <label htmlFor="addr-ward" className={labelClass}>Phường / xã</label>
+          <WardSelect
+            id="addr-ward"
+            name="addr-ward"
+            city={city}
+            value={ward}
+            onChange={setWard}
+            onResolve={setWard}
+            invalid={!!errors.ward}
+            describedBy={errors.ward ? "addr-ward-error" : undefined}
+          />
+          {errors.ward && <p id="addr-ward-error" className={errorClass}>{errors.ward}</p>}
         </div>
       </div>
       {message && <p role="alert" className={errorClass}>{message}</p>}

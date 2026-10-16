@@ -1,20 +1,24 @@
 import { expect, type Page } from "@playwright/test";
-import { CITY } from "./data";
+import { CITY, WARD } from "./data";
 
 // Same as apps/storefront/src/lib/format.ts: 269000 → "₫269.000".
 export const vnd = (amount: number) => "₫" + String(amount).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 
-/** Fills the checkout delivery form; the province goes through the searchable picker. */
+/** Fills the checkout delivery form; province, then ward (SPX's list for it), through the searchable pickers. */
 export async function fillDelivery(page: Page, { phone, name = "Khách Hàng Thử" }: { phone: string; name?: string }) {
   // By id: "Số điện thoại" / "Địa chỉ" are also prefixes of other labels on the page.
   await page.locator("#checkout-name").fill(name);
   await page.locator("#checkout-phone").fill(phone);
   await page.locator("#checkout-address").fill("1 Lê Lợi");
-  await page.locator("#checkout-ward").fill("Phường Bến Thành");
   await page.locator("#checkout-city").click();
   await page.getByRole("combobox", { name: "Tìm tỉnh / thành phố" }).fill("Hồ Chí Minh");
   await page.getByRole("option", { name: CITY }).click();
   await expect(page.locator("#checkout-city")).toContainText(CITY);
+  // Enabled once the province's wards have loaded.
+  await page.locator("#checkout-ward").click();
+  await page.getByRole("combobox", { name: "Tìm phường / xã" }).fill("Bến Thành");
+  await page.getByRole("option", { name: WARD }).click();
+  await expect(page.locator("#checkout-ward")).toContainText(WARD);
 }
 
 export const placeOrderButton = (page: Page) => page.getByRole("button", { name: "Đặt hàng" });

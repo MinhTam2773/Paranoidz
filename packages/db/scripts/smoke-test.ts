@@ -5,7 +5,7 @@
 // the admin client exactly like the storefront order route, with p_user_id for account orders.
 // Customer sessions (admin magic-link → verifyOtp) are only used to prove what a browser
 // can't do. Every per-customer rule is keyed on the normalized phone; test phones are
-// 0900000001-0900000010. Cleans up after itself; the only permanent trace is order_number_seq gaps.
+// 0900000001-0900000011. Cleans up after itself; the only permanent trace is order_number_seq gaps.
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../src/types.ts";
 
@@ -27,6 +27,7 @@ const QUOTE_VOUCHER = "SMOKE-TEST-QUOTE";
 const BUNDLE_PREFIX = "SMOKE-BUNDLE"; // assumes no other active bundle holds the products picked in case 12
 const PHONES = Array.from({ length: 9 }, (_, i) => `090000000${i + 1}`);
 const QUOTE_PHONE = "0900000010"; // case 17's promo order: no history from earlier cases
+const FEE_PHONE = "0900000011"; // case 19: up to 3 pending orders of its own
 const AUTH_EMAILS = [1, 2, 3].map((i) => `smoke-auth-${i}@paranoidz.test`);
 
 let failures = 0;
@@ -63,7 +64,7 @@ const reviewUsers: string[] = [];
 
 async function placeOrder(
   items: { variant_id: string; qty: number }[],
-  opts: { phone?: string; voucher?: string; userId?: string; db?: Db; city?: string } = {},
+  opts: { phone?: string; voucher?: string; userId?: string; db?: Db; city?: string; shippingFee?: number; spxVoucher?: string } = {},
 ) {
   const res = await (opts.db ?? admin).rpc("place_order", {
     p_items: items,
@@ -73,6 +74,8 @@ async function placeOrder(
     p_city: opts.city ?? "TP. Hồ Chí Minh",
     p_voucher_code: opts.voucher,
     p_user_id: opts.userId,
+    p_shipping_fee: opts.shippingFee,
+    p_spx_voucher: opts.spxVoucher,
   });
   if (res.data) createdOrders.push((res.data as Placed).order_id);
   return res as { data: Placed | null; error: { message: string } | null };
@@ -604,6 +607,54 @@ async function main() {
   check("quote: anon and signed-in customers can't call quote_order / order_discount",
     !!anonQuote.error && !!customerQuote.error && !!anonDiscount.error,
     `anon=${anonQuote.error?.message} customer=${customerQuote.error?.message} discount=${anonDiscount.error?.message}`);
+
+  // 18. SPX shipment columns: only the service role writes them, tracking number unique --------
+  const spxOrder = await placeOrder(one(), { phone: QUOTE_PHONE, userId: c1Id });
+  const spxId = spxOrder.data?.order_id ?? "";
+  const [spxOwnTry, spxAnonTry] = await Promise.all(
+    [c1, anon].map((db) => db.from("orders").update({ spx_tracking_no: "SPXVN-SMOKE-HACK" }).eq("id", spxId).select("id")),
+  );
+  const { data: ownRow } = await c1.from("orders").select("id").eq("id", spxId).maybeSingle();
+  const { error: spxWriteErr } = await admin.from("orders").update({
+    spx_tracking_no: "SPXVN-SMOKE-18", spx_ward: "Phường Phú Thạnh", spx_fee: 21, spx_created_at: new Date().toISOString(),
+  }).eq("id", spxId);
+  const { error: spxDupErr } = await admin.from("orders").update({ spx_tracking_no: "SPXVN-SMOKE-18" }).eq("id", createdOrders[0]);
+  const { data: spxRow } = await admin.from("orders").select("spx_tracking_no, spx_ward, spx_fee").eq("id", spxId).maybeSingle();
+  check("spx: customer (own order) and anon can't write SPX columns; service role can; tracking number unique",
+    !spxOrder.error && !!ownRow && (!!spxOwnTry.error || spxOwnTry.data?.length === 0) && (!!spxAnonTry.error || spxAnonTry.data?.length === 0)
+      && !spxWriteErr && spxDupErr?.code === "23505" && spxRow?.spx_tracking_no === "SPXVN-SMOKE-18" && spxRow.spx_fee === 21,
+    `place=${spxOrder.error?.message} own=${JSON.stringify(spxOwnTry.data ?? spxOwnTry.error)} anon=${JSON.stringify(spxAnonTry.data ?? spxAnonTry.error)} write=${spxWriteErr?.message} dup=${spxDupErr?.code} row=${JSON.stringify(spxRow)}`);
+
+  // 19. Live SPX fee: the caller's fee is charged within 0 … 3 × table, voucher stored with it --------
+  // Hà Nội, 1 unit → table fee ₫22.000, so ₫66.000 is the most a quote may charge.
+  const feeItems = [{ variant_id: pool[1].id, qty: 1 }];
+  const liveFee = await placeOrder(feeItems, { phone: FEE_PHONE, city: "Hà Nội", shippingFee: 15000, spxVoucher: " SPXV1 " });
+  const tableFee = await placeOrder(feeItems, { phone: FEE_PHONE, city: "Hà Nội", spxVoucher: "SPXV1" });
+  const { data: feeRows } = await admin.from("orders").select("id, subtotal, discount, shipping_fee, total, spx_voucher")
+    .in("id", [liveFee.data?.order_id ?? "", tableFee.data?.order_id ?? ""]);
+  const liveRow = feeRows?.find((r) => r.id === liveFee.data?.order_id);
+  const tableRow = feeRows?.find((r) => r.id === tableFee.data?.order_id);
+  check("spx fee: quoted fee charged + voucher stored; no fee → table fee, voucher dropped",
+    liveRow?.shipping_fee === 15000 && liveRow.spx_voucher === "SPXV1" && liveRow.total === liveRow.subtotal - liveRow.discount + 15000
+      && liveFee.data?.shipping_fee === 15000 && tableRow?.shipping_fee === 22000 && tableRow.spx_voucher === null,
+    `live=${JSON.stringify(liveRow ?? liveFee.error)} table=${JSON.stringify(tableRow ?? tableFee.error)}`);
+
+  const feeStock = (await variant(pool[1].id)).stock;
+  const [overMax, belowZero, fraction] = await Promise.all(
+    [66001, -1, 15000.5].map((shippingFee) => placeOrder(feeItems, { phone: FEE_PHONE, city: "Hà Nội", shippingFee })),
+  );
+  const feeStockAfter = (await variant(pool[1].id)).stock;
+  const atMax = await placeOrder(feeItems, { phone: FEE_PHONE, city: "Hà Nội", shippingFee: 66000 });
+  check("spx fee: above 3 × table, negative or fractional → INVALID_SHIPPING_FEE before stock; 3 × table allowed",
+    [overMax, belowZero, fraction].every((r) => r.error?.message === "INVALID_SHIPPING_FEE") && feeStockAfter === feeStock
+      && !atMax.error && atMax.data?.shipping_fee === 66000,
+    `over=${overMax.error?.message} neg=${belowZero.error?.message} frac=${fraction.error?.message} stock ${feeStock}→${feeStockAfter} max=${atMax.error?.message ?? atMax.data?.shipping_fee}`);
+
+  const [anonFeeTry, customerFeeTry] = await Promise.all(
+    [anon, c1].map((db) => placeOrder(feeItems, { phone: FEE_PHONE, city: "Hà Nội", shippingFee: 0, db })),
+  );
+  check("spx fee: anon and signed-in browsers can't call place_order with a fee",
+    !!anonFeeTry.error && !!customerFeeTry.error, `anon=${anonFeeTry.error?.message} customer=${customerFeeTry.error?.message}`);
 }
 
 async function cleanup() {
@@ -620,7 +671,7 @@ async function cleanup() {
     await admin.from("product_variants").update({ stock: stock + qty }).eq("id", variant_id);
   }
   if (createdOrders.length) await admin.from("orders").delete().in("id", createdOrders);
-  await admin.from("customers").delete().in("phone", [...PHONES, QUOTE_PHONE]);
+  await admin.from("customers").delete().in("phone", [...PHONES, QUOTE_PHONE, FEE_PHONE]);
   await admin.from("rate_limits").delete().in("bucket", PHONES.flatMap((p) => [`order:phone:${p}`, `lookup:phone:${p}`]));
   await admin.from("rate_limits").delete().or("bucket.like.order:ip:192.0.2.%,bucket.like.order:ip:2001:db8:%");
   await admin.from("vouchers").delete().in("code", [VOUCHER, BUNDLE_VOUCHER, QUOTE_VOUCHER]);

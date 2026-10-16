@@ -87,7 +87,7 @@ export function RegisterForm({ next }: { next: string }) {
   return (
     <div className="flex max-w-md flex-col gap-6">
       <form onSubmit={submit} noValidate className="flex flex-col gap-6">
-        <Field id="fullName" label="Họ tên" error={errors.fullName} autoComplete="name" maxLength={100} />
+        <Field id="fullName" label="Họ tên" error={errors.fullName} autoComplete="name" maxLength={64} />
         <Field
           id="phone"
           label="Số điện thoại"

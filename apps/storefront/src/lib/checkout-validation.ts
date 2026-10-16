@@ -1,4 +1,4 @@
-import { PROVINCE_NAMES } from "./provinces";
+import { PROVINCE_NAMES } from "@paranoidz/db/provinces";
 
 // Checkout field rules, shared by the form (live, per field) and the placeOrder server action
 // (authoritative). place_order() still re-validates the phone in SQL (normalize_vn_phone).
@@ -8,11 +8,11 @@ export type CheckoutValues = Record<CheckoutField, string>;
 export type FieldErrors = Partial<Record<CheckoutField, string>>;
 
 export const CHECKOUT_FIELDS: CheckoutField[] = [
-  "name", "phone", "address", "ward", "city", "secondaryPhone", "email", "note", "voucher",
+  "name", "phone", "address", "city", "ward", "secondaryPhone", "email", "note", "voucher",
 ];
 
 export const MAX_LENGTH: Record<CheckoutField, number> = {
-  name: 100, phone: 15, secondaryPhone: 15, email: 200, address: 200, ward: 100, city: 50, note: 500, voucher: 30,
+  name: 64, phone: 15, secondaryPhone: 15, email: 200, address: 200, ward: 100, city: 50, note: 500, voucher: 30,
 };
 
 /** Mirrors public.normalize_vn_phone(): VN mobile → "0901234567", else null. */
@@ -60,7 +60,7 @@ export function validateField(field: CheckoutField, raw: string, all: Partial<Ch
       if (!v) return "Nhập số nhà và tên đường.";
       return v.length < 5 ? "Địa chỉ có vẻ quá ngắn." : undefined;
     case "ward":
-      return v ? undefined : "Nhập phường hoặc xã.";
+      return v ? undefined : "Chọn phường / xã.";
     case "city":
       if (!v) return "Chọn tỉnh / thành phố.";
       return PROVINCE_NAMES.has(v) ? undefined : "Chọn tỉnh / thành phố trong danh sách.";

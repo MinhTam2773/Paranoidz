@@ -76,7 +76,7 @@ test.describe("S5 checkout guards", () => {
       "Nhập họ tên người nhận.",
       "Nhập số điện thoại để chúng tôi xác nhận đơn hàng.",
       "Nhập số nhà và tên đường.",
-      "Nhập phường hoặc xã.",
+      "Chọn phường / xã.",
       "Chọn tỉnh / thành phố.",
     ]) {
       await expect(page.getByText(message)).toBeVisible();

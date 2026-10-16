@@ -464,6 +464,11 @@ export type Database = {
           recipient_name: string
           secondary_phone: string | null
           shipping_fee: number
+          spx_created_at: string | null
+          spx_fee: number | null
+          spx_tracking_no: string | null
+          spx_voucher: string | null
+          spx_ward: string | null
           status: Database["public"]["Enums"]["order_status"]
           subtotal: number
           total: number
@@ -488,6 +493,11 @@ export type Database = {
           recipient_name: string
           secondary_phone?: string | null
           shipping_fee?: number
+          spx_created_at?: string | null
+          spx_fee?: number | null
+          spx_tracking_no?: string | null
+          spx_voucher?: string | null
+          spx_ward?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           subtotal: number
           total: number
@@ -512,6 +522,11 @@ export type Database = {
           recipient_name?: string
           secondary_phone?: string | null
           shipping_fee?: number
+          spx_created_at?: string | null
+          spx_fee?: number | null
+          spx_tracking_no?: string | null
+          spx_voucher?: string | null
+          spx_ward?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           subtotal?: number
           total?: number
@@ -889,6 +904,21 @@ export type Database = {
         }
         Relationships: []
       }
+      spx_locations: {
+        Row: {
+          province: string
+          ward: string
+        }
+        Insert: {
+          province: string
+          ward: string
+        }
+        Update: {
+          province?: string
+          ward?: string
+        }
+        Relationships: []
+      }
       stock_adjustments: {
         Row: {
           created_at: string
@@ -1124,6 +1154,8 @@ export type Database = {
           p_phone: string
           p_recipient_name: string
           p_secondary_phone?: string
+          p_shipping_fee?: number
+          p_spx_voucher?: string
           p_user_id?: string
           p_voucher_code?: string
           p_ward?: string

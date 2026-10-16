@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@paranoidz/db/server";
 import { PHONE_TAKEN } from "@/lib/auth";
 import { normalizePhone, validateField, type FieldErrors } from "@/lib/checkout-validation";
+import { isSpxWard } from "@/lib/wards";
 
 // Account: address book + edit profile. Runs AS the signed-in user (server client): RLS still
 // decides what they can touch; running here means the checkout field rules are enforced, not just suggested.
@@ -32,6 +33,7 @@ export async function saveAddress(input: { id?: string } & AddressFields): Promi
     if (e) fieldErrors[k] = e;
   }
   if (Object.keys(fieldErrors).length) return { ok: false, fieldErrors };
+  if (!(await isSpxWard(v.city, v.ward))) return { ok: false, fieldErrors: { ward: "Chọn phường / xã trong danh sách." } };
 
   const row = { name: v.name, phone: normalizePhone(v.phone)!, address: v.address, ward: v.ward, city: v.city };
   if (input.id) {

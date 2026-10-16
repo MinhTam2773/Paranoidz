@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState, useTransition, type FocusEvent, type FormEvent, type ReactNode } from "react";
 import { getCartItems, type CartItem } from "@/app/cart/actions";
-import { placeOrder, quoteOrder, quoteShipping, type CheckoutResult, type OrderQuote } from "@/app/checkout/actions";
+import { placeOrder, previewShipping, quoteOrder, type CheckoutResult, type OrderQuote } from "@/app/checkout/actions";
 import type { SavedAddress } from "@/components/account/AddressBook";
 import { clearCart, useCart, useCartReady, type CartLine } from "@/lib/cart";
 import {
@@ -21,14 +21,16 @@ import {
 } from "@/lib/checkout-validation";
 import { formatVnd } from "@/lib/format";
 import { ProvinceSelect } from "./ProvinceSelect";
+import { WardSelect } from "./WardSelect";
 
 type Placed = Extract<CheckoutResult, { ok: true }>["order"];
 
 // Signed-in customer: pre-fill source. Addresses come default-first, then newest.
 export type CheckoutAccount = { name: string; phone: string; email: string; addresses: SavedAddress[] } | null;
 
-// Fields a saved address fills; typing in any of them unlinks the address (orders.address_id).
-const ADDRESS_FIELDS = ["name", "phone", "address", "ward"] as const;
+// Text fields a saved address fills; typing in any of them unlinks the address (orders.address_id).
+// Province and ward are pickers with their own state.
+const ADDRESS_FIELDS = ["name", "phone", "address"] as const;
 
 // 16px on mobile: iOS Safari zooms the page when focusing an input under 16px (DESIGN.md has no
 // 16px text token; deliberate exception). Desktop keeps the 14px product-name size.
@@ -87,22 +89,23 @@ export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; acc
   const [errors, setErrors] = useState<FieldErrors>({});
   const initial = account?.addresses[0];
   const [city, setCity] = useState(initial?.city ?? "");
+  const [ward, setWard] = useState(initial?.ward ?? "");
   const [addressId, setAddressId] = useState<string | null>(initial?.id ?? null);
   const [placed, setPlaced] = useState<Placed | null>(null);
   const [pending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
   const idsKey = lines.map((l) => l.variantId).toSorted().join(",");
-  const units = lines.reduce((sum, l) => sum + l.qty, 0);
-  // Shipping quote for the chosen province: undefined while loading, null if it can't be quoted.
+  const linesKey = lines.map((l) => `${l.variantId}:${l.qty}`).toSorted().join(",");
+  // Shipping quote (SPX live, else the table) for the chosen province + ward and the lines:
+  // undefined while loading, null if it can't be quoted.
   const [shipping, setShipping] = useState<{ key: string; fee: number | null } | null>(null);
-  const shippingKey = `${city}|${units}`;
+  const shippingKey = `${city}|${ward}|${linesKey}`;
   const shippingFee = shipping?.key === shippingKey ? shipping.fee : undefined;
   // Live discount (quoteOrder): re-asked when the lines, the phone or the code change. The last
   // answer stays on screen while the next one loads; null = couldn't quote.
   const [phone, setPhone] = useState(initial?.phone ?? account?.phone ?? "");
   const [voucher, setVoucher] = useState("");
   const [quote, setQuote] = useState<{ key: string; value: OrderQuote | null } | null>(null);
-  const linesKey = lines.map((l) => `${l.variantId}:${l.qty}`).toSorted().join(",");
   const quotePhone = normalizePhone(phone) ?? "";
   const quoteVoucher = voucher.trim().toUpperCase();
   const quoteKey = `${linesKey}|${quotePhone}|${quoteVoucher}`;
@@ -118,15 +121,16 @@ export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; acc
   }, [idsKey]);
 
   useEffect(() => {
-    if (!city || !units) return;
+    if (!city || !ward || !linesKey) return;
     let cancelled = false;
-    quoteShipping(city, units).then((fee) => {
-      if (!cancelled) setShipping({ key: `${city}|${units}`, fee });
+    const items = linesKey.split(",").map((s) => ({ variantId: s.split(":")[0], qty: Number(s.split(":")[1]) }));
+    previewShipping({ city, ward, items }).then((fee) => {
+      if (!cancelled) setShipping({ key: `${city}|${ward}|${linesKey}`, fee });
     });
     return () => {
       cancelled = true;
     };
-  }, [city, units]);
+  }, [city, ward, linesKey]);
 
   useEffect(() => {
     if (!linesKey) return;
@@ -197,6 +201,7 @@ export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; acc
     const form = formRef.current!;
     for (const k of ADDRESS_FIELDS) (form.elements.namedItem(k) as HTMLInputElement).value = k === "phone" ? formatPhone(fill.phone) : fill[k];
     setCity(fill.city);
+    setWard(fill.ward ?? "");
     setPhone(fill.phone);
     setAddressId(a?.id ?? null);
     setErrors((e) => ({ ...e, name: undefined, phone: undefined, address: undefined, ward: undefined, city: undefined }));
@@ -273,7 +278,7 @@ export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; acc
   const subtotal = rows.reduce((sum, { line, item }) => sum + (item ? item.price * line.qty : 0), 0);
   const priced = quote?.value ?? null; // last answer, possibly for older inputs while re-quoting
   const fresh = quote?.key === quoteKey ? quote.value : undefined;
-  const shippingKnown = !!city && typeof shippingFee === "number";
+  const shippingKnown = !!city && !!ward && typeof shippingFee === "number";
   const discountLabel =
     priced?.source === "auto_first5" ? `Ưu đãi 5 đơn đầu (−${priced.pct}%)`
     : priced?.source === "promo" ? `Mã ${priced.code} (−${priced.pct}%)`
@@ -322,9 +327,6 @@ export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; acc
           <Field name="address" label="Địa chỉ" required error={errors.address} className="sm:col-span-2">
             {(p) => <input {...p} className={`${p.className} h-11`} defaultValue={initial?.address} autoComplete="street-address" placeholder="Số nhà, tên đường" maxLength={MAX_LENGTH.address} />}
           </Field>
-          <Field name="ward" label="Phường / xã" required error={errors.ward}>
-            {(p) => <input {...p} className={`${p.className} h-11`} defaultValue={initial?.ward} autoComplete="address-level3" placeholder="Ví dụ: Phường Bến Thành" maxLength={MAX_LENGTH.ward} />}
-          </Field>
           <Field name="city" label="Tỉnh / thành phố" required error={errors.city}>
             {(p) => (
               <ProvinceSelect
@@ -332,10 +334,29 @@ export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; acc
                 name={p.name}
                 value={city}
                 onChange={(v) => {
+                  if (v !== city) setWard("");
                   setCity(v);
                   setAddressId(null);
                   check("city", v);
                 }}
+                invalid={p["aria-invalid"]}
+                describedBy={p["aria-describedby"]}
+              />
+            )}
+          </Field>
+          <Field name="ward" label="Phường / xã" required error={errors.ward}>
+            {(p) => (
+              <WardSelect
+                id={p.id}
+                name={p.name}
+                city={city}
+                value={ward}
+                onChange={(v) => {
+                  setWard(v);
+                  setAddressId(null);
+                  check("ward", v);
+                }}
+                onResolve={setWard}
                 invalid={p["aria-invalid"]}
                 describedBy={p["aria-describedby"]}
               />
@@ -393,11 +414,11 @@ export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; acc
             )}
             <div className="flex justify-between gap-4">
               <dt className="text-text-secondary">Phí vận chuyển</dt>
-              {city && typeof shippingFee === "number" ? (
+              {shippingKnown ? (
                 <dd>{formatVnd(shippingFee)}</dd>
               ) : (
                 <dd className="text-right text-caption text-text-secondary">
-                  {!city ? "Chọn tỉnh / thành phố" : shippingFee === undefined ? "Đang tính…" : "Xác nhận qua điện thoại"}
+                  {!city ? "Chọn tỉnh / thành phố" : !ward ? "Chọn phường / xã" : shippingFee === undefined ? "Đang tính…" : "Xác nhận qua điện thoại"}
                 </dd>
               )}
             </div>

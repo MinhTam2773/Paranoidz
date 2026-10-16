@@ -50,6 +50,9 @@ jobs:
       - name: Admin unit tests
         run: pnpm --filter admin test
 
+      - name: DB package unit tests (SPX signing, order bodies)
+        run: pnpm --filter @paranoidz/db test
+
       - name: Smoke — orders, vouchers, security
         run: pnpm --filter @paranoidz/db smoke
 
