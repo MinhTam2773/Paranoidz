@@ -74,7 +74,7 @@ test.describe("S5 checkout guards", () => {
     await placeOrderButton(page).click();
     for (const message of [
       "Nhập họ tên người nhận.",
-      "Nhập số điện thoại để chúng tôi xác nhận đơn hàng.",
+      "Nhập số điện thoại để chúng tôi giao hàng.",
       "Nhập số nhà và tên đường.",
       "Chọn phường / xã.",
       "Chọn tỉnh / thành phố.",
