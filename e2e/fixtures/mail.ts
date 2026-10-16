@@ -9,14 +9,22 @@ type Summary = { ID: string; Subject: string };
 /** Waits for the email to `to` with this subject and returns the auth link inside it. */
 export async function authLinkFromEmail(to: string, subject: string) {
   let message: Summary | undefined;
-  await expect
-    .poll(async () => {
-      const res = await fetch(`${mailpit()}/api/v1/search?query=${encodeURIComponent(`to:"${to}"`)}`);
-      const { messages } = (await res.json()) as { messages: Summary[] };
-      message = messages.find((m) => m.Subject === subject);
-      return message !== undefined;
-    }, { timeout: 15_000 })
-    .toBe(true);
+  try {
+    await expect
+      .poll(async () => {
+        const res = await fetch(`${mailpit()}/api/v1/search?query=${encodeURIComponent(`to:"${to}"`)}`);
+        const { messages } = (await res.json()) as { messages: Summary[] };
+        message = messages.find((m) => m.Subject === subject);
+        return message !== undefined;
+      }, { timeout: 15_000 })
+      .toBe(true);
+  } catch {
+    // Say what the inbox does hold, so a CI failure explains itself.
+    const res = await fetch(`${mailpit()}/api/v1/messages?limit=10`);
+    const { total, messages } = (await res.json()) as { total: number; messages: (Summary & { To: { Address: string }[] })[] };
+    const seen = messages.map((m) => `${m.To.map((t) => t.Address).join(",")}: ${m.Subject}`).join(" | ");
+    throw new Error(`No "${subject}" email to ${to} in Mailpit (${mailpit()}) after 15 s. Inbox has ${total}: ${seen || "nothing"}`);
+  }
   const { HTML } = (await (await fetch(`${mailpit()}/api/v1/message/${message!.ID}`)).json()) as { HTML: string };
   const href = HTML.match(/href="([^"]*\/auth\/v1\/verify[^"]*)"/)?.[1];
   expect(href, "auth link in the email").toBeTruthy();
