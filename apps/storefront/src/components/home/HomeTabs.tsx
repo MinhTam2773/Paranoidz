@@ -4,8 +4,9 @@ import { useState, type KeyboardEvent, type ReactNode } from "react";
 
 type HomeTab = { id: string; label: string; content: ReactNode };
 
-// DESIGN.md §4 NEW GOODS / BEST SELLER switcher: filled pill for the active tab. The panels are
-// server-rendered and passed in; inactive ones stay in the HTML (hidden). ←/→ move between tabs.
+// Redesign 2026-10-16: editorial tab headers — large uppercase type with an
+// accent underline for the active tab, left-aligned like a magazine section
+// head. Same keyboard behavior as before.
 export function HomeTabs({ tabs }: { tabs: HomeTab[] }) {
   const [active, setActive] = useState(tabs[0].id);
 
@@ -19,7 +20,7 @@ export function HomeTabs({ tabs }: { tabs: HomeTab[] }) {
 
   return (
     <section>
-      <div role="tablist" aria-label="Sản phẩm" onKeyDown={onKeyDown} className="mb-6 flex justify-center gap-2">
+      <div role="tablist" aria-label="Sản phẩm" onKeyDown={onKeyDown} className="mb-8 flex items-baseline gap-8 border-b border-border">
         {tabs.map((t) => (
           <button
             key={t.id}
@@ -30,11 +31,12 @@ export function HomeTabs({ tabs }: { tabs: HomeTab[] }) {
             aria-controls={`home-panel-${t.id}`}
             tabIndex={t.id === active ? 0 : -1}
             onClick={() => setActive(t.id)}
-            className={`h-11 rounded-sm px-6 text-nav font-bold uppercase transition-colors duration-200 ${
-              t.id === active ? "bg-text-primary text-text-on-dark" : "text-text-secondary hover:text-text-primary"
+            className={`relative -mb-px pb-4 text-h3 uppercase transition-colors duration-200 ${
+              t.id === active ? "text-text-primary" : "text-text-muted hover:text-text-secondary"
             }`}
           >
             {t.label}
+            {t.id === active && <span aria-hidden className="absolute inset-x-0 -bottom-px h-[3px] bg-accent" />}
           </button>
         ))}
       </div>
