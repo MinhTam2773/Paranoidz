@@ -1,6 +1,6 @@
 import { strict as assert } from "node:assert";
 import { describe, it } from "node:test";
-import { extractUpdates, spxToTarget, stepsTo } from "../../src/spx/webhook.ts";
+import { extractUpdates, isCustomerRefusal, spxConfirms, spxToTarget, stepsTo } from "../../src/spx/webhook.ts";
 
 describe("spxToTarget", () => {
   it("maps the documented 4.1 codes", () => {
@@ -13,6 +13,24 @@ describe("spxToTarget", () => {
     assert.equal(spxToTarget(1001), null);
     assert.equal(spxToTarget(3001), null);
     assert.equal(spxToTarget(9999), null);
+  });
+});
+
+describe("isCustomerRefusal", () => {
+  it("counts only returns (6001–6003); SPX-side failures are not the customer's", () => {
+    for (const c of [6001, 6002, 6003]) assert.equal(isCustomerRefusal(c), true);
+    for (const c of [5001, 5002, 5003, 7001, 4001, 2001]) assert.equal(isCustomerRefusal(c), false);
+  });
+});
+
+describe("spxConfirms (manual Đã giao / Giao thất bại on an SPX order)", () => {
+  it("allows Đã giao only when SPX says delivered", () => {
+    assert.equal(spxConfirms("delivered", 4001), true);
+    for (const c of [1001, 2001, 2006, 3001, 6001]) assert.equal(spxConfirms("delivered", c), false);
+  });
+  it("allows Giao thất bại only when SPX says returning / returned", () => {
+    for (const c of [6001, 6002, 6003]) assert.equal(spxConfirms("delivery_failed", c), true);
+    for (const c of [2001, 2006, 3001, 4001, 5003, 7001]) assert.equal(spxConfirms("delivery_failed", c), false);
   });
 });
 

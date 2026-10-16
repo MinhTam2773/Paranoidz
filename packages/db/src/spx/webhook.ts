@@ -15,6 +15,18 @@ export function spxToTarget(code: number): SpxTarget | null {
   return null;
 }
 
+// 6001–6003: the parcel comes back after failed delivery — the customer's refusal. 5001–5003 and
+// 7001 (pickup failed, damaged, lost, pickup cancelled) are SPX-side and don't count against them.
+export function isCustomerRefusal(code: number) {
+  return code >= 6001 && code <= 6003;
+}
+
+// A manual Đã giao / Giao thất bại on an order with an SPX shipment is allowed only when SPX already
+// says so: both are terminal, so a wrong click could never be corrected by a later callback.
+export function spxConfirms(target: "delivered" | "delivery_failed", code: number) {
+  return target === "delivered" ? code === 4001 : isCustomerRefusal(code);
+}
+
 // Forward-only paths; transition_order_status() allows a single step at a time and throws on
 // anything else, so the route walks these one step at a time and stops on the first error.
 export const WEBHOOK_PATHS: Record<SpxTarget, string[]> = {

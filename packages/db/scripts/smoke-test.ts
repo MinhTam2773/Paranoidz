@@ -655,6 +655,21 @@ async function main() {
   );
   check("spx fee: anon and signed-in browsers can't call place_order with a fee",
     !!anonFeeTry.error && !!customerFeeTry.error, `anon=${anonFeeTry.error?.message} customer=${customerFeeTry.error?.message}`);
+
+  // 20. SPX-side failure (lost, damaged, pickup failed): stock back, no refusal for the customer --------
+  const lostItems = one();
+  const lostStock = (await variant(lostItems[0].variant_id)).stock;
+  const lost = await placeOrder(lostItems, { phone: PHONES[4] });
+  await transition(lost.data!.order_id, "confirmed", "shipped");
+  const refusalsBefore = (await customer(PHONES[4]))?.refusal_count;
+  const { error: lostError } = await admin.rpc("transition_order_status", {
+    p_order_id: lost.data!.order_id, p_new_status: "delivery_failed", p_count_refusal: false,
+  });
+  const refusalsAfter = (await customer(PHONES[4]))?.refusal_count;
+  const lostStockAfter = (await variant(lostItems[0].variant_id)).stock;
+  check("delivery_failed with p_count_refusal false: stock restored, refusal_count unchanged",
+    !lostError && refusalsAfter === refusalsBefore && lostStockAfter === lostStock,
+    `err=${lostError?.message ?? "none"} refusals ${refusalsBefore}→${refusalsAfter} stock ${lostStock}→${lostStockAfter}`);
 }
 
 async function cleanup() {

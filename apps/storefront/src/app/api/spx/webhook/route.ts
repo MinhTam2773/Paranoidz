@@ -1,7 +1,7 @@
 import { after } from "next/server";
 import { createAdminClient } from "@paranoidz/db/admin";
 import { checkSign } from "@paranoidz/db/spx/sign";
-import { extractUpdates, spxToTarget, stepsTo, type SpxTarget, type SpxUpdate } from "@paranoidz/db/spx/webhook";
+import { extractUpdates, isCustomerRefusal, spxToTarget, stepsTo, type SpxTarget, type SpxUpdate } from "@paranoidz/db/spx/webhook";
 import type { Database } from "@paranoidz/db/types";
 
 type OrderStatus = Database["public"]["Enums"]["order_status"];
@@ -31,7 +31,8 @@ type OrderStatus = Database["public"]["Enums"]["order_status"];
 //
 // Status mapping (§4.1 appendix): 2001/2006 (in transit/delivering) -> shipped, 4001 ->
 // delivered, 5001-5003 (pickup failed/damaged/lost), 6001-6003 (returning/return failed/
-// returned) and 7001 (pickup request cancelled) -> delivery_failed. 1001/3001/unknown are
+// returned) and 7001 (pickup request cancelled) -> delivery_failed; only 6001-6003 count as the
+// customer's refusal (p_count_refusal), the others are SPX-side. 1001/3001/unknown are
 // logged and ignored. Every move goes through transition_order_status(), so stock, vouchers
 // and loyalty stay consistent; the walk is idempotent (an order already at or past the target
 // is left alone). Unknown tracking numbers are logged and acknowledged — SPX must not retry
@@ -71,13 +72,14 @@ function verifySignature(req: Request, rawBody: string): boolean {
 
 type AdminClient = ReturnType<typeof createAdminClient>;
 
-async function advanceTo(client: AdminClient, orderId: string, current: string, target: SpxTarget, note: string): Promise<"moved" | "noop"> {
+async function advanceTo(client: AdminClient, orderId: string, current: string, target: SpxTarget, note: string, countRefusal: boolean): Promise<"moved" | "noop"> {
   let moved = false;
   for (const next of stepsTo(current, target)) {
     const { error } = await client.rpc("transition_order_status", {
       p_order_id: orderId,
       p_new_status: next as OrderStatus,
       p_note: note,
+      p_count_refusal: countRefusal,
     });
     if (error) {
       // A concurrent move (admin click, another callback) changed the state underneath us;
@@ -108,7 +110,7 @@ async function processUpdates(updates: SpxUpdate[]): Promise<void> {
       console.error("spx webhook: order not found", u.trackingNo);
       continue;
     }
-    const outcome = await advanceTo(client, order.id, order.status, target, `SPX webhook: ${u.statusCode} → ${target}`);
+    const outcome = await advanceTo(client, order.id, order.status, target, `SPX webhook: ${u.statusCode} → ${target}`, isCustomerRefusal(u.statusCode));
     console.log("spx webhook: processed", { tracking_no: u.trackingNo, order: order.order_number, from: order.status, to: target, outcome });
   }
 }
