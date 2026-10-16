@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useRef, useState, type ReactNode } from "react";
 import { formatVnd } from "@/lib/format";
+import { CashIcon, PhoneIcon, ReturnIcon, TruckIcon } from "@/components/layout/icons";
 import { ColorOptions } from "./ColorOptions";
 import { ProductTabs } from "./ProductTabs";
 import { PurchaseActions } from "./PurchaseActions";
@@ -206,12 +207,37 @@ export function ProductView({
               variant={selected}
               soldOut={soldOut}
               price={shown ? formatVnd(shown.price) : ""}
+              name={name}
+              thumbnailUrl={mainImage?.url ?? null}
               imageRef={mainImageRef}
               onNeedSize={() => {
                 sizeGroupRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
                 sizeGroupRef.current?.querySelector<HTMLButtonElement>("button[aria-pressed]:enabled")?.focus({ preventScroll: true });
               }}
             />
+
+            {/* Trust row (Hydra-style): the four reassurances, right where the buy decision happens. */}
+            <div className="grid grid-cols-2 gap-px border border-border bg-border">
+              {[
+                [TruckIcon, "SPX Express", "Giao nhanh toàn quốc"],
+                [CashIcon, "Thanh toán COD", "Nhận hàng rồi trả tiền"],
+                [ReturnIcon, "Đổi trả 7 ngày", "Nếu sản phẩm lỗi do shop"],
+                [PhoneIcon, "Hotline", "0972 926 956"],
+              ].map(([Icon, title, sub]) => {
+                const I = Icon as (p: { width?: number; height?: number }) => ReactNode;
+                return (
+                  <div key={title as string} className="flex items-center gap-3 bg-bg-primary p-3">
+                    <span aria-hidden className="flex size-9 shrink-0 items-center justify-center rounded-full bg-bg-secondary text-text-primary">
+                      <I width={18} height={18} />
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block truncate text-caption font-semibold uppercase tracking-[0.04em] text-text-primary">{title as string}</span>
+                      <span className="block truncate text-caption text-text-secondary">{sub as string}</span>
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>

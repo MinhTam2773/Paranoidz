@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+/* Devices with a fine pointer (mouse/trackpad): hover interactions are real. Touch screens
+   keep the tap flows even at desktop widths. */
+@custom-variant hoverable (@media (hover: hover) and (pointer: fine));
+
 /*
  * Design tokens — DESIGN.md is the source of truth. Names map 1:1 to its
  * tokens (--bg-primary → bg-bg-primary, --text-muted → text-text-muted).

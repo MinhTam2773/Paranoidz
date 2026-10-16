@@ -11,19 +11,25 @@ import { QuantityStepper } from "./QuantityStepper";
 export const primaryClass =
   "h-12 rounded-sm bg-accent px-4 text-button uppercase text-text-on-dark transition-all duration-200 enabled:hover:-translate-y-px enabled:hover:bg-accent-hover enabled:hover:shadow-accent disabled:cursor-not-allowed disabled:bg-bg-tertiary disabled:text-text-muted";
 
-// Quantity + ADD TO CART / BUY IT NOW for the selected variant, plus the mobile sticky bar
-// (DESIGN.md §8) shown while the inline buttons are off-screen. Buy It Now skips the cart
-// (ARCHITECTURE.md §4). Quantities are capped at stock here; place_order() re-checks atomically.
+// Quantity + ADD TO CART / BUY IT NOW for the selected variant, plus the sticky buy bar
+// (DESIGN.md §8, Hydra-style): thumbnail + name + variant + price + add button, shown on every
+// screen size while the inline buttons are off-screen (and the footer isn't). Buy It Now skips
+// the cart (ARCHITECTURE.md §4). Quantities are capped at stock here; place_order() re-checks
+// atomically.
 export function PurchaseActions({
   variant,
   soldOut,
   price,
+  name,
+  thumbnailUrl,
   imageRef,
   onNeedSize,
 }: {
   variant: ProductVariant | null;
   soldOut: boolean;
   price: string;
+  name: string;
+  thumbnailUrl: string | null;
   imageRef: RefObject<HTMLImageElement | null>; // the displayed main image, flown to the cart
   onNeedSize: () => void;
 }) {
@@ -117,18 +123,33 @@ export function PurchaseActions({
 
       <div
         inert={!showBar}
-        className={`fixed inset-x-0 bottom-0 z-30 flex flex-col gap-2 border-t border-border bg-bg-primary px-4 py-3 transition-transform duration-200 lg:hidden ${
+        className={`fixed inset-x-0 bottom-0 z-30 border-t border-border bg-bg-primary/95 backdrop-blur transition-transform duration-200 ${
           showBar ? "shadow-2" : "translate-y-full"
         }`}
       >
-        {status}
-        <div className="flex items-center gap-3">
-          <span className="flex-1 text-price">{price}</span>
+        <div className="mx-auto flex w-full max-w-7xl items-center gap-3 px-4 py-3 lg:gap-4 lg:px-6">
+          {thumbnailUrl && (
+            <img src={thumbnailUrl} alt="" aria-hidden className="hidden size-14 shrink-0 rounded-sm bg-bg-secondary object-cover sm:block" />
+          )}
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-[15px] font-medium text-text-primary">{name}</p>
+            <p className="mt-0.5 flex flex-wrap items-baseline gap-x-2">
+              <span className="text-price">{price}</span>
+              {variant ? (
+                <span className="truncate text-caption text-text-secondary">
+                  {variant.color} / {variant.size}
+                </span>
+              ) : (
+                <span className="text-caption text-text-secondary">Chọn màu và size</span>
+              )}
+            </p>
+          </div>
           {/* No size yet: jump to the size picker instead of a dead disabled button. */}
-          <button type="button" onClick={variant ? add : onNeedSize} className={`flex-1 ${primaryClass}`}>
+          <button type="button" onClick={variant ? add : onNeedSize} className={`shrink-0 ${primaryClass}`}>
             {variant ? "Thêm vào giỏ" : "Chọn size"}
           </button>
         </div>
+        {status && <div className="mx-auto w-full max-w-7xl px-4 pb-2 lg:px-6">{status}</div>}
       </div>
     </>
   );
