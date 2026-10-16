@@ -127,7 +127,7 @@ function AddressForm({ initial, onDone }: { initial?: SavedAddress; onDone: () =
     <form onSubmit={submit} noValidate className="flex flex-col gap-5 rounded-sm border border-text-primary p-5">
       <h3 className="text-nav uppercase">{initial ? "Sửa địa chỉ" : "Địa chỉ mới"}</h3>
       <div className="grid gap-5 sm:grid-cols-2">
-        <Field id="addr-name" label="Họ tên" error={errors.name} defaultValue={initial?.name} autoComplete="name" maxLength={100} />
+        <Field id="addr-name" label="Họ tên" error={errors.name} defaultValue={initial?.name} autoComplete="name" maxLength={64} />
         <Field
           id="addr-phone"
           label="Số điện thoại"

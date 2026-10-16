@@ -38,7 +38,7 @@ export function ProfileCard({ name, email, phone }: { name: string; email: strin
     return (
       <form onSubmit={submit} noValidate className="flex flex-col gap-5 rounded-sm border border-text-primary p-6">
         <h2 className="text-nav uppercase">Sửa thông tin</h2>
-        <Field id="profile-name" label="Họ tên" error={errors.name} defaultValue={name} autoComplete="name" maxLength={100} autoFocus />
+        <Field id="profile-name" label="Họ tên" error={errors.name} defaultValue={name} autoComplete="name" maxLength={64} autoFocus />
         <Field
           id="profile-phone"
           label="Số điện thoại"

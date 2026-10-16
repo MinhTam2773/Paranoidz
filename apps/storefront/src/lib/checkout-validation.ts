@@ -12,7 +12,7 @@ export const CHECKOUT_FIELDS: CheckoutField[] = [
 ];
 
 export const MAX_LENGTH: Record<CheckoutField, number> = {
-  name: 100, phone: 15, secondaryPhone: 15, email: 200, address: 200, ward: 100, city: 50, note: 500, voucher: 30,
+  name: 64, phone: 15, secondaryPhone: 15, email: 200, address: 200, ward: 100, city: 50, note: 500, voucher: 30,
 };
 
 /** Mirrors public.normalize_vn_phone(): VN mobile → "0901234567", else null. */

@@ -45,7 +45,7 @@ export function createOrderBody(order: Order, province: string, ward: string, pi
     deliver_info: {
       deliver_state: province,
       deliver_city: ward,
-      deliver_name: order.recipient_name,
+      deliver_name: order.recipient_name.slice(0, 64), // SPX's limit; checkout caps new names at 64 too
       deliver_phone: order.phone,
       deliver_detail_address: order.address,
       deliver_instruction: (order.note ?? "").slice(0, 256),

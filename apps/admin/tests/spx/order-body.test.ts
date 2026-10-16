@@ -34,6 +34,11 @@ test("create-order body: COD = total, 300 g per unit, sender pays, pickup slot, 
   assert.equal(body.sender_info.sender_address_version, 2);
 });
 
+test("create-order body: receiver name cut to SPX's 64 characters (orders placed before checkout's limit)", () => {
+  const body = createOrderBody({ ...order, recipient_name: "Nguyễn ".repeat(12) }, "Tỉnh Cao Bằng", "Xã Hòa An", { pickupTime: 1, rangeId: 2 }, sender);
+  assert.equal(body.deliver_info.deliver_name.length, 64);
+});
+
 test("create-order body: high-value service only from ₫3.000.000 declared value", () => {
   const body = createOrderBody({ ...order, subtotal: 2_999_000, note: null }, "Tỉnh Cao Bằng", "Xã Hòa An", { pickupTime: 1, rangeId: 2 }, sender);
   assert.equal(body.fulfillment_info.high_value_processing_collection, 0);
