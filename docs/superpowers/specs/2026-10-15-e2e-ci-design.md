@@ -18,20 +18,28 @@ and one GitHub Actions job that runs everything on a throwaway database.
 - **Hard guard:** Playwright global setup aborts unless the Supabase URL host is `127.0.0.1` or
   `localhost`. A misconfigured run can never reach prod or test.
 - **No side effects:** `RESEND_API_KEY`, `ZALO_*`, `TEST_LABEL` are never set for e2e runs.
-- **Env is passed, not written, locally.** Local Supabase URL + keys go to `next build` / `next start`
-  as process env (Next.js never overrides existing env with `.env.local`), so the developer's
-  `.env.local` files keep pointing at `paranoidz-test`. CI writes both apps' `.env.local` from
-  `supabase status` (the smoke scripts read `apps/admin/.env.local`). Cost locally: each app's `.next`
-  is rebuilt, so the next `pnpm dev` starts cold.
+- **Env is passed, not written.** `e2e/env.ts` reads `supabase status -o env` and hands the URL + keys
+  to `next build` / `next start` as process env, with every other key found in the apps' `.env*`
+  files set to `""` (Next.js never overrides an existing variable, empty or not), so the developer's
+  `.env.local` (paranoidz-test, Resend, Zalo) can't leak in. CI writes only `apps/admin/.env.local`,
+  for the smoke scripts. Apps run on `:3100` / `:3101` with `reuseExistingServer: false`, so a
+  `pnpm dev` on `:3000` (pointing at paranoidz-test) is never reused. The production build lands in
+  `.next`; Next 16's dev server uses `.next/dev`, so both coexist.
+- **The service-role test client lives in `@paranoidz/db/testing`** (`createLocalTestClient()`), not
+  in `e2e/`: `admin.ts` can't load in plain Node (`server-only`), and `createClient` stays inside
+  `packages/db` (CLAUDE.md §4). It runs the same local-URL guard.
 - **Tests run against `next build` + `next start`**, not `next dev`, so ISR / caching behave like
   production.
 - **Each test owns its data:** a `seedProduct()` fixture (service key) creates a product + variants with
-  known stock and a unique slug; each test uses its own phone and sends its own `x-real-ip` header
-  (`lib/rate-limit.ts` keys on it). Tests run in parallel without sharing stock, the per-phone rules
-  (first-5 discount, 3 open pending orders) or the IP rate limit. `dev.sql` still loads (the smoke
-  scripts need its stock), but no e2e test depends on it.
-- **Users:** global setup creates a test admin and a test customer with the service key, with random
-  per-run passwords that are never written to disk; only the saved sessions (`storageState`) are reused.
+  known stock and a unique slug; each test uses its own phone, and storefront tests send their own
+  `x-real-ip` (`e2e/fixtures/test.ts`) — `next start` fills `x-forwarded-for` from the socket, so
+  without it every test shares one IP and trips the 10-orders-per-hour limit. Tests run in parallel
+  without sharing stock, the per-phone rules (first-5 discount, 3 open pending orders) or the rate
+  limits. `dev.sql` still loads (the smoke scripts need its stock); the only e2e use of it is S1's
+  "listing renders a card" step (see A4 / ISR below).
+- **Users:** the `setup` project creates the admin with the service key (random password, kept in
+  memory) and signs in through the real login form; only the saved session (`e2e/.auth/`, gitignored)
+  is reused. Tests that need a customer (S7, A1) create their own.
 - **A4 checks the new product's own page**, not `/products`: the listing is ISR with
   `revalidate = 60`, and admin `revalidatePath` only clears the admin app's cache. Showing a new product
   in the listing within 60 s is by design, not something to test.
@@ -53,7 +61,7 @@ New workspace package `e2e/` (added to `pnpm-workspace.yaml`): `@playwright/test
 | S4 | Promo code at checkout | Valid code lowers total; invalid → Vietnamese error, priced without it |
 | S5 | Checkout guards | Bad phone / missing fields → Vietnamese errors; stock gone before submit → refused, never negative |
 | S6 | Order lookup | Number + phone → status; wrong phone → not found |
-| S7 | Signed-in customer orders | Order appears in `/account` history |
+| S7 | Sign in → add the account phone → order | Order appears in `/account` history |
 | A1 | Admin access | Signed out → `/login`; customer refused; admin gets in |
 | A2 | Lifecycle pending → confirmed → shipped → delivered | Each step in detail + history; `delivered_count` +1 |
 | A3 | Cancel a pending order | Stock restored; voucher slot released |
@@ -67,7 +75,8 @@ there directly; an e2e test can't easily forge a server action payload).
 ## CI — `.github/workflows/ci.yml`
 
 One job on `ubuntu-latest`, on pull requests to `master` and pushes to `master`: checkout → pnpm + Node →
-`pnpm install` → Supabase CLI (pinned) → `supabase start` without Studio, Realtime, Mailpit, imgproxy,
-edge runtime, logflare / vector → write `.env.local`s → admin unit tests → `smoke` +
+`pnpm install` → Supabase CLI (pinned 2.72.7, same as local) → `supabase start` without Studio,
+Realtime, Mailpit, imgproxy, edge runtime, logflare / vector, supavisor → write
+`apps/admin/.env.local` → admin unit tests → `smoke` +
 `smoke:inventory` → build both apps → install Chromium (cached) → Playwright → on failure upload the
 HTML report + traces.
