@@ -19,6 +19,7 @@ function localSupabase() {
   process.env.NEXT_PUBLIC_SUPABASE_URL = vars.API_URL;
   process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = vars.PUBLISHABLE_KEY;
   process.env.SUPABASE_SERVICE_ROLE_KEY = vars.SECRET_KEY;
+  process.env.E2E_MAILPIT_URL = vars.MAILPIT_URL; // the local stack's catch-all inbox (auth emails)
 }
 
 // Every key in the apps' .env files, set to "": Next.js never overrides a variable that already

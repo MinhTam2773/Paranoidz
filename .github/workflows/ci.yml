@@ -34,9 +34,9 @@ jobs:
         with:
           version: 2.72.7
 
-      # All migrations + seeds apply from zero. Unused services skipped to start faster.
+      # All migrations + seeds apply from zero. Unused services skipped to start faster; Mailpit stays (S11, S12).
       - name: Start local Supabase
-        run: supabase start -x studio,realtime,imgproxy,edge-runtime,logflare,vector,mailpit,supavisor
+        run: supabase start -x studio,realtime,imgproxy,edge-runtime,logflare,vector,supavisor
 
       # The smoke scripts read apps/admin/.env.local. The e2e tests read `supabase status` themselves.
       - name: Point the smoke scripts at local Supabase
@@ -68,6 +68,13 @@ jobs:
 
       - name: E2E
         run: pnpm test:e2e
+
+      - name: Auth service log (on failure)
+        if: failure()
+        run: |
+          docker inspect supabase_auth_Paranoidz --format '{{range .Config.Env}}{{println .}}{{end}}' | grep -E 'MAILER_(SUBJECTS|TEMPLATES)_' || true
+          docker exec supabase_auth_Paranoidz wget -qO- http://supabase_kong_Paranoidz:8088/email/recovery.html | head -c 300 || true
+          docker logs supabase_auth_Paranoidz --tail 80 2>&1 | grep -vE '"path":"/health"' || true
 
       - uses: actions/upload-artifact@v4
         if: failure()

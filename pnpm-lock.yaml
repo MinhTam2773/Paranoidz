@@ -304,9 +304,15 @@ importers:
       '@types/node':
         specifier: ^20.19.43
         version: 20.19.43
+      read-excel-file:
+        specifier: 9.3.12
+        version: 9.3.12
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
+      write-excel-file:
+        specifier: 4.1.1
+        version: 4.1.1
 
   packages/db:
     dependencies:

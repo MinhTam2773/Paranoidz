@@ -82,3 +82,43 @@ export async function createPromo(pct: number) {
   if (error) throw error;
   return code;
 }
+
+/** Walks an order to delivered (service role may call transition_order_status, like the admin). */
+export async function deliverOrder(orderId: string) {
+  for (const status of ["confirmed", "shipped", "delivered"] as const) {
+    const { error } = await db.rpc("transition_order_status", { p_order_id: orderId, p_new_status: status });
+    if (error) throw error;
+  }
+}
+
+export async function setProfilePhone(userId: string, phone: string) {
+  const { error } = await db.from("profiles").update({ phone }).eq("id", userId);
+  if (error) throw error;
+}
+
+export async function createBundle(productIds: string[], discountAmount: number) {
+  const name = `Combo Thử ${uid()}`;
+  const { data, error } = await db.from("bundles").insert({ name, discount_amount: discountAmount }).select("id").single();
+  if (error) throw error;
+  const { error: iErr } = await db.from("bundle_items").insert(productIds.map((product_id) => ({ bundle_id: data.id, product_id })));
+  if (iErr) throw iErr;
+  return { id: data.id, name };
+}
+
+/** A visible review written straight into the table (service role skips the delivered-order check). */
+export async function seedReview(productId: string, content = `Đánh giá thử ${uid()}`) {
+  const user = await createUser();
+  const { data, error } = await db
+    .from("reviews")
+    .insert({ product_id: productId, user_id: user.id, rating: 4, content })
+    .select("id, author_name")
+    .single();
+  if (error) throw error;
+  return { id: data.id, authorName: data.author_name, content };
+}
+
+export async function createCategory(name = `Danh Mục Thử ${uid()}`) {
+  const { data, error } = await db.from("categories").insert({ name, slug: `e2e-${uid()}` }).select("id").single();
+  if (error) throw error;
+  return { id: data.id, name };
+}
