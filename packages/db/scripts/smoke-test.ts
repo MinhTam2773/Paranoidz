@@ -59,6 +59,8 @@ const createdOrders: string[] = [];
 const createdUsers: string[] = [];
 const deliveredItems: { variant_id: string; qty: number }[] = [];
 let autoUsedBefore: number | null = null;
+// Flash sale windows switched off for the run (their extra discount depends on the clock).
+let flashWindows: string[] = [];
 const cartUsers: string[] = [];
 const reviewUsers: string[] = [];
 
@@ -94,6 +96,11 @@ async function customer(phone: string) {
 }
 
 async function main() {
+  const { data: flash, error: flashError } = await admin.from("flash_sale_windows").select("id").eq("enabled", true);
+  if (flashError) throw flashError;
+  flashWindows = flash.map((w) => w.id);
+  if (flashWindows.length) await admin.from("flash_sale_windows").update({ enabled: false }).in("id", flashWindows);
+
   const [c1, c3] = await Promise.all(CUSTOMERS.map(signInAs));
   const c1Id = (await c1.auth.getUser()).data.user!.id;
 
@@ -696,6 +703,7 @@ async function cleanup() {
   for (const id of createdUsers) await admin.auth.admin.deleteUser(id);
   // The delivered test order kept its AUTO-FIRST5 use; put the counter back.
   if (autoUsedBefore !== null) await admin.from("vouchers").update({ used_count: autoUsedBefore }).eq("type", "auto_first5");
+  if (flashWindows.length) await admin.from("flash_sale_windows").update({ enabled: true }).in("id", flashWindows);
   const { data: left } = await admin.from("vouchers").select("code, used_count").eq("type", "auto_first5");
   console.log(`cleanup: removed ${createdOrders.length} test orders; auto voucher ${JSON.stringify(left)}`);
 }
