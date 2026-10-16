@@ -71,7 +71,10 @@ jobs:
 
       - name: Auth service log (on failure)
         if: failure()
-        run: docker logs supabase_auth_Paranoidz --tail 80 2>&1 | grep -vE '"path":"/health"' || true
+        run: |
+          docker inspect supabase_auth_Paranoidz --format '{{range .Config.Env}}{{println .}}{{end}}' | grep -E 'MAILER_(SUBJECTS|TEMPLATES)_' || true
+          docker exec supabase_auth_Paranoidz wget -qO- http://supabase_kong_Paranoidz:8088/email/recovery.html | head -c 300 || true
+          docker logs supabase_auth_Paranoidz --tail 80 2>&1 | grep -vE '"path":"/health"' || true
 
       - uses: actions/upload-artifact@v4
         if: failure()
