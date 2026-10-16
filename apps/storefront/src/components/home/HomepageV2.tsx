@@ -34,6 +34,13 @@ const LOOKS = [
   { src: "/home/look-6.jpg", alt: "Áo polo trắng Paranoidz" },
 ];
 
+// Vertical TikTok clips — native 9:16, text overlays are fine here because
+// this is UGC, not the brand hero.
+const CLIPS = [
+  { src: "/home/pdz3-web.mp4", label: "Phố cổ" },
+  { src: "/home/pdz4-web.mp4", label: "Biển" },
+];
+
 export function Lookbook() {
   return (
     <section aria-label="Paranoidz ngoài đời">
@@ -54,6 +61,20 @@ export function Lookbook() {
               sizes="(min-width: 1024px) 33vw, 50vw"
               className="object-cover transition-transform duration-300 hover:scale-[1.03]"
               loading="lazy"
+            />
+          </div>
+        ))}
+      </div>
+      <div className="mt-4 grid grid-cols-2 gap-3 sm:gap-4">
+        {CLIPS.map((clip) => (
+          <div key={clip.src} className="relative aspect-[9/16] overflow-hidden rounded-sm bg-bg-dark">
+            <video
+              className="absolute inset-0 h-full w-full object-cover"
+              src={clip.src}
+              controls
+              playsInline
+              preload="none"
+              aria-label={`Video ${clip.label}`}
             />
           </div>
         ))}
