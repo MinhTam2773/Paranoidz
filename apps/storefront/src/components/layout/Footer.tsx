@@ -5,12 +5,11 @@ import { Logo } from "./Logo";
 const heading = "text-caption font-semibold uppercase tracking-[0.06em] text-text-on-dark";
 const muted = "text-caption text-text-on-dark/70";
 
-// Social links (2026-10-16): TikTok / Fanpage / Zalo. Hrefs are "#" until Tủn
-// supplies the real URLs — update SOCIALS below.
+// Social links (2026-10-16, Tủn supplied).
 const SOCIALS = [
-  { label: "TIKTOK", href: "#" },
-  { label: "FANPAGE", href: "#" },
-  { label: "ZALO", href: "#" },
+  { label: "TIKTOK", href: "https://www.tiktok.com/@paranoidz.vn" },
+  { label: "FANPAGE", href: "https://www.facebook.com/paranoidz.vn/" },
+  { label: "ZALO", href: "https://zalo.me/0345267709" },
 ] as const;
 
 // Footer (2026-10-16): logo image, business info (Hộ kinh doanh COOLSHIRTZ),
