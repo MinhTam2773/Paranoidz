@@ -66,7 +66,7 @@ export async function createSpxShipment(orderId: string, ward: string, slot: str
   const admin = createAdminClient();
   const { data: order, error } = await admin
     .from("orders")
-    .select("order_number, status, spx_tracking_no, recipient_name, phone, address, note, city, subtotal, total, order_items(name_snapshot, qty)")
+    .select("order_number, status, spx_tracking_no, spx_voucher, recipient_name, phone, address, note, city, subtotal, total, order_items(name_snapshot, qty)")
     .eq("id", orderId)
     .maybeSingle();
   if (error) throw error;
@@ -79,22 +79,31 @@ export async function createSpxShipment(orderId: string, ward: string, slot: str
   const { count } = await admin.from("spx_locations").select("*", { count: "exact", head: true }).eq("province", province).eq("ward", ward);
   if (!count) return { error: "Chọn phường / xã giao hàng." };
 
-  const body = createOrderBody(
+  const body = (voucher: string | null) => createOrderBody(
     { ...order, items: order.order_items.map((i) => ({ name: i.name_snapshot, qty: i.qty })) },
     province,
     ward,
     { pickupTime, rangeId },
     { name: env("SPX_SENDER_NAME"), phone: env("SPX_SENDER_PHONE"), address: env("SPX_SENDER_ADDRESS"), ward: env("SPX_SENDER_WARD"), province: env("SPX_SENDER_PROVINCE") },
+    voucher,
   );
   type Created = { tracking_no: string; estimated_shipping_fee: number };
-  let created: Created;
-  try {
-    const data = await spxUserCall<{ orders?: Created[]; fail_list?: SpxFailure[] }>("v1/order/batch_create_order", { orders: [body] });
-    if (!data.orders?.length) return { error: spxError("Không tạo được đơn SPX", data.fail_list?.[0]) };
-    created = data.orders[0];
-  } catch (e) {
-    return { error: spxError("Không tạo được đơn SPX", e) };
+  const create = async (voucher: string | null): Promise<{ created?: Created; failure?: unknown }> => {
+    try {
+      const data = await spxUserCall<{ orders?: Created[]; fail_list?: SpxFailure[] }>("v1/order/batch_create_order", { orders: [body(voucher)] });
+      return data.orders?.length ? { created: data.orders[0] } : { failure: data.fail_list?.[0] };
+    } catch (e) {
+      return { failure: e };
+    }
+  };
+  // The checkout's SPX voucher (ARCHITECTURE.md §5): if SPX no longer accepts it (expired, used
+  // up), create without it — the customer's fee is final, the difference is the shop's.
+  let result = await create(order.spx_voucher);
+  if (!result.created && order.spx_voucher && /voucher/i.test(String((result.failure as SpxFailure | undefined)?.message))) {
+    result = await create(null);
   }
+  const created = result.created;
+  if (!created) return { error: spxError("Không tạo được đơn SPX", result.failure) };
 
   // Only the first shipment sticks: one created in parallel by a second click is cancelled at SPX.
   const { data: saved, error: saveError } = await admin

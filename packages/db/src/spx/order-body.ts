@@ -3,7 +3,8 @@ import { searchKey } from "../provinces.ts";
 // One order for SPX's 1.2 Create Order (ARCHITECTURE.md §5 "SPX Open API"): standard service,
 // pickup, sender pays shipping, COD = the order total, 300 g per unit (same as shipping_fee()),
 // declared value = subtotal with SPX's high-value service from ₫3.000.000. Addresses are SPX's
-// 2-level names (address_version 2): state = province, city = ward.
+// 2-level names (address_version 2): state = province, city = ward. `voucher` = the SPX voucher
+// the checkout quote used (orders.spx_voucher).
 const UNIT_GRAMS = 300;
 const HIGH_VALUE = 3_000_000;
 
@@ -20,7 +21,7 @@ type Order = {
   items: { name: string; qty: number }[];
 };
 
-export function createOrderBody(order: Order, province: string, ward: string, pickup: SpxPickup, sender: SpxSender) {
+export function createOrderBody(order: Order, province: string, ward: string, pickup: SpxPickup, sender: SpxSender, voucher?: string | null) {
   const units = order.items.reduce((sum, i) => sum + i.qty, 0);
   return {
     order_id: order.order_number,
@@ -41,6 +42,7 @@ export function createOrderBody(order: Order, province: string, ward: string, pi
       collect_type: 1,
       pickup_time: pickup.pickupTime,
       pickup_time_range_id: pickup.rangeId,
+      ...(voucher ? { voucher_code: voucher } : {}),
     },
     deliver_info: {
       deliver_state: province,

@@ -34,6 +34,11 @@ test("create-order body: COD = total, 300 g per unit, sender pays, pickup slot, 
   assert.equal(body.sender_info.sender_address_version, 2);
 });
 
+test("create-order body: the checkout's SPX voucher goes in fulfillment_info", () => {
+  const body = createOrderBody(order, "Thành phố Hà Nội", "Phường Ba Đình", { pickupTime: 1, rangeId: 1 }, sender, "SHIP10");
+  assert.equal(body.fulfillment_info.voucher_code, "SHIP10");
+});
+
 test("create-order body: receiver name cut to SPX's 64 characters (orders placed before checkout's limit)", () => {
   const body = createOrderBody({ ...order, recipient_name: "Nguyễn ".repeat(12) }, "Tỉnh Cao Bằng", "Xã Hòa An", { pickupTime: 1, rangeId: 2 }, sender);
   assert.equal(body.deliver_info.deliver_name.length, 64);
