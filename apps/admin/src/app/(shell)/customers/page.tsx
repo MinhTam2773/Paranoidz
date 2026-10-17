@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { createAdminClient } from "@paranoidz/db/admin";
+import { CustomersExport } from "@/components/customers/CustomersExport";
 import { CustomersIcon } from "@/components/icons";
 import { Pagination } from "@/components/Pagination";
 import { requireAdmin } from "@/lib/auth";
+import { customerSearch } from "@/lib/customer-search";
 import { formatDateTime, formatPhone } from "@/lib/format";
 
 const PAGE_SIZE = 20;
@@ -32,19 +34,8 @@ export default async function CustomersPage({ searchParams }: PageProps<"/custom
     .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
 
   if (q) {
-    let digits = q.replace(/\D/g, "");
-    if (/^84\d{9}$/.test(digits)) digits = "0" + digits.slice(2);
-    if (/\p{L}/u.test(q)) {
-      // A name: phones whose orders or account carry it (.ilike = one filter value, no injection).
-      const [byOrder, byAccount] = await Promise.all([
-        admin.from("orders").select("phone").ilike("recipient_name", `%${q}%`).limit(500),
-        admin.from("profiles").select("phone").ilike("full_name", `%${q}%`).not("phone", "is", null).limit(500),
-      ]);
-      const phones = [...new Set([...(byOrder.data ?? []), ...(byAccount.data ?? [])].map((r) => r.phone!))];
-      query = query.in("phone", phones.length ? phones : ["-"]);
-    } else {
-      query = digits.length >= 3 ? query.like("phone", `%${digits}%`) : query.in("phone", ["-"]);
-    }
+    const f = await customerSearch(admin, q);
+    query = "like" in f ? query.like("phone", f.like) : query.in("phone", f.phones);
   }
   const { data: customers, count, error } = await query;
   if (error) throw error;
@@ -69,7 +60,8 @@ export default async function CustomersPage({ searchParams }: PageProps<"/custom
 
   return (
     <div className="flex flex-col gap-4">
-      <form action="/customers" role="search" className="flex gap-2">
+      <div className="flex flex-wrap items-start gap-2">
+      <form action="/customers" role="search" className="flex min-w-64 flex-1 gap-2">
         <input
           type="search" name="q" defaultValue={q} maxLength={100}
           aria-label="Tìm theo tên hoặc số điện thoại" placeholder="Tên hoặc số điện thoại"
@@ -79,6 +71,8 @@ export default async function CustomersPage({ searchParams }: PageProps<"/custom
           Tìm
         </button>
       </form>
+      <CustomersExport q={q} />
+      </div>
 
       {rows.length === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-sm border border-border bg-surface px-6 py-16 text-center text-text-secondary">

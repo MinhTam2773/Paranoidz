@@ -7,7 +7,6 @@ Pick from TODO.md → "Now" first. Starting an item: move it to TODO.md → "Now
 ## Features — admin (DASHBOARD_DESIGN.md §6)
 
 - [ ] Gift pool (+ empty-pool banner for pending awards) — `/gift-pool` is already in the sidebar ("Kho quà tặng") and 404s until built. Marking awards fulfilled waits on ARCHITECTURE.md §8.4.
-- [ ] **Export orders + customers to Excel, for the client's own records** (client, 2026-10-14). Not for BigSeller: "chỉ lưu ở file excel thôi, còn import thì chỉ với tồn kho". Use: invoices, after-sales, returns / refunds ("xuất hoá đơn hoặc đơn hậu mãi, trả hàng hoàn hàng"). A separate file from the BigSeller stock files. Before building: (1) scope — DASHBOARD_DESIGN.md §7 says "no export" except the BigSeller stock files, and ARCHITECTURE.md §9 doesn't list it; add the exception to both first. (2) Ask the client which fields and which orders (date range? statuses?), one file or two (orders / customers). (3) It's personal data (names, phones, addresses) leaving the database — admin-only server route, no client-side generation from cached data, and tell the client where the files end up.
 - [ ] Shipping rates editor (`shipping_rates` / `shipping_provinces`) — only if SPX changes prices often; until then update the rows by migration. Lower priority since checkout uses SPX's live fee (the table is only the fallback).
 
 ## Features — storefront / auth
