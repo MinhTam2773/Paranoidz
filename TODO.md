@@ -21,7 +21,7 @@ Read this first (CLAUDE.md §7), update it last. It stays short on purpose; the 
 - **Checkout price:** server-side `quote_order()` / `place_order()`. First-5 vs promo code vs combo → best wins, **then the flash sale stacks on top** for the window's 4 picked products (PR #19, `flash_sale_picks()`). Shipping: SPX live fee, `shipping_rates` table as fallback. **Production runs on SPX *test* keys** (owner's choice until SPX sends prod keys; see Now #1).
 - **Product cards (client's design):** "★ 5.0" shown when a product has no reviews (client's choice), Shopee sold count + gift badge (`products.shopee_sold_count`, `gift_label`, typed in the admin; empty on prod), "Hoả tốc HCM" badge.
 - **Messages:** order emails via Resend, new-order Zalo alert to the client, auth emails via Resend SMTP (templates still Supabase's defaults on prod, see "Waiting").
-- **CI:** GitHub Actions on a fresh local Supabase: admin + db unit tests, `smoke`, `smoke:inventory`, Playwright e2e (S1–S13, A1–A13). Green on `14d668f`, but PRs #19 and #20 merged with CI red on 2026-10-17. Protecting `master` is in progress (Now #2).
+- **CI:** GitHub Actions on a fresh local Supabase: admin + db unit tests, `smoke`, `smoke:inventory`, Playwright e2e (S1–S13, A1–A13). Green on `14d668f`, but PRs #19 and #20 merged with CI red on 2026-10-17. `master` is protected since 2026-10-17: PR + `test` check required, admins may bypass.
 - **Who does what** (owner + client, 2026-10-17):
   - **Storefront UI is the client's.** Tủn (`tuanthanh971`) builds it with his own GPT agent and sends PRs (commit messages in Vietnamese without diacritics).
   - **The developer** (`MinhTam2773`, with Claude) does the database, server logic, admin, setup and reviews.
@@ -31,15 +31,19 @@ Read this first (CLAUDE.md §7), update it last. It stays short on purpose; the 
 ## Now (in order)
 
 1. [ ] **SPX on test keys in production. Owner accepts this until SPX sends prod keys (2026-10-17).** Checkout charges SPX's fake test fee (₫21 to Hà Nội), and TẠO ĐƠN SPX in the prod admin creates the shipment on SPX's test system (no real pickup). One real order already went through like that: PZ-2026-0662 (2026-10-16, ₫21 shipping, cancelled). Until the keys arrive, ship real orders on spx.vn by hand. Optional code guard: a lower bound in `quoteShipping()` (SPX fee < table ÷ 3 → table). When the prod keys arrive: put them in both Vercel projects' Production, register `https://paranoidz.vn/api/spx/webhook` with SPX, watch one real order move by itself, compare the first real SPX quotes with the table.
-2. [ ] **Protect `master`.** Rule: require a PR (no approval needed) + the `test` check, admins may bypass (the client has `write`, so he can't). Started 2026-10-17 in GitHub settings but not saved; the owner finishes it: tick "Require status checks", add `test`, Create.
+2. [x] **`master` is protected** (owner, 2026-10-17; checked via the API): a PR is required (0 approvals) and the `test` check must pass; admins may bypass (`enforce_admins` off), the client has `write` so he can't.
 3. [ ] **Discount stacking "like Shopee".** The client wants stacking (answer 2026-10-17): the final item price on product pages (flash sale included), and the customer picks promo code / combo at checkout. Owner + Claude to write the exact rules (ARCHITECTURE.md §5 "Discount stacking"), then a smoke case. The checkout voucher picker is storefront UI (client).
 4. [ ] **Free socks with clothing** (decided 2026-10-17, ARCHITECTURE.md §5): one random-colour pair per order with ≥ 1 clothing item. Needs a design: how `place_order()` adds the gift line and takes it from stock.
 5. [ ] **Loyalty program proposal.** The client wants it counted by money spent and game-like ("buy more, get more"), and asked Claude to propose one (ARCHITECTURE.md §8.4). Replaces the earlier gift-pool questions.
-6. [ ] **Publish Google + Facebook login** (client: yes, 2026-10-17). Steps in `docs/BACKLOG.md` → Features.
-7. [ ] **A2 (admin order lifecycle) is flaky in CI.** It passes on retry. Not looked at yet.
+6. [ ] **Delivery method saved inside `place_order()`** (RED, 2026-10-17): today the storefront writes `orders.delivery_method` in a second UPDATE after the order is created, so an express order can end up `standard`. Being moved into `place_order()` (new migration, smoke case); waits on the owner's RED review before push.
+7. [ ] **Remove the `html, body` overflow clip** (PR #22): S13 can catch mobile overflow again.
+8. [ ] **Publish Google + Facebook login** (client: yes, 2026-10-17). Steps in `docs/BACKLOG.md` → Features.
+9. [ ] **A2 (admin order lifecycle) is flaky in CI.** It passes on retry. Not looked at yet.
 
 ## Waiting on the client / owner
 
+- [ ] **Express ("hoả tốc") fee:** the owner asks aT for the price (2026-10-17). Owner's rule: the customer must see the exact express cost at checkout, even if express is rare, and aT won't absorb it. Until aT answers, express orders still pay the standard SPX fee. Then: charge it in `quote_order()` / `place_order()` (RED: pricing).
+- [ ] **Discount stacking questions + mock-up for aT** (sent 2026-10-17): his answers decide Now #3.
 - [ ] **Hide the "Outlet 2026" / "New collection" nav links** for now (client, 2026-10-17). Storefront UI, so Tủn's agent does it. Both 404 today.
 - [ ] **Categories:** the client is creating them (Áo thun, Polo, Tất…). Delete the 4 English dev categories on prod afterwards.
 - [ ] **Catalog content:** the client says names / descriptions are done. Still open: no size guides, English colour names (Black, Cream, Mint Blue…), long names.
