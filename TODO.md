@@ -26,8 +26,7 @@ Read this first (CLAUDE.md §7), update it last. It stays short on purpose; the 
 ## Now (in order)
 
 1. [ ] **URGENT: production runs on SPX's *test* keys** (owner, 2026-10-17: prod keys not received from SPX yet). Seen on paranoidz.vn 2026-10-17: checkout for 1 tee to Hà Nội / Phường Ba Đình shows **"₫21 · Giá trực tiếp từ SPX"**, total ₫125.121. That's the test host's fake fee. `quoteShipping()` only rejects fees *above* 3 × table, and `place_order()` accepts anything from 0 to 3 × table, so a real order would be charged ₫21. TẠO ĐƠN SPX in the prod admin would create the shipment on SPX's test system: a fake tracking number and no real pickup. To do: (a) check prod orders for `shipping_fee` < ₫1.000 or a test-host tracking number; (b) stop using the test keys in Production (remove `SPX_*` from both Vercel projects' Production + redeploy, so checkout uses the table and shipments go on spx.vn by hand until the prod keys arrive); (c) code guard: a lower bound in `quoteShipping()` too (SPX fee < table ÷ 3 → table), and refuse a `test-stable` host when `VERCEL_ENV=production`. Then, once SPX sends prod keys: register `https://paranoidz.vn/api/spx/webhook` with SPX, watch one real order move by itself, and compare the first real SPX quotes with the table.
-2. [ ] **DESIGN.md is stale: the client's live design wins** (owner, 2026-10-17). The client's PRs #6 / #8 / #9 / #10 / #12 replaced parts of DESIGN.md: one-row header (not two), hotline 0345 267 709 (not 0972 926 956), 1:1 product images (not 3:4), sale badge top-left (not top-right), ticker announcement bar, hero carousel. **Until DESIGN.md is rewritten, the live storefront code is the reference for storefront UI. Don't "fix" the site back to DESIGN.md.** Recommended: rewrite DESIGN.md from the current code in its own session.
-3. [ ] **A2 (admin order lifecycle) is flaky in CI.** It passes on retry. Not looked at yet.
+2. [ ] **A2 (admin order lifecycle) is flaky in CI.** It passes on retry. Not looked at yet.
 
 ## Waiting on the client / owner (dashboard or content, no code)
 
@@ -55,3 +54,4 @@ ARCHITECTURE.md §8 items 3–7: voucher cap, loyalty gift notification + fulfil
 
 - 2026-10-16: TODO.md split into this file + `docs/BACKLOG.md` / `docs/DONE.md` / `docs/LESSONS.md`. Every item was re-checked against `master` `c6299b8`. Stale entries were dropped; entries for the client's PRs #6–#12 were added to DONE.md from their commits (not re-verified).
 - 2026-10-17: found prod checkout charging SPX test-host fees (₫21, Now #1). Owner decided the client's live design wins over DESIGN.md. Flash-sale stacking question parked for the client. CI on `3cd939a` failed once on a Google Fonts download during `next build` (Vercel built the same commit fine); re-ran it.
+- 2026-10-17: DESIGN.md rewritten from the live storefront (client's design, PRs #6–#12); checked on paranoidz.vn at 1280px and 375px. Design gaps found on the way are in `docs/BACKLOG.md` → Carried debt → Storefront.
