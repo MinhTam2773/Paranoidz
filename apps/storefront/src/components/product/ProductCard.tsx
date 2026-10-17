@@ -149,7 +149,7 @@ export function ProductCard({ product, eager = false }: { product: ProductCardDa
               </p>
               <p className="flex w-fit flex-wrap items-center gap-1.5">
                 <span className="flex items-center gap-1 rounded-sm bg-accent/10 px-1.5 py-0.5 text-caption font-medium text-accent">
-                  <span aria-hidden>⚡</span>Hoả tốc
+                  <span aria-hidden>⚡</span>Hoả tốc HCM
                 </span>
                 {giftLabel && (
                   <span className="flex items-center gap-1 rounded-sm bg-accent/10 px-1.5 py-0.5 text-caption font-medium text-accent">
