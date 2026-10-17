@@ -9,6 +9,7 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { requireAdmin } from "@/lib/auth";
 import { formatDateTime, formatPhone, formatVnd } from "@/lib/format";
 import { isOrderStatus, STATUS_LABEL, type OrderStatus } from "@/lib/order-status";
+import { searchFilter } from "@/lib/order-search";
 
 const PAGE_SIZE = 20;
 
@@ -20,19 +21,6 @@ const TABS: { status: OrderStatus | null; label: string }[] = [
     label: STATUS_LABEL[status],
   })),
 ];
-
-// Order number or phone. Only [A-Z0-9-] / digits reach the PostgREST filter, so
-// the input can't inject filter syntax. "+84 90…" matches the stored "090…".
-function searchFilter(q: string) {
-  const term = q.toUpperCase().replace(/[^A-Z0-9-]/g, "");
-  let digits = q.replace(/\D/g, "");
-  if (/^84\d{9}$/.test(digits)) digits = "0" + digits.slice(2);
-  const parts: string[] = [];
-  if (term) parts.push(`order_number.ilike.*${term}*`);
-  if (digits.length >= 3) parts.push(`phone.like.*${digits}*`);
-  // Nothing searchable left → match nothing rather than everything.
-  return parts.join(",") || "id.is.null";
-}
 
 function href(status: OrderStatus | null, q: string, page = 1) {
   const params = new URLSearchParams();

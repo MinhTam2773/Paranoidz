@@ -71,14 +71,14 @@ test("customer row: latest name / address, delivered total, first and latest ord
       o("2026-10-03T00:00:00Z", "delivery_failed", 250_000),
       o("2026-10-05T00:00:00Z", "pending", 200_000, { recipient_name: "Tên Mới", address: "9 Hai Bà Trưng", ward: null }),
     ],
-    new Set(["0911111111"]),
+    new Map([["0911111111", "Tên Tài Khoản"]]),
   );
   const v = rows[1].map(value);
   assert.deepEqual(v.slice(0, 9), ["0901234567", "Tên Mới", "a@b.vn", "9 Hai Bà Trưng, TP. Hồ Chí Minh", 3, 1, 1, "Có", 300_000]);
   assert.equal((v[9] as Date).toISOString(), "2026-10-01T07:00:00.000Z");
   assert.equal((v[10] as Date).toISOString(), "2026-10-05T07:00:00.000Z");
   assert.equal(v[11], null);
-  assert.deepEqual(rows[2].map(value).slice(0, 5), ["0911111111", null, null, null, 0]);
+  assert.deepEqual(rows[2].map(value).slice(0, 5), ["0911111111", "Tên Tài Khoản", null, null, 0]);
   assert.equal(value(rows[2][11]), "Có");
 });
 
@@ -114,7 +114,7 @@ test("the files keep phones as text and money as numbers, in named sheets", asyn
   assert.equal(row[ORDER_HEADER.indexOf("Tổng thu COD (₫)")], 390_000);
   assert.equal(sheets[1].data.length, 3);
 
-  const customers = await readXlsxFile(await customersXlsx(customerSheet([{ phone: "0301234567", delivered_count: 0, refusal_count: 0, is_blacklisted: false }], [], new Set())));
+  const customers = await readXlsxFile(await customersXlsx(customerSheet([{ phone: "0301234567", delivered_count: 0, refusal_count: 0, is_blacklisted: false }], [], new Map())));
   assert.equal(customers[0].sheet, "Khách hàng");
   assert.equal(customers[0].data[1][0], "0301234567");
 });

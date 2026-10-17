@@ -82,8 +82,9 @@ export function orderSheets(orders: OrderRow[]) {
   return { orders: ordersSheet, items: itemsSheet };
 }
 
-// One row per customer; `orders` are that set of phones' orders, any order.
-export function customerSheet(customers: CustomerRow[], orders: CustomerOrder[], accountPhones: Set<string>) {
+// One row per customer; `orders` are that set of phones' orders, any status; `accounts` maps a
+// profile's phone to its name (the /customers list's fallback when no order carries one).
+export function customerSheet(customers: CustomerRow[], orders: CustomerOrder[], accounts: Map<string, string | null>) {
   const byPhone = new Map<string, CustomerOrder[]>();
   for (const o of [...orders].sort((a, b) => b.created_at.localeCompare(a.created_at))) {
     byPhone.set(o.phone, [...(byPhone.get(o.phone) ?? []), o]); // newest first
@@ -93,11 +94,11 @@ export function customerSheet(customers: CustomerRow[], orders: CustomerOrder[],
     const own = byPhone.get(c.phone) ?? [];
     const latest = own[0];
     rows.push([
-      text(c.phone), text(latest?.recipient_name), text(own.find((o) => o.email)?.email),
+      text(c.phone), text(latest?.recipient_name ?? accounts.get(c.phone)), text(own.find((o) => o.email)?.email),
       text(latest && [latest.address, latest.ward, latest.city].filter(Boolean).join(", ")),
       count(own.length), count(c.delivered_count), count(c.refusal_count), yes(c.is_blacklisted),
       money(own.filter((o) => o.status === "delivered").reduce((s, o) => s + o.total, 0)),
-      date(own.at(-1)?.created_at), date(latest?.created_at), yes(accountPhones.has(c.phone)),
+      date(own.at(-1)?.created_at), date(latest?.created_at), yes(accounts.has(c.phone)),
     ]);
   }
   return rows;

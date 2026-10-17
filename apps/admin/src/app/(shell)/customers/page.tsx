@@ -3,6 +3,7 @@ import { createAdminClient } from "@paranoidz/db/admin";
 import { CustomersIcon } from "@/components/icons";
 import { Pagination } from "@/components/Pagination";
 import { requireAdmin } from "@/lib/auth";
+import { customerSearch } from "@/lib/customer-search";
 import { formatDateTime, formatPhone } from "@/lib/format";
 
 const PAGE_SIZE = 20;
@@ -32,19 +33,8 @@ export default async function CustomersPage({ searchParams }: PageProps<"/custom
     .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
 
   if (q) {
-    let digits = q.replace(/\D/g, "");
-    if (/^84\d{9}$/.test(digits)) digits = "0" + digits.slice(2);
-    if (/\p{L}/u.test(q)) {
-      // A name: phones whose orders or account carry it (.ilike = one filter value, no injection).
-      const [byOrder, byAccount] = await Promise.all([
-        admin.from("orders").select("phone").ilike("recipient_name", `%${q}%`).limit(500),
-        admin.from("profiles").select("phone").ilike("full_name", `%${q}%`).not("phone", "is", null).limit(500),
-      ]);
-      const phones = [...new Set([...(byOrder.data ?? []), ...(byAccount.data ?? [])].map((r) => r.phone!))];
-      query = query.in("phone", phones.length ? phones : ["-"]);
-    } else {
-      query = digits.length >= 3 ? query.like("phone", `%${digits}%`) : query.in("phone", ["-"]);
-    }
+    const f = await customerSearch(admin, q);
+    query = "like" in f ? query.like("phone", f.like) : query.in("phone", f.phones);
   }
   const { data: customers, count, error } = await query;
   if (error) throw error;

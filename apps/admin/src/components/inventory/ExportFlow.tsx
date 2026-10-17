@@ -3,17 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { buildExport, confirmExport, type ExportBatch, type ExportFile } from "@/app/(shell)/inventory/export/actions";
+import { downloadXlsx as download } from "@/lib/download";
 import { Toast, type ToastMessage } from "../Toast";
-
-const XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-
-function download(file: ExportFile) {
-  const bytes = Uint8Array.from(atob(file.base64), (c) => c.charCodeAt(0));
-  const url = URL.createObjectURL(new Blob([bytes], { type: XLSX }));
-  const a = Object.assign(document.createElement("a"), { href: url, download: file.name });
-  a.click();
-  URL.revokeObjectURL(url);
-}
 
 // TẢI FILE → upload in BigSeller → ĐÃ NHẬP VÀO BIGSELLER. Only the batch in the
 // downloaded files is marked; anything that arrives after the download waits for the next one.
