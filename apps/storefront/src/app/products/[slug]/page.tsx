@@ -7,6 +7,7 @@ import { BundleOffers, getBundleOffers } from "@/components/product/BundleOffers
 import { ProductView } from "@/components/product/ProductView";
 import { ReviewSection, type ReviewData } from "@/components/product/ReviewSection";
 import { SizeGuide, isSizeGuide } from "@/components/product/SizeGuide";
+import { renderDescription } from "@/lib/sanitize-description";
 
 // ISR (ARCHITECTURE.md §2.2): every active product is prebuilt at deploy, then rebuilt at most once a
 // minute; slugs added later render on first visit. Shown stock is display only — place_order() re-checks.
@@ -103,7 +104,10 @@ export default async function ProductPage({ params }: PageProps<"/products/[slug
               {product.description && (
                 <div className="flex flex-col gap-4">
                   <h2 className="text-nav font-bold uppercase">Mô tả</h2>
-                  <p className="text-text-secondary">{product.description}</p>
+                  <div
+                    className="desc-rich text-text-secondary"
+                    dangerouslySetInnerHTML={{ __html: renderDescription(product.description) }}
+                  />
                 </div>
               )}
               {product.care_instructions && (

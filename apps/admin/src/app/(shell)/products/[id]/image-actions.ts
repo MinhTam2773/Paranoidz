@@ -71,6 +71,28 @@ export async function addProductImage(productId: string, path: string, color: st
   return done(productId);
 }
 
+// Description images (2026-10-17): embedded in the product description HTML
+// (<img> tags), not gallery rows. They live under products/{slug}/desc/ so the
+// addProductImage path check never confuses them with gallery photos.
+export async function createDescriptionImageUpload(productId: string, contentType: string, size: number) {
+  await requireAdmin();
+  const ext = TYPES[contentType];
+  if (!ext) return { error: "Chỉ nhận ảnh JPG, PNG hoặc WebP." };
+  if (!(size > 0 && size <= MAX_BYTES)) return { error: "Ảnh tối đa 10 MB." };
+  const product = await loadProduct(productId);
+  if (!product) return { error: "Không tìm thấy sản phẩm." };
+
+  const admin = createAdminClient();
+  const path = `products/${product.slug}/desc/${randomUUID()}.${ext}`;
+  const { data, error } = await admin.storage.from(BUCKET).createSignedUploadUrl(path);
+  if (error) return { error: "Không thể tải ảnh lên. Vui lòng thử lại." };
+  return {
+    path: data.path,
+    token: data.token,
+    publicUrl: admin.storage.from(BUCKET).getPublicUrl(path).data.publicUrl,
+  };
+}
+
 // orderedIds = every image of the product in the new order.
 export async function reorderProductImages(productId: string, orderedIds: string[]): Promise<Result> {
   await requireAdmin();

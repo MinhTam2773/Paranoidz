@@ -103,7 +103,7 @@ export function validateProduct(input: ProductInput) {
   else if (slug.length > 80) errors.slug = "Slug tối đa 80 ký tự.";
 
   const description = input.description.trim();
-  if (description.length > 5000) errors.description = "Mô tả tối đa 5000 ký tự.";
+  if (description.length > 20000) errors.description = "Mô tả tối đa 20000 ký tự (kể cả thẻ ảnh).";
   const careInstructions = input.careInstructions.trim();
   if (careInstructions.length > 1000) errors.careInstructions = "Tối đa 1000 ký tự.";
 

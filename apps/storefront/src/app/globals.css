@@ -115,4 +115,23 @@
     letter-spacing: -0.02em;
     font-weight: 800;
   }
+
+  /* Rich product description (2026-10-17): small safe HTML subset —
+     images + basic formatting, sanitized server-side. */
+  .desc-rich img {
+    @apply my-4 w-full rounded-sm;
+  }
+  .desc-rich p {
+    @apply my-2;
+  }
+  .desc-rich ul {
+    @apply my-2 list-inside list-disc;
+  }
+  .desc-rich ol {
+    @apply my-2 list-inside list-decimal;
+  }
+  .desc-rich h3,
+  .desc-rich h4 {
+    @apply mt-4 font-bold;
+  }
 }
