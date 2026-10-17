@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useTransition, type FormEvent } from "react";
+import { useRef, useState, useTransition, type FormEvent } from "react";
 import { saveProduct } from "@/app/(shell)/products/actions";
+import { createDescriptionImageUpload } from "@/app/(shell)/products/[id]/image-actions";
+import { createClient } from "@paranoidz/db/client";
 import { slugify, validateProduct, type FieldErrors, type ProductInput, type VariantInput } from "@/lib/product";
 import { Toast, type ToastMessage } from "../Toast";
 
@@ -53,6 +55,46 @@ function ProductForm({ initial, categories, setNotice, onSaved }: {
   const [pending, startTransition] = useTransition();
   const [colors, setColors] = useState("");
   const [sizes, setSizes] = useState("");
+  const descRef = useRef<HTMLTextAreaElement>(null);
+  const descFileRef = useRef<HTMLInputElement>(null);
+  const [descUploading, setDescUploading] = useState(false);
+
+  // Description images (2026-10-17): upload to product-images/products/{slug}/desc/
+  // and insert an <img> tag at the cursor. Editing-only — a new product has no
+  // slug folder until it is saved once.
+  async function insertDescriptionImage(file: File) {
+    if (!initial.id) return;
+    setDescUploading(true);
+    try {
+      const ticket = await createDescriptionImageUpload(initial.id, file.type, file.size);
+      if ("error" in ticket) {
+        setNotice(ticket.error ?? "Không thể tải ảnh lên.");
+        return;
+      }
+      const { error } = await createClient()
+        .storage.from("product-images")
+        .uploadToSignedUrl(ticket.path, ticket.token, file, { contentType: file.type });
+      if (error) {
+        setNotice("Không thể tải ảnh lên. Vui lòng thử lại.");
+        return;
+      }
+      const tag = `<img src="${ticket.publicUrl}" alt="">`;
+      const el = descRef.current;
+      if (el) {
+        const s = el.selectionStart ?? form.description.length;
+        const e = el.selectionEnd ?? s;
+        set("description", form.description.slice(0, s) + tag + form.description.slice(e));
+        requestAnimationFrame(() => {
+          el.focus();
+          el.selectionStart = el.selectionEnd = s + tag.length;
+        });
+      } else {
+        set("description", form.description + tag);
+      }
+    } finally {
+      setDescUploading(false);
+    }
+  }
 
   // Editing a field clears its error; the rest stay until the next submit.
   const clearErrors = (...keys: string[]) =>
@@ -146,14 +188,44 @@ function ProductForm({ initial, categories, setNotice, onSaved }: {
               Đang bán (hiển thị trên cửa hàng)
             </label>
           </div>
-          <Field id="description" label="Mô tả" error={err("description")} wide>
-            <textarea id="description" value={form.description} onChange={(e) => set("description", e.target.value)} rows={5} maxLength={5000} className={`${input} h-auto py-2 ${border("description")}`} {...aria("description")} />
+          <Field id="description" label="Mô tả" error={err("description")} wide hint="Hỗ trợ ảnh và định dạng cơ bản (xuống dòng, in đậm, gạch đầu dòng).">
+            <textarea ref={descRef} id="description" value={form.description} onChange={(e) => set("description", e.target.value)} rows={5} maxLength={20000} className={`${input} h-auto py-2 ${border("description")}`} {...aria("description")} />
+            {!creating && (
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  disabled={descUploading}
+                  onClick={() => descFileRef.current?.click()}
+                  className="h-9 rounded-sm border border-border px-4 text-button uppercase transition-colors duration-200 hover:border-text-primary hover:text-text-primary disabled:opacity-50"
+                >
+                  {descUploading ? "Đang tải…" : "Chèn ảnh"}
+                </button>
+                <input
+                  ref={descFileRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    e.target.value = "";
+                    if (f) insertDescriptionImage(f);
+                  }}
+                />
+                <span className="text-stat-label text-text-secondary">Ảnh chèn vào vị trí con trỏ trong mô tả.</span>
+              </div>
+            )}
           </Field>
           <Field id="careInstructions" label="Hướng dẫn bảo quản" error={err("careInstructions")} wide>
             <textarea id="careInstructions" value={form.careInstructions} onChange={(e) => set("careInstructions", e.target.value)} rows={2} maxLength={1000} className={`${input} h-auto py-2 ${border("careInstructions")}`} {...aria("careInstructions")} />
           </Field>
           <Field id="sizeGuide" label="Bảng size" error={err("sizeGuide")} wide hint="Dòng đầu là các size, mỗi dòng sau là một số đo: &quot;Size: S, M, L&quot; rồi &quot;Ngực (cm): 52, 55, 58&quot;. Để trống nếu không có.">
             <textarea id="sizeGuide" value={form.sizeGuide} onChange={(e) => set("sizeGuide", e.target.value)} rows={4} placeholder={"Size: S, M, L\nNgực (cm): 52, 55, 58\nDài (cm): 70, 72, 74"} className={`${input} h-auto py-2 font-[inherit] placeholder:text-text-muted ${border("sizeGuide")}`} {...aria("sizeGuide")} />
+          </Field>
+          <Field id="shopeeSoldCount" label="Lượt bán Shopee" hint="Số lượt bán trên Shopee, hiện trên card dạng &quot;Đã bán X&quot;. Shopee không cho đồng bộ tự động nên nhập tay.">
+            <input id="shopeeSoldCount" type="number" min={0} step={1} value={form.shopeeSoldCount} onChange={(e) => set("shopeeSoldCount", Math.max(0, Math.floor(Number(e.target.value) || 0)))} className={input} />
+          </Field>
+          <Field id="giftLabel" label="Quà tặng kèm" hint='Hiện badge "🎁 ..." trên card, ví dụ "Quà tặng kèm". Để trống nếu không có. Quà do shop tự bỏ vào đơn khi đóng gói.'>
+            <input id="giftLabel" value={form.giftLabel} onChange={(e) => set("giftLabel", e.target.value)} maxLength={40} placeholder="Quà tặng kèm" className={input} />
           </Field>
         </div>
       </section>

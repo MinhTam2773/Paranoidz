@@ -51,29 +51,31 @@ export function Lookbook() {
         </h2>
         <span className="shrink-0 text-nav uppercase text-text-secondary">Khách mặc Paranoidz</span>
       </div>
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
+      <div className="grid grid-cols-3 gap-2 sm:gap-3 lg:grid-cols-5">
         {LOOKS.map((look) => (
           <div key={look.src} className="relative aspect-square overflow-hidden rounded-sm bg-bg-secondary">
             <Image
               src={look.src}
               alt={look.alt}
               fill
-              sizes="(min-width: 1024px) 33vw, 50vw"
+              sizes="(min-width: 1024px) 20vw, 33vw"
               className="object-cover transition-transform duration-300 hover:scale-[1.03]"
               loading="lazy"
             />
           </div>
         ))}
       </div>
-      <div className="mt-4 grid grid-cols-2 gap-3 sm:gap-4">
+      <div className="mt-2 grid grid-cols-3 gap-2 sm:mt-3 sm:gap-3 lg:grid-cols-5">
         {CLIPS.map((clip) => (
-          <div key={clip.src} className="relative aspect-[9/16] overflow-hidden rounded-sm bg-bg-dark">
+          <div key={clip.src} className="relative aspect-square overflow-hidden rounded-sm bg-bg-dark">
             <video
               className="absolute inset-0 h-full w-full object-cover"
               src={clip.src}
-              controls
+              autoPlay
+              muted
+              loop
               playsInline
-              preload="none"
+              preload="metadata"
               aria-label={`Video ${clip.label}`}
             />
           </div>

@@ -23,6 +23,8 @@ export type ProductInput = {
   description: string;
   careInstructions: string;
   sizeGuide: string;
+  shopeeSoldCount: number;
+  giftLabel: string;
   isActive: boolean;
   variants: VariantInput[];
 };
@@ -103,7 +105,7 @@ export function validateProduct(input: ProductInput) {
   else if (slug.length > 80) errors.slug = "Slug tối đa 80 ký tự.";
 
   const description = input.description.trim();
-  if (description.length > 5000) errors.description = "Mô tả tối đa 5000 ký tự.";
+  if (description.length > 20000) errors.description = "Mô tả tối đa 20000 ký tự (kể cả thẻ ảnh).";
   const careInstructions = input.careInstructions.trim();
   if (careInstructions.length > 1000) errors.careInstructions = "Tối đa 1000 ký tự.";
 
@@ -151,6 +153,8 @@ export function validateProduct(input: ProductInput) {
       name, slug, description: description || null, care_instructions: careInstructions || null,
       size_guide: guide.value as Json | null, is_active: input.isActive,
       category_id: input.categoryId || null,
+      shopee_sold_count: Math.max(0, Math.floor(input.shopeeSoldCount || 0)),
+      gift_label: input.giftLabel.trim() || null,
     },
     variants,
   };

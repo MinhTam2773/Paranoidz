@@ -46,25 +46,39 @@ export default async function HomePage() {
   const byId = new Map(cards.map(({ card }) => [card.id, card]));
   const newGoods = cards.slice(0, GRID_SIZE).map(({ card }) => card);
   const best = bestSellers.data!.flatMap(({ product_id }) => byId.get(product_id) ?? []);
-  const onSale = cards
-    .map(({ card }) => card)
-    .filter((c) => !c.soldOut && c.originalPrice !== null && c.originalPrice > c.price)
-    .slice(0, ROW_SIZE);
   // Flash sale: extra discount on the selling price during an active window.
   const flashState = getFlashSaleState((flashWindows.data ?? []) as FlashSaleWindow[]);
-  const flashCards =
-    flashState?.active && flashState.discountPercent > 0
-      ? onSale.map((c) => ({
-          ...c,
-          // Stacked: flash price vs the TRUE original, so the badge shows the total % off.
-          price: flashPrice(c.price, flashState.discountPercent),
-          variants: c.variants.map((v) => ({
-            ...v,
-            original_price: v.original_price,
-            price: flashPrice(v.price, flashState.discountPercent),
-          })),
-        }))
-      : onSale;
+  // Flash sale (option B, 2026-10-17): the discounted products are picked
+  // server-side by public.flash_sale_picks() — deterministic per window, so the
+  // homepage, checkout quote and place_order() all price the same 4 products.
+  // Active window: picks at flash prices; otherwise a teaser of the next
+  // window's picks at normal prices.
+  const { data: pickIds } = flashState
+    ? await supabase.rpc(
+        "flash_sale_picks",
+        flashState.active ? {} : { p_at: new Date(flashState.nextStartsAt).toISOString() },
+      )
+    : { data: null };
+  const flashCards = ((pickIds ?? []) as string[])
+    .map((id) => byId.get(id))
+    .filter(
+      (c): c is ProductCardData =>
+        !!c && !c.soldOut && c.originalPrice !== null && c.originalPrice > c.price,
+    )
+    .map((c) =>
+      flashState?.active && flashState.discountPercent > 0
+        ? {
+            ...c,
+            // Stacked: flash price vs the TRUE original, so the badge shows the total % off.
+            price: flashPrice(c.price, flashState.discountPercent),
+            variants: c.variants.map((v) => ({
+              ...v,
+              original_price: v.original_price,
+              price: flashPrice(v.price, flashState.discountPercent),
+            })),
+          }
+        : c,
+    );
   const categoryRows = categories
     .data!.map((c) => ({
       name: c.name,

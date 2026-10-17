@@ -49,6 +49,12 @@ export function Header() {
         </div>
 
         <div className="ml-auto flex items-center gap-1 lg:ml-0 lg:gap-2">
+          <Link
+            href="/order-lookup"
+            className="mr-1 hidden items-center rounded-sm bg-bg-dark px-4 py-2.5 text-nav font-bold uppercase text-text-on-dark transition-colors hover:bg-black lg:flex"
+          >
+            Tra cứu đơn hàng
+          </Link>
           <AccountLink icon className="hidden items-center gap-2 text-nav uppercase text-text-primary lg:flex" />
           <CartLink />
           <MobileNav />

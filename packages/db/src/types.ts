@@ -454,6 +454,7 @@ export type Database = {
           bigseller_restocked_at: string | null
           city: string
           created_at: string
+          delivery_method: string
           discount: number
           district: string | null
           email: string | null
@@ -483,6 +484,7 @@ export type Database = {
           bigseller_restocked_at?: string | null
           city: string
           created_at?: string
+          delivery_method?: string
           discount?: number
           district?: string | null
           email?: string | null
@@ -512,6 +514,7 @@ export type Database = {
           bigseller_restocked_at?: string | null
           city?: string
           created_at?: string
+          delivery_method?: string
           discount?: number
           district?: string | null
           email?: string | null
@@ -644,9 +647,11 @@ export type Database = {
           category_id: string | null
           created_at: string
           description: string | null
+          gift_label: string | null
           id: string
           is_active: boolean
           name: string
+          shopee_sold_count: number
           size_guide: Json | null
           slug: string
           updated_at: string
@@ -656,9 +661,11 @@ export type Database = {
           category_id?: string | null
           created_at?: string
           description?: string | null
+          gift_label?: string | null
           id?: string
           is_active?: boolean
           name: string
+          shopee_sold_count?: number
           size_guide?: Json | null
           slug: string
           updated_at?: string
@@ -668,9 +675,11 @@ export type Database = {
           category_id?: string | null
           created_at?: string
           description?: string | null
+          gift_label?: string | null
           id?: string
           is_active?: boolean
           name?: string
+          shopee_sold_count?: number
           size_guide?: Json | null
           slug?: string
           updated_at?: string
@@ -1138,6 +1147,10 @@ export type Database = {
           unsent_out: number
           variant_id: string
         }[]
+      }
+      flash_sale_picks: {
+        Args: { p_at?: string }
+        Returns: string[]
       }
       has_delivered_product: {
         Args: { p_product_id: string }

@@ -20,6 +20,13 @@ import {
   type FieldErrors,
 } from "@/lib/checkout-validation";
 import { formatVnd } from "@/lib/format";
+import {
+  DELIVERY_METHODS,
+  deliveryMethodLabel,
+  getDeliveryMethod,
+  setDeliveryMethod,
+  type DeliveryMethod,
+} from "@/lib/delivery-method";
 import { ProvinceSelect } from "./ProvinceSelect";
 import { WardSelect } from "./WardSelect";
 
@@ -107,6 +114,14 @@ export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; acc
   const [phone, setPhone] = useState(initial?.phone ?? account?.phone ?? "");
   const [voucher, setVoucher] = useState("");
   const [quote, setQuote] = useState<{ key: string; value: OrderQuote | null } | null>(null);
+  // Delivery method: pre-selected from the product-page choice (localStorage).
+  const [deliveryMethod, setDeliveryMethodState] = useState<DeliveryMethod>(() => getDeliveryMethod());
+  const pickDelivery = (m: DeliveryMethod) => {
+    setDeliveryMethodState(m);
+    setDeliveryMethod(m);
+  };
+  const isHcm = city === "TP. Hồ Chí Minh";
+  const expressBlocked = deliveryMethod === "express" && city !== "" && !isHcm;
   const quotePhone = normalizePhone(phone) ?? "";
   const quoteVoucher = voucher.trim().toUpperCase();
   const quoteKey = `${linesKey}|${quotePhone}|${quoteVoucher}`;
@@ -215,10 +230,16 @@ export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; acc
     setErrors(errs);
     setMessage(undefined);
     if (Object.keys(errs).length) return focusFirst(errs);
+    // Express is HCMC-only: don't let the order through with a mismatched address.
+    if (deliveryMethod === "express" && v.city !== "TP. Hồ Chí Minh") {
+      setMessage("⚡ Hoả tốc chỉ áp dụng nội thành TP.HCM. Vui lòng chọn giao thường hoặc đổi địa chỉ.");
+      return;
+    }
     startTransition(async () => {
       const res: CheckoutResult = await placeOrder({
         items: lines.map((l) => ({ variantId: l.variantId, qty: l.qty })),
         addressId: addressId ?? undefined,
+        deliveryMethod,
         ...v,
       });
       if (res.ok) {
@@ -254,6 +275,7 @@ export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; acc
             <div className="flex justify-between"><dt className="text-text-secondary">Giảm giá</dt><dd className="text-accent">−{formatVnd(placed.discount)}</dd></div>
           )}
           <div className="flex justify-between"><dt className="text-text-secondary">Phí vận chuyển</dt><dd>{formatVnd(placed.shippingFee)}</dd></div>
+          <div className="flex justify-between"><dt className="text-text-secondary">Phương thức giao hàng</dt><dd>{deliveryMethodLabel(placed.deliveryMethod === "express" ? "express" : "standard")}</dd></div>
           <div className="flex justify-between border-t border-border pt-3">
             <dt className="text-nav uppercase">Tổng thanh toán khi nhận hàng</dt><dd className="text-price">{formatVnd(placed.total)}</dd>
           </div>
@@ -374,40 +396,72 @@ export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; acc
           </Field>
         </div>
 
-        {/* 02 — Shipping method: the SPX Express carrier card. The fee is SPX's live
-            quote for this address when available, else the shop's standard table. */}
+        {/* 02 — Shipping method: standard (SPX live quote) or HCMC express.
+            The product-page choice pre-selects this; the customer can change it here. */}
         <h2 className="text-h3 uppercase"><span className="mr-2 text-accent">02</span>Phương thức vận chuyển</h2>
-        <div className="border border-border bg-bg-primary">
-          <div className="flex items-center gap-4 p-4">
-            <span aria-hidden className="flex h-11 w-11 shrink-0 items-center justify-center bg-bg-dark text-text-on-dark">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M5 12h14M5 12a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2M5 12v7a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-7" />
-                <circle cx="9" cy="20" r="1.6" /><circle cx="17" cy="20" r="1.6" />
-              </svg>
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="text-nav font-bold uppercase">SPX Express</p>
-              <p className="mt-0.5 text-caption text-text-secondary">Giao hàng nhanh toàn quốc · Thanh toán khi nhận hàng (COD)</p>
-            </div>
-            <div className="shrink-0 text-right">
-              {shippingKnown ? (
-                <>
-                  <p className="text-price">{formatVnd(shippingFee)}</p>
-                  <p className="mt-0.5 text-caption text-text-muted">
-                    {shippingQuote?.source === "spx" ? "Giá trực tiếp từ SPX" : "Theo bảng giá chuẩn"}
-                  </p>
-                </>
-              ) : (
-                <p className="text-caption text-text-secondary">
-                  {!city || !ward ? "Nhập địa chỉ để tính phí" : "Đang tính…"}
-                </p>
-              )}
-            </div>
-          </div>
-          <p className="border-t border-border px-4 py-2.5 text-caption text-text-muted">
-            Phí ship tính theo địa chỉ giao hàng và khối lượng đơn — mức bạn thấy là mức bạn trả, shop không thu thêm.
-          </p>
+        <div role="radiogroup" aria-label="Phương thức vận chuyển" className="flex flex-col gap-2">
+          {DELIVERY_METHODS.map((m) => {
+            const active = deliveryMethod === m.value;
+            const isExpress = m.value === "express";
+            return (
+              <button
+                key={m.value}
+                type="button"
+                role="radio"
+                aria-checked={active}
+                onClick={() => pickDelivery(m.value)}
+                className={`border bg-bg-primary transition-colors duration-200 ${
+                  active ? "border-text-primary" : "border-border hover:border-border-hover"
+                }`}
+              >
+                <span className="flex items-center gap-4 p-4">
+                  <span
+                    aria-hidden
+                    className={`flex size-5 shrink-0 items-center justify-center rounded-full border-2 transition-colors duration-200 ${
+                      active ? "border-accent" : "border-border"
+                    }`}
+                  >
+                    {active && <span className="size-2.5 rounded-full bg-accent" />}
+                  </span>
+                  <span aria-hidden className="flex h-11 w-11 shrink-0 items-center justify-center bg-bg-dark text-text-on-dark">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M5 12h14M5 12a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2M5 12v7a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-7" />
+                      <circle cx="9" cy="20" r="1.6" /><circle cx="17" cy="20" r="1.6" />
+                    </svg>
+                  </span>
+                  <span className="min-w-0 flex-1 text-left">
+                    <span className="block text-nav font-bold uppercase">{isExpress ? "Hoả tốc" : "SPX Express"}</span>
+                    <span className="mt-0.5 block text-caption text-text-secondary">{m.sub}</span>
+                  </span>
+                  <span className="shrink-0 text-right">
+                    {isExpress ? (
+                      <span className="text-caption text-text-secondary">Giao hàng gấp:<br />☎ 0903715249</span>
+                    ) : shippingKnown ? (
+                      <>
+                        <span className="block text-price">{formatVnd(shippingFee)}</span>
+                        <span className="mt-0.5 block text-caption text-text-muted">
+                          {shippingQuote?.source === "spx" ? "Giá trực tiếp từ SPX" : "Theo bảng giá chuẩn"}
+                        </span>
+                      </>
+                    ) : (
+                      <span className="text-caption text-text-secondary">
+                        {!city || !ward ? "Nhập địa chỉ để tính phí" : "Đang tính…"}
+                      </span>
+                    )}
+                  </span>
+                </span>
+              </button>
+            );
+          })}
         </div>
+        {expressBlocked && (
+          <p role="alert" className="rounded-sm border border-warning bg-warning/10 p-3 text-caption text-text-primary">
+            ⚡ Hoả tốc chỉ áp dụng nội thành TP.HCM — địa chỉ của bạn ở {city}, đơn sẽ được giao thường. Vui lòng chọn lại hoặc đổi địa chỉ.
+          </p>
+        )}
+        <p className="border border-border border-t-0 px-4 py-2.5 text-caption text-text-muted">
+          Phí ship tính theo địa chỉ giao hàng và khối lượng đơn — mức bạn thấy là mức bạn trả, shop không thu thêm.
+        </p>
       </form>
 
       <aside className="lg:col-span-5">

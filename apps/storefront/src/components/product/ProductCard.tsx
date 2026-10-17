@@ -20,18 +20,21 @@ export type ProductCardData = {
   variants: { id: string; color: string; size: string; price: number; original_price: number | null; stock: number }[];
   reviewCount: number;
   ratingAverage: number;
+  shopeeSoldCount: number;
+  giftLabel: string | null;
 };
 
 // DESIGN.md §4 product card (client reference 2026-10-12): borderless, rounded 3:4 image on
 // bg-secondary with hover zoom, sale / sold-out badge top-right, heart + quick-add buttons bottom-right,
-// colour dots, name, dual price, rating. Sold out (every variant at 0, ARCHITECTURE.md §3) replaces
-// the sale badge and drops the cart button. The rating shows from an average of 3 up (owner,
+// colour dots, name, dual price, rating + express badge. Sold out (every variant at 0,
+// ARCHITECTURE.md §3) replaces the sale badge and drops the cart button. The rating defaults
+// to 5 stars (owner, 2026-10-17); real reviews take over from an average of 3 up (owner,
 // 2026-10-12). A dot swaps the photo to that colour's first one; a colour without an admin-picked
 // hex shows its name instead. `eager`: above-the-fold cards, so the LCP image isn't lazy-loaded.
 // The buttons and dots sit beside the links, not inside them (a button inside <a> is invalid HTML);
 // the image link is a mouse/touch shortcut only, the text link is the one in the tab order.
 export function ProductCard({ product, eager = false }: { product: ProductCardData; eager?: boolean }) {
-  const { id, name, slug, imageUrl, imageColor, price, originalPrice, soldOut, colors, variants, reviewCount, ratingAverage } = product;
+  const { id, name, slug, imageUrl, imageColor, price, originalPrice, soldOut, colors, variants, reviewCount, ratingAverage, shopeeSoldCount, giftLabel } = product;
   const [color, setColor] = useState(() => (colors.some((c) => c.name === imageColor) ? imageColor : null));
   const onSale = originalPrice !== null && originalPrice > price;
   // Scarcity cue (Chuột Trắng-style): any size down to its last few units.
@@ -124,14 +127,40 @@ export function ProductCard({ product, eager = false }: { product: ProductCardDa
           <span className={`text-[17px] font-bold tracking-[0.01em] ${onSale ? "text-accent" : "text-text-primary"}`}>{formatVnd(price)}</span>
           {onSale && <s className="text-[13px] text-text-muted">{formatVnd(originalPrice)}</s>}
         </p>
-        {reviewCount > 0 && ratingAverage >= 3 && (
-          <p className="flex w-fit items-center gap-1 rounded-sm border border-warning px-1.5 py-0.5 text-caption text-text-secondary">
-            <span aria-hidden className="text-warning">★</span>
-            <span className="text-text-primary">{ratingAverage.toFixed(1).replace(".", ",")}</span>
-            <span>({reviewCount})</span>
-            <span className="sr-only">điểm trung bình, {reviewCount} đánh giá</span>
-          </p>
-        )}
+        {(() => {
+          // Default 5 stars (owner 2026-10-17); real reviews take over when they exist.
+          // Sold count comes from the Shopee shop (manual field, no Shopee API).
+          const hasReal = reviewCount > 0 && ratingAverage >= 3;
+          const shown = hasReal ? ratingAverage : 5;
+          return (
+            <>
+              <p className="flex w-fit flex-wrap items-center gap-1.5">
+                <span className="flex items-center gap-1 rounded-sm border border-warning px-1.5 py-0.5 text-caption">
+                  <span aria-hidden className="text-warning">★</span>
+                  <span className="text-text-primary">{shown.toFixed(1)}</span>
+                  {hasReal && <span className="text-text-secondary">({reviewCount})</span>}
+                  <span className="sr-only">
+                    {hasReal ? `điểm trung bình, ${reviewCount} đánh giá` : "đánh giá 5 sao"}
+                  </span>
+                </span>
+                {shopeeSoldCount > 0 && (
+                  <span className="text-caption text-text-secondary">Đã bán {shopeeSoldCount}</span>
+                )}
+              </p>
+              <p className="flex w-fit flex-wrap items-center gap-1.5">
+                <span className="flex items-center gap-1 rounded-sm bg-accent/10 px-1.5 py-0.5 text-caption font-medium text-accent">
+                  <span aria-hidden>⚡</span>Hoả tốc HCM
+                </span>
+                {giftLabel && (
+                  <span className="flex items-center gap-1 rounded-sm bg-accent/10 px-1.5 py-0.5 text-caption font-medium text-accent">
+                    <span aria-hidden>🎁</span>
+                    {giftLabel}
+                  </span>
+                )}
+              </p>
+            </>
+          );
+        })()}
       </Link>
     </div>
   );

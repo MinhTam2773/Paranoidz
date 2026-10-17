@@ -115,4 +115,50 @@
     letter-spacing: -0.02em;
     font-weight: 800;
   }
+
+  /* Rich product description (2026-10-17): small safe HTML subset —
+     images + basic formatting, sanitized server-side. */
+  .desc-rich img {
+    @apply my-4 w-full rounded-sm;
+  }
+  .desc-rich p {
+    @apply my-2;
+  }
+  .desc-rich ul {
+    @apply my-2 list-inside list-disc;
+  }
+  .desc-rich ol {
+    @apply my-2 list-inside list-decimal;
+  }
+  .desc-rich h3,
+  .desc-rich h4 {
+    @apply mt-4 font-bold;
+  }
+  /* Auto-formatted legacy descriptions (2026-10-17) */
+  .desc-rich .desc-lead {
+    @apply text-h3 font-bold uppercase;
+  }
+  .desc-rich .desc-points {
+    @apply my-2 list-none space-y-1;
+  }
+  .desc-rich .desc-points li {
+    @apply relative pl-5;
+  }
+  .desc-rich .desc-points li::before {
+    content: "–";
+    @apply absolute left-0 text-text-secondary;
+  }
+  .desc-rich .desc-sizes {
+    @apply my-2 list-none space-y-1;
+  }
+  .desc-rich .desc-sizes li {
+    @apply relative pl-5;
+  }
+  .desc-rich .desc-sizes li::before {
+    content: "•";
+    @apply absolute left-0 text-text-secondary;
+  }
+  .desc-rich .desc-tags {
+    @apply mt-4 text-caption text-text-muted;
+  }
 }
