@@ -78,12 +78,14 @@ before the order discount).
 
 ## UI (DASHBOARD_DESIGN.md §6.2 / §6.4)
 
-- `/orders`, top-right above the tabs: secondary (outline) **XUẤT EXCEL**. It opens an inline row (no
-  modal): **Từ ngày** / **Đến ngày** (native date inputs) + primary **TẢI FILE** ("Đang tạo…", disabled
-  while running) + a line "Theo tab đang xem: <tab> · tìm '<q>'" so the client knows the filters apply.
+- `/orders`, right end of the search row (§5 Data table: action top-right): secondary (outline)
+  **XUẤT EXCEL**. It opens an inline panel under the row (no modal): **Từ ngày** / **Đến ngày** (native
+  date inputs) + primary **TẢI FILE** ("Đang tạo…", disabled while running) + a line "Theo tab đang xem:
+  <tab> · tìm "<q>". File có số điện thoại và địa chỉ của khách: chỉ lưu trên máy của bạn." The panel
+  stays open across tab switches. On a narrow screen the button wraps to its own line.
   File: `Paranoidz_don-hang_<from>-<to>.xlsx` (e.g. `…_20261001-20261031.xlsx`). No orders →
   "Không có đơn nào trong khoảng này.", no file. From after To → "Ngày bắt đầu phải trước ngày kết thúc."
-- `/customers`, top-right: secondary **XUẤT EXCEL**, downloads at once ("Đang tạo…" while running).
+- `/customers`, right end of the search row: secondary **XUẤT EXCEL**, downloads at once ("Đang tạo…" while running).
   File: `Paranoidz_khach-hang_<YYYYMMDD-HHmm>.xlsx` (Vietnam time).
 - Errors: toast "Không thể xuất file. Vui lòng thử lại."
 - Nothing in the database changes; no confirmation step.

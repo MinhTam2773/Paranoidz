@@ -3,11 +3,12 @@ import { Suspense } from "react";
 import { createAdminClient } from "@paranoidz/db/admin";
 import { OrdersIcon } from "@/components/icons";
 import { AllCheckbox, BulkBar, BulkProvider, RowCheckbox } from "@/components/orders/BulkOrders";
+import { OrdersExport } from "@/components/orders/OrdersExport";
 import { pickupSlots } from "@/components/orders/SpxCard";
 import { Pagination } from "@/components/Pagination";
 import { StatusBadge } from "@/components/StatusBadge";
 import { requireAdmin } from "@/lib/auth";
-import { formatDateTime, formatPhone, formatVnd } from "@/lib/format";
+import { formatDateTime, formatPhone, formatVnd, vnDate } from "@/lib/format";
 import { isOrderStatus, STATUS_LABEL, type OrderStatus } from "@/lib/order-status";
 import { searchFilter } from "@/lib/order-search";
 
@@ -50,6 +51,7 @@ export default async function OrdersPage({ searchParams }: PageProps<"/orders">)
 
   const orders = data.map((o) => ({ ...o, items: o.order_items.reduce((n, i) => n + i.qty, 0) }));
   const pages = Math.ceil((count ?? 0) / PAGE_SIZE);
+  const today = vnDate();
   // Bulk SPX (DASHBOARD_DESIGN.md §6.2): create on Đã tiếp nhận, reprint on Đã tạo vận đơn.
   const bulk = status === "pending" ? "create" : status === "confirmed" ? "print" : null;
   const selectable = (o: (typeof orders)[number]) => bulk === "create" || (bulk === "print" && !!o.spx_tracking_no);
@@ -78,7 +80,8 @@ export default async function OrdersPage({ searchParams }: PageProps<"/orders">)
         </ul>
       </nav>
 
-      <form action="/orders" role="search" className="flex gap-2">
+      <div className="flex flex-wrap items-start gap-2">
+      <form action="/orders" role="search" className="flex min-w-64 flex-1 gap-2">
         {status && <input type="hidden" name="status" value={status} />}
         <input
           type="search"
@@ -96,6 +99,12 @@ export default async function OrdersPage({ searchParams }: PageProps<"/orders">)
           Tìm
         </button>
       </form>
+      <OrdersExport
+        status={status} q={q}
+        tabLabel={TABS.find((t) => t.status === status)!.label}
+        defaultFrom={`${today.slice(0, 8)}01`} defaultTo={today}
+      />
+      </div>
 
       {orders.length === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-sm border border-border bg-surface px-6 py-16 text-center text-text-secondary">

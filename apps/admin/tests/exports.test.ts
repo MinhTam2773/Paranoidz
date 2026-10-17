@@ -17,7 +17,7 @@ const order = (over: Partial<OrderRow> = {}): OrderRow => ({
   spx_tracking_no: null, user_id: null,
   order_items: [item("PDZ01-DEN-M", 1, 200_000), item("PDZ02-DEN-M", 1, 200_000)],
   order_status_history: [{ status: "pending", created_at: "2026-10-01T03:00:00Z" }],
-  voucher_uses: [],
+  voucher_uses: null,
   ...over,
 });
 
@@ -49,7 +49,7 @@ test("closed date, voucher label and account flag", () => {
         { status: "pending", created_at: "2026-10-01T03:00:00Z" },
         { status: "delivered", created_at: "2026-10-04T10:15:00Z" },
       ],
-      voucher_uses: [{ vouchers: { code: "AUTO-FIRST5", type: "auto_first5" } }],
+      voucher_uses: { vouchers: { code: "AUTO-FIRST5", type: "auto_first5" } },
     }),
   ]).orders;
   const v = row.map(value);
@@ -57,7 +57,7 @@ test("closed date, voucher label and account flag", () => {
   assert.equal((v[ORDER_HEADER.indexOf("Ngày giao / hủy")] as Date).toISOString(), "2026-10-04T17:15:00.000Z");
   assert.equal(v[ORDER_HEADER.indexOf("Mã giảm giá")], "5 ĐƠN ĐẦU");
   assert.equal(v[ORDER_HEADER.indexOf("Có tài khoản")], "Có");
-  const [, promo] = orderSheets([order({ voucher_uses: [{ vouchers: { code: "SALE10", type: "promo" } }] })]).orders;
+  const [, promo] = orderSheets([order({ voucher_uses: { vouchers: { code: "SALE10", type: "promo" } } })]).orders;
   assert.equal(value(promo[ORDER_HEADER.indexOf("Mã giảm giá")]), "SALE10");
 });
 

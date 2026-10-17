@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createAdminClient } from "@paranoidz/db/admin";
+import { CustomersExport } from "@/components/customers/CustomersExport";
 import { CustomersIcon } from "@/components/icons";
 import { Pagination } from "@/components/Pagination";
 import { requireAdmin } from "@/lib/auth";
@@ -59,7 +60,8 @@ export default async function CustomersPage({ searchParams }: PageProps<"/custom
 
   return (
     <div className="flex flex-col gap-4">
-      <form action="/customers" role="search" className="flex gap-2">
+      <div className="flex flex-wrap items-start gap-2">
+      <form action="/customers" role="search" className="flex min-w-64 flex-1 gap-2">
         <input
           type="search" name="q" defaultValue={q} maxLength={100}
           aria-label="Tìm theo tên hoặc số điện thoại" placeholder="Tên hoặc số điện thoại"
@@ -69,6 +71,8 @@ export default async function CustomersPage({ searchParams }: PageProps<"/custom
           Tìm
         </button>
       </form>
+      <CustomersExport q={q} />
+      </div>
 
       {rows.length === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-sm border border-border bg-surface px-6 py-16 text-center text-text-secondary">

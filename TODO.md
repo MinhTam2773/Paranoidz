@@ -29,8 +29,8 @@ Spec: `docs/superpowers/specs/2026-10-17-orders-customers-excel-export-design.md
 
 - [x] Row builders + paging helper (`apps/admin/src/lib/exports/`) with `node:test` unit tests
 - [x] Server actions: orders (date range + tab + search) and customers (all / search), `requireAdmin()` first
-- [ ] XUẤT EXCEL on `/orders` (inline Từ ngày / Đến ngày + TẢI FILE) and `/customers` (direct download)
-- [ ] Playwright admin case A14 (orders file + customers file)
+- [x] XUẤT EXCEL on `/orders` (inline Từ ngày / Đến ngày + TẢI FILE) and `/customers` (direct download)
+- [x] Playwright admin case A14 (orders file + customers file)
 - [ ] Verify: admin unit tests, `next build`, e2e A14, both pages at 375px / 1280px, files opened by hand
 - [ ] Send the spec's client questions to aT (owner)
 
