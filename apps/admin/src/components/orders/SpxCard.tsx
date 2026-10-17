@@ -12,6 +12,7 @@ type Order = {
   city: string;
   ward: string | null;
   shipping_fee: number;
+  delivery_method: string | null;
   spx_tracking_no: string | null;
   spx_ward: string | null;
   spx_fee: number | null;
@@ -20,7 +21,16 @@ type Order = {
 
 // Body of the "Vận chuyển SPX" card (DASHBOARD_DESIGN.md §6.2). Rendered under <Suspense>:
 // an order without a shipment waits for SPX's pickup slots. Creating the shipment confirms it.
+// Express (hoả tốc) orders are booked manually — SPX's own portal can't price express
+// either, so there is no API path; the shop books GrabExpress/Ahamove/SPX app by hand.
 export async function SpxCard({ order }: { order: Order }) {
+  if (order.delivery_method === "express" && !order.spx_tracking_no) {
+    return (
+      <p className="rounded-sm border border-warning bg-warning/10 p-3 text-caption text-text-primary">
+        ⚡ Đơn hoả tốc — SPX không hỗ trợ tạo đơn hoả tốc qua hệ thống (kể cả cổng SPX). Shop tự đặt GrabExpress / Ahamove / app SPX rồi cập nhật mã vận đơn vào ghi chú đơn hàng.
+      </p>
+    );
+  }
   if (order.spx_tracking_no) {
     return (
       <div className="flex flex-col gap-4">
