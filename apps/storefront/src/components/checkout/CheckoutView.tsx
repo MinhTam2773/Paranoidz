@@ -435,7 +435,7 @@ export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; acc
                   </span>
                   <span className="shrink-0 text-right">
                     {isExpress ? (
-                      <span className="text-caption text-text-secondary">Shop liên hệ<br />báo phí ship</span>
+                      <span className="text-caption text-text-secondary">Giao hàng gấp:<br />☎ 0903715249</span>
                     ) : shippingKnown ? (
                       <>
                         <span className="block text-price">{formatVnd(shippingFee)}</span>

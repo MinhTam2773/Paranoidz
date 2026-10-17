@@ -5,6 +5,7 @@ import { createPublicClient } from "@paranoidz/db/public";
 import { Breadcrumb } from "@/components/layout/Breadcrumb";
 import { BundleOffers, getBundleOffers } from "@/components/product/BundleOffers";
 import { ProductView } from "@/components/product/ProductView";
+import { RecentlyViewed } from "@/components/product/RecentlyViewed";
 import { ReviewSection, type ReviewData } from "@/components/product/ReviewSection";
 import { SizeGuide, isSizeGuide } from "@/components/product/SizeGuide";
 import { renderDescription } from "@/lib/sanitize-description";
@@ -124,6 +125,9 @@ export default async function ProductPage({ params }: PageProps<"/products/[slug
         reviews={<ReviewSection productId={product.id} slug={slug} reviews={reviews} />}
         reviewCount={reviews.length}
       />
+      <div className="mt-16">
+        <RecentlyViewed excludeId={product.id} />
+      </div>
     </div>
   );
 }

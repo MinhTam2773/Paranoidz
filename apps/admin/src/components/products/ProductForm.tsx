@@ -224,8 +224,8 @@ function ProductForm({ initial, categories, setNotice, onSaved }: {
           <Field id="shopeeSoldCount" label="Lượt bán Shopee" hint="Số lượt bán trên Shopee, hiện trên card dạng &quot;Đã bán X&quot;. Shopee không cho đồng bộ tự động nên nhập tay.">
             <input id="shopeeSoldCount" type="number" min={0} step={1} value={form.shopeeSoldCount} onChange={(e) => set("shopeeSoldCount", Math.max(0, Math.floor(Number(e.target.value) || 0)))} className={input} />
           </Field>
-          <Field id="giftLabel" label="Quà tặng kèm" hint='Hiện badge "🎁 ..." trên card, ví dụ "Tặng vớ". Để trống nếu không có. Quà do shop tự bỏ vào đơn khi đóng gói.'>
-            <input id="giftLabel" value={form.giftLabel} onChange={(e) => set("giftLabel", e.target.value)} maxLength={40} placeholder="Tặng vớ" className={input} />
+          <Field id="giftLabel" label="Quà tặng kèm" hint='Hiện badge "🎁 ..." trên card, ví dụ "Quà tặng kèm". Để trống nếu không có. Quà do shop tự bỏ vào đơn khi đóng gói.'>
+            <input id="giftLabel" value={form.giftLabel} onChange={(e) => set("giftLabel", e.target.value)} maxLength={40} placeholder="Quà tặng kèm" className={input} />
           </Field>
         </div>
       </section>

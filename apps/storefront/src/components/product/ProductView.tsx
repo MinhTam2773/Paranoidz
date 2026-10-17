@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { formatVnd } from "@/lib/format";
 import { CashIcon, PhoneIcon, ReturnIcon, TruckIcon } from "@/components/layout/icons";
 import { ColorOptions } from "./ColorOptions";
@@ -14,6 +14,7 @@ import {
   setDeliveryMethod,
   type DeliveryMethod,
 } from "@/lib/delivery-method";
+import { recordView } from "@/lib/recently-viewed";
 
 export type ProductVariant = {
   id: string;
@@ -77,6 +78,11 @@ export function ProductView({
     hex: variants.find((v) => v.color === name && v.color_hex)?.color_hex ?? null,
   }));
   const soldOut = variants.every((v) => v.stock === 0);
+
+  // Record this view for the "recently viewed" rail (localStorage, no account needed).
+  useEffect(() => {
+    recordView(productId);
+  }, [productId]);
 
   const [color, setColor] = useState(() => (variants.find((v) => v.stock > 0) ?? variants[0])?.color ?? null);
   const [size, setSize] = useState(() => (color ? defaultSize(variants, color) : null));

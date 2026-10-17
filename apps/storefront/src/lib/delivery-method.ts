@@ -14,7 +14,7 @@ export const DELIVERY_METHODS: { value: DeliveryMethod; label: string; sub: stri
   {
     value: "express",
     label: "⚡ Hoả tốc nội thành HCM",
-    sub: "Nhận trong ngày · shop liên hệ báo phí ship",
+    sub: "Giao hàng gấp — gọi 0903715249",
   },
 ];
 
