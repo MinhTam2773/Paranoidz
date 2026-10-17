@@ -8,6 +8,12 @@ import { ColorOptions } from "./ColorOptions";
 import { ProductTabs } from "./ProductTabs";
 import { PurchaseActions } from "./PurchaseActions";
 import { WishlistButton } from "./WishlistButton";
+import {
+  DELIVERY_METHODS,
+  getDeliveryMethod,
+  setDeliveryMethod,
+  type DeliveryMethod,
+} from "@/lib/delivery-method";
 
 export type ProductVariant = {
   id: string;
@@ -75,6 +81,12 @@ export function ProductView({
   const [color, setColor] = useState(() => (variants.find((v) => v.stock > 0) ?? variants[0])?.color ?? null);
   const [size, setSize] = useState(() => (color ? defaultSize(variants, color) : null));
   const [activeImage, setActiveImage] = useState(0);
+  // Delivery method picked here carries into checkout (localStorage).
+  const [deliveryMethod, setDeliveryMethodState] = useState<DeliveryMethod>(() => getDeliveryMethod());
+  const pickDelivery = (m: DeliveryMethod) => {
+    setDeliveryMethodState(m);
+    setDeliveryMethod(m);
+  };
   const tabs = [
     ...(details ? [{ id: "details", label: "Chi tiết sản phẩm", content: details }] : []),
     ...(sizeGuide ? [{ id: "size-guide", label: "Bảng size", content: sizeGuide }] : []),
@@ -201,6 +213,42 @@ export function ProductView({
                   Chỉ còn {selected.stock} sản phẩm
                 </p>
               )}
+            </div>
+
+            {/* Delivery method: customer picks standard or HCMC express here; the choice
+                carries into checkout via localStorage. */}
+            <div role="radiogroup" aria-labelledby="delivery-label" className="flex flex-col gap-3">
+              <p id="delivery-label" className="text-nav uppercase">Phương thức giao hàng</p>
+              <div className="flex flex-col gap-2">
+                {DELIVERY_METHODS.map((m) => {
+                  const active = deliveryMethod === m.value;
+                  return (
+                    <button
+                      key={m.value}
+                      type="button"
+                      role="radio"
+                      aria-checked={active}
+                      onClick={() => pickDelivery(m.value)}
+                      className={`flex items-center gap-3 rounded-sm border p-3 text-left transition-colors duration-200 ${
+                        active ? "border-text-primary bg-bg-secondary" : "border-border hover:border-border-hover"
+                      }`}
+                    >
+                      <span
+                        aria-hidden
+                        className={`flex size-5 shrink-0 items-center justify-center rounded-full border-2 transition-colors duration-200 ${
+                          active ? "border-accent" : "border-border"
+                        }`}
+                      >
+                        {active && <span className="size-2.5 rounded-full bg-accent" />}
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block text-caption font-semibold uppercase tracking-[0.04em] text-text-primary">{m.label}</span>
+                        <span className="block text-caption text-text-secondary">{m.sub}</span>
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             <PurchaseActions

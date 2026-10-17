@@ -23,7 +23,7 @@ export default async function OrderDetailPage({ params }: PageProps<"/orders/[nu
     .from("orders")
     // One literal: supabase-js infers the row type from it.
     .select(
-      "id, order_number, status, created_at, recipient_name, phone, secondary_phone, email, address, ward, district, city, note, subtotal, discount, shipping_fee, total, applied_bundles, spx_tracking_no, spx_ward, spx_fee, spx_created_at, order_items(id, name_snapshot, color_snapshot, size_snapshot, price_snapshot, image_snapshot, qty), order_status_history(id, status, note, created_at), voucher_uses(vouchers(code))",
+      "id, order_number, status, created_at, recipient_name, phone, secondary_phone, email, address, ward, district, city, note, subtotal, discount, shipping_fee, total, applied_bundles, delivery_method, spx_tracking_no, spx_ward, spx_fee, spx_created_at, order_items(id, name_snapshot, color_snapshot, size_snapshot, price_snapshot, image_snapshot, qty), order_status_history(id, status, note, created_at), voucher_uses(vouchers(code))",
     )
     .eq("order_number", number)
     .order("created_at", { referencedTable: "order_status_history" })
@@ -121,6 +121,12 @@ export default async function OrderDetailPage({ params }: PageProps<"/orders/[nu
                 </div>
               )}
               <div className="flex justify-between gap-4"><dt className="text-text-secondary">Phí vận chuyển</dt><dd>{formatVnd(order.shipping_fee)}</dd></div>
+              <div className="flex justify-between gap-4">
+                <dt className="text-text-secondary">Phương thức giao hàng</dt>
+                <dd className={order.delivery_method === "express" ? "font-semibold text-accent" : ""}>
+                  {order.delivery_method === "express" ? "⚡ Hoả tốc (nội thành HCM)" : "Giao thường"}
+                </dd>
+              </div>
               <div className="flex justify-between gap-4 border-t border-border pt-3 font-semibold">
                 <dt>Tổng thu hộ (COD)</dt><dd>{formatVnd(order.total)}</dd>
               </div>

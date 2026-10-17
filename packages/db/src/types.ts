@@ -454,6 +454,7 @@ export type Database = {
           bigseller_restocked_at: string | null
           city: string
           created_at: string
+          delivery_method: string
           discount: number
           district: string | null
           email: string | null
@@ -483,6 +484,7 @@ export type Database = {
           bigseller_restocked_at?: string | null
           city: string
           created_at?: string
+          delivery_method?: string
           discount?: number
           district?: string | null
           email?: string | null
@@ -512,6 +514,7 @@ export type Database = {
           bigseller_restocked_at?: string | null
           city?: string
           created_at?: string
+          delivery_method?: string
           discount?: number
           district?: string | null
           email?: string | null

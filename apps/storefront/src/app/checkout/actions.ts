@@ -14,10 +14,11 @@ import { HOTLINE } from "@/lib/site";
 import { isSpxWard, spxWards } from "@/lib/wards";
 
 // addressId: the saved address the form was filled from, if untouched (links orders.address_id).
-export type CheckoutInput = { items: { variantId: string; qty: number }[]; addressId?: string } & CheckoutValues;
+// deliveryMethod: "standard" | "express", chosen on the product page / checkout (validated below).
+export type CheckoutInput = { items: { variantId: string; qty: number }[]; addressId?: string; deliveryMethod?: string } & CheckoutValues;
 
 export type CheckoutResult =
-  | { ok: true; order: { orderNumber: string; subtotal: number; discount: number; shippingFee: number; total: number; phone: string } }
+  | { ok: true; order: { orderNumber: string; subtotal: number; discount: number; shippingFee: number; total: number; phone: string; deliveryMethod: string } }
   | { ok: false; message?: string; fieldErrors?: FieldErrors };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -96,6 +97,12 @@ export async function placeOrder(input: CheckoutInput): Promise<CheckoutResult> 
 
   const [wardOk, subtotal] = await Promise.all([isSpxWard(f.city, f.ward), subtotalOf(items)]);
   if (!wardOk) return { ok: false, fieldErrors: { ward: "Chọn phường / xã trong danh sách." } };
+  // Delivery method: only "express" is special; anything else falls back to standard.
+  // Express is HCMC-only — enforced here too because the browser is untrusted.
+  const deliveryMethod = input?.deliveryMethod === "express" ? "express" : "standard";
+  if (deliveryMethod === "express" && f.city !== "TP. Hồ Chí Minh") {
+    return { ok: false, message: "⚡ Hoả tốc chỉ áp dụng nội thành TP.HCM. Vui lòng chọn giao thường." };
+  }
   const shipping = await quoteShipping(f.city, f.ward, unitsOf(items), subtotal);
   if (!shipping) return explain("SHIPPING_UNAVAILABLE");
 
@@ -121,6 +128,16 @@ export async function placeOrder(input: CheckoutInput): Promise<CheckoutResult> 
     return explain(error.message);
   }
 
+  // Delivery method isn't a place_order() param (that function is frozen); set it directly.
+  // place_order() already validated everything else, so this is just a label for fulfillment.
+  if (deliveryMethod === "express") {
+    const { error: dmError } = await admin
+      .from("orders")
+      .update({ delivery_method: "express" })
+      .eq("id", (data as { order_id: string }).order_id);
+    if (dmError) console.error("delivery_method update failed", dmError);
+  }
+
   const order = data as { order_id: string; order_number: string; subtotal: number; discount: number; shipping_fee: number; total: number };
 
   // Stock changed: refresh the ISR catalog + the ordered products now rather than within 60s.
@@ -141,6 +158,7 @@ export async function placeOrder(input: CheckoutInput): Promise<CheckoutResult> 
       shippingFee: order.shipping_fee,
       total: order.total,
       phone: normalizePhone(f.phone)!,
+      deliveryMethod,
     },
   };
 }
