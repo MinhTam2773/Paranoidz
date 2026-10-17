@@ -65,6 +65,25 @@ export default async function HomePage() {
           })),
         }))
       : onSale;
+  // Flash sale shows only 4 random products per window — seeded by the window
+  // timestamp so the picks stay stable for the whole window instead of
+  // reshuffling on every render.
+  const flashSeed = flashState ? (flashState.active ? flashState.endsAt : flashState.nextStartsAt) : 0;
+  const flashCardsShown = (() => {
+    const arr = [...flashCards];
+    let s = (flashSeed >>> 0) || 1;
+    const rand = () => {
+      s ^= s << 13;
+      s ^= s >>> 17;
+      s ^= s << 5;
+      return (s >>> 0) / 4294967296;
+    };
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(rand() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr.slice(0, 4);
+  })();
   const categoryRows = categories
     .data!.map((c) => ({
       name: c.name,
@@ -125,7 +144,7 @@ export default async function HomePage() {
           ]}
         />
 
-        {flashState && <FlashSale state={flashState} cards={flashCards} />}
+        {flashState && <FlashSale state={flashState} cards={flashCardsShown} />}
 
         {categoryRows.map((row, i) => (
           <RowSection key={row.name} index={String(i + 2).padStart(2, "0")} title={row.name} href="/products">
