@@ -35,10 +35,8 @@ Read this first (CLAUDE.md §7), update it last. It stays short on purpose; the 
 3. [ ] **Discount stacking "like Shopee".** The client wants stacking (answer 2026-10-17): the final item price on product pages (flash sale included), and the customer picks promo code / combo at checkout. Owner + Claude to write the exact rules (ARCHITECTURE.md §5 "Discount stacking"), then a smoke case. The checkout voucher picker is storefront UI (client).
 4. [ ] **Free socks with clothing** (decided 2026-10-17, ARCHITECTURE.md §5): one random-colour pair per order with ≥ 1 clothing item. Needs a design: how `place_order()` adds the gift line and takes it from stock.
 5. [ ] **Loyalty program proposal.** The client wants it counted by money spent and game-like ("buy more, get more"), and asked Claude to propose one (ARCHITECTURE.md §8.4). Replaces the earlier gift-pool questions.
-6. [ ] **Delivery method saved inside `place_order()`** (RED, 2026-10-17): today the storefront writes `orders.delivery_method` in a second UPDATE after the order is created, so an express order can end up `standard`. Being moved into `place_order()` (new migration, smoke case); waits on the owner's RED review before push.
-7. [ ] **Remove the `html, body` overflow clip** (PR #22): S13 can catch mobile overflow again.
-8. [ ] **Publish Google + Facebook login** (client: yes, 2026-10-17). Steps in `docs/BACKLOG.md` → Features.
-9. [ ] **A2 (admin order lifecycle) is flaky in CI.** It passes on retry. Not looked at yet.
+6. [ ] **Publish Google + Facebook login** (client: yes, 2026-10-17). Steps in `docs/BACKLOG.md` → Features.
+7. [ ] **A2 (admin order lifecycle) is flaky in CI.** It passes on retry. Not looked at yet.
 
 ## Waiting on the client / owner
 
@@ -64,5 +62,6 @@ ARCHITECTURE.md §8.4 / §8.5 (loyalty): waits on the proposal in Now #5. §8.3 
 
 ## Last session
 
+- 2026-10-17: `place_order()` now saves the delivery method in the same INSERT (PR #23, migration `20261017000005`): owner's local smoke passed (case 21), CI green, migration on test then prod, anon still `42501` on both, merged. Overflow clip removed (PR #22).
 - 2026-10-17: audit of PRs #18–#21 and prod. #19 / #20 merged with CI red. For ~22 min after #19 a second `place_order()` (PUBLIC execute) was live. Checked afterwards: anon gets `42501` on `place_order` / `quote_order` / `order_discount`, and the only order since 2026-10-16 is PZ-2026-0662 (before that window). Recorded the client's answers (ARCHITECTURE.md §5 / §8, this file). Started the `master` protection rule (not saved: Now #2).
 - 2026-10-17: DESIGN.md rewritten from the live storefront; Excel export built (PR #18); found prod charging SPX test-host fees.
