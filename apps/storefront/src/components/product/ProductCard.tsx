@@ -135,7 +135,9 @@ export function ProductCard({ product, eager = false }: { product: ProductCardDa
           return (
             <>
               <p className="flex w-fit flex-wrap items-center gap-1.5">
-                <span className="flex items-center gap-1 rounded-sm border border-warning px-1.5 py-0.5 text-caption">
+                {/* relative: contains the absolutely-positioned sr-only text (S13 2026-10-17:
+                    without it, the sr-only sat at x=377px, widening the page to 378px). */}
+                <span className="relative flex items-center gap-1 rounded-sm border border-warning px-1.5 py-0.5 text-caption">
                   <span aria-hidden className="text-warning">★</span>
                   <span className="text-text-primary">{shown.toFixed(1)}</span>
                   {hasReal && <span className="text-text-secondary">({reviewCount})</span>}

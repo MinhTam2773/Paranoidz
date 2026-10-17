@@ -101,6 +101,13 @@
 }
 
 @layer base {
+  html,
+  body {
+    /* S13 (2026-10-17): clip stray horizontal overflow instead of letting the
+       page scroll sideways. `clip` (not `hidden`) keeps `position: sticky`
+       working on the header. */
+    overflow-x: clip;
+  }
   body {
     @apply bg-bg-primary font-sans text-body text-text-primary;
   }
