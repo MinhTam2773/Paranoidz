@@ -1,6 +1,6 @@
 # Orders + customers Excel export: design
 
-Date: 2026-10-17 · Status: agreed with the owner, not built. Client questions open (end of file).
+Date: 2026-10-17 · Status: built and verified on branch `claude/modest-visvesvaraya-c77e68` (not merged). Client questions open (end of file).
 
 The client (2026-10-14) wants an Excel copy of orders and customers **for his own records**: invoices,
 after-sales, returns / refunds ("xuất hoá đơn hoặc đơn hậu mãi, trả hàng hoàn hàng"). It is never

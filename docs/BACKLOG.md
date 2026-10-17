@@ -7,7 +7,6 @@ Pick from TODO.md → "Now" first. Starting an item: move it to TODO.md → "Now
 ## Features — admin (DASHBOARD_DESIGN.md §6)
 
 - [ ] Gift pool (+ empty-pool banner for pending awards) — `/gift-pool` is already in the sidebar ("Kho quà tặng") and 404s until built. Marking awards fulfilled waits on ARCHITECTURE.md §8.4.
-- [ ] **Export orders + customers to Excel, for the client's own records** (client, 2026-10-14). Scoped 2026-10-17: spec `docs/superpowers/specs/2026-10-17-orders-customers-excel-export-design.md` (two files from `/orders` and `/customers`, date range + current tab, full personal data, server-side only). DASHBOARD_DESIGN.md §7 and ARCHITECTURE.md §2.2 / §9 now carry the exception. Ready to build; the spec's client questions (invoice software template, company invoices, columns, returns after delivery) can adjust columns but don't block it.
 - [ ] Shipping rates editor (`shipping_rates` / `shipping_provinces`) — only if SPX changes prices often; until then update the rows by migration. Lower priority since checkout uses SPX's live fee (the table is only the fallback).
 
 ## Features — storefront / auth

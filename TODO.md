@@ -23,17 +23,6 @@ Read this first (CLAUDE.md §7), update it last. It stays short on purpose; the 
 - **CI:** GitHub Actions on a fresh local Supabase. It runs admin + db unit tests, `smoke`, `smoke:inventory` and Playwright e2e (S1–S13, A1–A13). Green on `master`. `master` isn't protected.
 - **Who commits:** the developer (`MinhTam2773`, with Claude) and the client **Tủn** (`tuanthanh971`), who sends storefront PRs directly (commit messages in Vietnamese without diacritics). Check `git log` for their work. It doesn't always reach this file.
 
-## In progress: orders + customers Excel export (branch `claude/modest-visvesvaraya-c77e68`)
-
-Spec: `docs/superpowers/specs/2026-10-17-orders-customers-excel-export-design.md`. No migration.
-
-- [x] Row builders + paging helper (`apps/admin/src/lib/exports/`) with `node:test` unit tests
-- [x] Server actions: orders (date range + tab + search) and customers (all / search), `requireAdmin()` first
-- [x] XUẤT EXCEL on `/orders` (inline Từ ngày / Đến ngày + TẢI FILE) and `/customers` (direct download)
-- [x] Playwright admin case A14 (orders file + customers file)
-- [ ] Verify: admin unit tests, `next build`, e2e A14, both pages at 375px / 1280px, files opened by hand
-- [ ] Send the spec's client questions to aT (owner)
-
 ## Now (in order)
 
 1. [ ] **URGENT: production runs on SPX's *test* keys** (owner, 2026-10-17: prod keys not received from SPX yet). Seen on paranoidz.vn 2026-10-17: checkout for 1 tee to Hà Nội / Phường Ba Đình shows **"₫21 · Giá trực tiếp từ SPX"**, total ₫125.121. That's the test host's fake fee. `quoteShipping()` only rejects fees *above* 3 × table, and `place_order()` accepts anything from 0 to 3 × table, so a real order would be charged ₫21. TẠO ĐƠN SPX in the prod admin would create the shipment on SPX's test system: a fake tracking number and no real pickup. To do: (a) check prod orders for `shipping_fee` < ₫1.000 or a test-host tracking number; (b) stop using the test keys in Production (remove `SPX_*` from both Vercel projects' Production + redeploy, so checkout uses the table and shipments go on spx.vn by hand until the prod keys arrive); (c) code guard: a lower bound in `quoteShipping()` too (SPX fee < table ÷ 3 → table), and refuse a `test-stable` host when `VERCEL_ENV=production`. Then, once SPX sends prod keys: register `https://paranoidz.vn/api/spx/webhook` with SPX, watch one real order move by itself, and compare the first real SPX quotes with the table.
@@ -42,6 +31,7 @@ Spec: `docs/superpowers/specs/2026-10-17-orders-customers-excel-export-design.md
 
 ## Waiting on the client / owner (dashboard or content, no code)
 
+- [ ] **Excel export (branch `claude/modest-visvesvaraya-c77e68`, not merged):** send aT the client questions at the end of `docs/superpowers/specs/2026-10-17-orders-customers-excel-export-design.md` (e-invoice template, company invoices, columns, returns after delivery). Before merging, open one downloaded file of each kind in Excel by hand (diacritics, leading 0 in phones, money columns sum) — only checked by `read-excel-file` so far. No migration.
 - [ ] **Ask the client: is the flash sale meant to stack?** PR #12 (`20261016000002_flash_sale_pricing.sql`) makes `order_discount()` add an extra 10% during 6 daily 1-hour windows (0 / 9 / 12 / 15 / 18 / 21 h VN), **on top of** the first-5 / promo code / combo discount. Everything else in ARCHITECTURE.md §5 is "best one wins, never stacked", and checkout copy says "không cộng dồn". Example: a first-5 customer in a window gets 10% + 10%. Once answered: record the rule in ARCHITECTURE.md §5, fix the checkout copy if needed, add a smoke case. Also ask whether they want to edit the windows from the admin (today: rows in Supabase).
 - [ ] **SPX production keys** (app-id / app-secret from SPX, then the client's account user-id / secret). Ask SPX to send them privately, not in a group chat. Then TODO "Now" #1.
 
@@ -66,4 +56,4 @@ ARCHITECTURE.md §8 items 3–7: voucher cap, loyalty gift notification + fulfil
 
 - 2026-10-16: TODO.md split into this file + `docs/BACKLOG.md` / `docs/DONE.md` / `docs/LESSONS.md`. Every item was re-checked against `master` `c6299b8`. Stale entries were dropped; entries for the client's PRs #6–#12 were added to DONE.md from their commits (not re-verified).
 - 2026-10-17: found prod checkout charging SPX test-host fees (₫21, Now #1). Owner decided the client's live design wins over DESIGN.md. Flash-sale stacking question parked for the client. CI on `3cd939a` failed once on a Google Fonts download during `next build` (Vercel built the same commit fine); re-ran it.
-- 2026-10-17: scoped the orders + customers Excel export with the owner (spec `docs/superpowers/specs/2026-10-17-orders-customers-excel-export-design.md`, docs exception added). Not built. Its client questions are at the end of the spec; send them to aT.
+- 2026-10-17: scoped and built the orders + customers Excel export (spec `docs/superpowers/specs/2026-10-17-orders-customers-excel-export-design.md`; DONE.md). On branch `claude/modest-visvesvaraya-c77e68`, not pushed. A2 failed once in the local admin e2e run and passed alone (Now #3).
