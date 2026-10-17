@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
-// DESIGN.md §4 promotion / category rows: a horizontal scroll-snap row of cards (2 visible on
+// DESIGN.md §4 promotion / category rows: a horizontal scroll row of cards (2 visible on
 // mobile, 3 on tablet, 4 on desktop) with one dot per screenful, shown only when the row overflows.
 // The ResizeObserver's first callback does the initial measure (no setState in the effect body).
 export function ProductRow({ label, children }: { label: string; children: ReactNode }) {
@@ -38,7 +38,10 @@ export function ProductRow({ label, children }: { label: string; children: React
       <div
         ref={ref}
         aria-label={label}
-        className="flex snap-x snap-mandatory gap-3 overflow-x-auto [scrollbar-width:none] sm:gap-4 *:shrink-0 *:snap-start *:basis-[calc((100%-12px)/2)] sm:*:basis-[calc((100%-32px)/3)] lg:*:basis-[calc((100%-48px)/4)]"
+        // S13 (2026-10-17): `scroll-snap-align` on the cards made mobile Chromium
+        // report the page 3px too wide (378px vs 375px viewport), failing the
+        // no-sideways-scroll test. Snap dropped; the row still scrolls freely.
+        className="flex gap-3 overflow-x-auto [scrollbar-width:none] sm:gap-4 *:shrink-0 *:basis-[calc((100%-12px)/2)] sm:*:basis-[calc((100%-32px)/3)] lg:*:basis-[calc((100%-48px)/4)]"
       >
         {children}
       </div>
