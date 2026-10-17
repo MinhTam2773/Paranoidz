@@ -136,8 +136,8 @@ export function ProductCard({ product, eager = false }: { product: ProductCardDa
             <>
               <p className="flex w-fit flex-wrap items-center gap-1.5">
                 <span className="flex items-center gap-1 rounded-sm border border-warning px-1.5 py-0.5 text-caption">
-                  <span aria-hidden className="text-warning">★★★★★</span>
-                  <span className="text-text-primary">{shown.toFixed(1).replace(".", ",")}</span>
+                  <span aria-hidden className="text-warning">★</span>
+                  <span className="text-text-primary">{shown.toFixed(1)}</span>
                   {hasReal && <span className="text-text-secondary">({reviewCount})</span>}
                   <span className="sr-only">
                     {hasReal ? `điểm trung bình, ${reviewCount} đánh giá` : "đánh giá 5 sao"}
