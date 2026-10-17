@@ -29,6 +29,7 @@ const PHONES = Array.from({ length: 9 }, (_, i) => `090000000${i + 1}`);
 const QUOTE_PHONE = "0900000010"; // case 17's promo order: no history from earlier cases
 const FEE_PHONE = "0900000011"; // case 19: up to 3 pending orders of its own
 const LOST_PHONE = "0900000012"; // case 20: refusal count from this case only
+const DELIVERY_PHONE = "0900000013"; // case 21: up to 2 pending orders of its own
 const AUTH_EMAILS = [1, 2, 3].map((i) => `smoke-auth-${i}@paranoidz.test`);
 
 let failures = 0;
@@ -67,7 +68,7 @@ const reviewUsers: string[] = [];
 
 async function placeOrder(
   items: { variant_id: string; qty: number }[],
-  opts: { phone?: string; voucher?: string; userId?: string; db?: Db; city?: string; shippingFee?: number; spxVoucher?: string } = {},
+  opts: { phone?: string; voucher?: string; userId?: string; db?: Db; city?: string; shippingFee?: number; spxVoucher?: string; deliveryMethod?: string } = {},
 ) {
   const res = await (opts.db ?? admin).rpc("place_order", {
     p_items: items,
@@ -79,6 +80,7 @@ async function placeOrder(
     p_user_id: opts.userId,
     p_shipping_fee: opts.shippingFee,
     p_spx_voucher: opts.spxVoucher,
+    p_delivery_method: opts.deliveryMethod,
   });
   if (res.data) createdOrders.push((res.data as Placed).order_id);
   return res as { data: Placed | null; error: { message: string } | null };
@@ -679,6 +681,31 @@ async function main() {
   check("delivery_failed with p_count_refusal false: stock restored, refusal_count unchanged",
     !lostError && refusalsAfter === refusalsBefore && lostStockAfter === lostStock,
     `err=${lostError?.message ?? "none"} refusals ${refusalsBefore}→${refusalsAfter} stock ${lostStock}→${lostStockAfter}`);
+
+  // 21. Delivery method is written by place_order() itself, validated before any stock change --------
+  const dmItems = [{ variant_id: pool[1].id, qty: 1 }];
+  const express = await placeOrder(dmItems, { phone: DELIVERY_PHONE, deliveryMethod: "express" });
+  const standard = await placeOrder(dmItems, { phone: DELIVERY_PHONE });
+  const { data: dmRows } = await admin.from("orders").select("id, delivery_method")
+    .in("id", [express.data?.order_id ?? "", standard.data?.order_id ?? ""]);
+  const dmOf = (id?: string) => dmRows?.find((r) => r.id === id)?.delivery_method;
+  check("delivery method: express is stored by the same insert; no argument → standard",
+    !express.error && !standard.error && dmOf(express.data?.order_id) === "express" && dmOf(standard.data?.order_id) === "standard",
+    `express=${express.error?.message ?? dmOf(express.data?.order_id)} default=${standard.error?.message ?? dmOf(standard.data?.order_id)}`);
+
+  const dmStock = (await variant(pool[1].id)).stock;
+  const badMethod = await placeOrder(dmItems, { phone: DELIVERY_PHONE, deliveryMethod: "drone" });
+  check("delivery method: unknown value → INVALID_DELIVERY_METHOD, stock unchanged",
+    badMethod.error?.message === "INVALID_DELIVERY_METHOD" && (await variant(pool[1].id)).stock === dmStock,
+    `err=${badMethod.error?.message} stock ${dmStock}→${(await variant(pool[1].id)).stock}`);
+
+  const anonMethod = await anon.rpc("place_order", {
+    p_items: dmItems, p_recipient_name: "Smoke Test", p_phone: DELIVERY_PHONE, p_address: "1 Test St",
+    p_city: "TP. Hồ Chí Minh", p_delivery_method: "express",
+  });
+  if (anonMethod.data) createdOrders.push((anonMethod.data as Placed).order_id); // only if the grant is wrong
+  check("delivery method: anon can't call the 16-param place_order (42501, no second overload)",
+    anonMethod.error?.code === "42501", `code=${anonMethod.error?.code} msg=${anonMethod.error?.message}`);
 }
 
 async function cleanup() {
@@ -695,7 +722,7 @@ async function cleanup() {
     await admin.from("product_variants").update({ stock: stock + qty }).eq("id", variant_id);
   }
   if (createdOrders.length) await admin.from("orders").delete().in("id", createdOrders);
-  await admin.from("customers").delete().in("phone", [...PHONES, QUOTE_PHONE, FEE_PHONE, LOST_PHONE]);
+  await admin.from("customers").delete().in("phone", [...PHONES, QUOTE_PHONE, FEE_PHONE, LOST_PHONE, DELIVERY_PHONE]);
   await admin.from("rate_limits").delete().in("bucket", PHONES.flatMap((p) => [`order:phone:${p}`, `lookup:phone:${p}`]));
   await admin.from("rate_limits").delete().or("bucket.like.order:ip:192.0.2.%,bucket.like.order:ip:2001:db8:%");
   await admin.from("vouchers").delete().in("code", [VOUCHER, BUNDLE_VOUCHER, QUOTE_VOUCHER]);

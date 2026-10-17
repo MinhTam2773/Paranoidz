@@ -1187,6 +1187,7 @@ export type Database = {
           p_address?: string
           p_address_id?: string
           p_city?: string
+          p_delivery_method?: string
           p_district?: string
           p_email?: string
           p_items: Json
