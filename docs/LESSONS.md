@@ -19,6 +19,8 @@ Sections: Workflow · Windows & shell · Supabase · Next.js / React / Tailwind 
 - **Two `next dev` servers can't share one app folder** ("Another next dev server is already running"). If another chat holds port 3000, verify on `storefront-prod` (build, then `preview_start`) instead of changing ports.
 - **The claude.ai Vercel connector needed the team scope granted** — first attempt 403'd on `minhtam2773s-projects` until reconnected. The claude.ai Supabase connector is signed into a different account (sees only "All Barber"), so it can't reach `rbuoirnnroauzdjwwfij`.
 
+- **`CREATE OR REPLACE FUNCTION` with a different parameter list creates a second function** (an overload), and a new function gets `EXECUTE` for `PUBLIC` by default (2026-10-17, PR #19 → #20). For ~22 min prod had a second `security definer` `place_order()` that anon could call directly, and the smoke test failed with "could not choose the best candidate function". When a function's signature changes: `drop function` the old signature in the same migration, then `revoke … from public, anon, authenticated` + `grant … to service_role` on the new one. Check afterwards as anon: the RPC must answer `42501 permission denied`.
+
 ## Windows & shell
 
 - **`supabase/.env.test.local` has CRLF line endings** (2026-10-14): `. file` in Git Bash keeps the `\r` in `TEST_DB_PASSWORD` → `db push --db-url` fails with "password authentication failed". Parse it with Node (strip `\r`, `encodeURIComponent`) instead. The file lives only in the main checkout, not in worktrees.

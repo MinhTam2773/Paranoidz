@@ -201,6 +201,15 @@ The client wants SPX's **live** price at checkout (SPX runs promotions, so a fix
   - **Manual final steps (2026-10-16).** `delivered` and `delivery_failed` are terminal, so a later callback can't fix a wrong click. On an order with an SPX tracking number, the admin's **Đánh dấu đã giao** / **Giao thất bại** first ask SPX (1.3 Track Order, `v1/order/batch_search_order`) and go ahead only if SPX already says 4001 (delivered) / 6001–6003 (returning / returned); otherwise, or if SPX can't be reached, the order stays as it is and the toast shows SPX's current status. Orders without an SPX shipment keep the plain buttons.
 - **One shipper per order.** Website orders get SPX shipments only from our admin; BigSeller keeps handling Shopee / TikTok orders. Never both for the same order.
 
+### Discount stacking — under review (2026-10-17)
+- **What the code does today:** first-5 vs promo code vs combo → the best one wins (above). The **flash sale** (client, PRs #12 / #19: `flash_sale_windows` + `flash_sale_picks()`, 4 picked products per daily window) takes an extra % off those products' lines **on top of** that winner, inside `order_discount()`.
+- **Client's wish (2026-10-17):** discounts stack "like Shopee": the price shown on the homepage / product pages is the final item price (flash sale already in it), and the customer picks the promo code / combo themselves at checkout. Exact rules (which ones combine, which are one per order) are not decided yet; until they are, don't change `order_discount()` again.
+- **Promo code format (client):** codes like `pdz000001`–`pdz009999` (to confirm: one batch of unique single-use codes?).
+
+### Free socks with clothing — decided 2026-10-17 (client)
+- Every order with at least one clothing item (tee, polo, any higher-priced garment — not socks) gets **one** pair of socks: the "Màu Ngẫu Nhiên" (random colour) SKU. One pair per order, however many shirts.
+- Not built yet: today only `products.gift_label` exists (a badge typed by hand). The gift must come out of stock like any variant (inside `place_order()`), so it also shows in the BigSeller export.
+
 ### Loyalty program
 - Counter = lifetime `customers.delivered_count` for the order's **phone**. Never resets.
 - Gift triggered at every multiple of 10 (10, 20, 30, …) → row in `loyalty_awards`.
@@ -266,11 +275,11 @@ The client wants SPX's **live** price at checkout (SPX runs promotions, so a fix
 
 1. ~~Free shipping: all orders vs orders over ₫1.000.000~~ — **RESOLVED 2026-10-09: no free shipping; the customer pays SPX-rate shipping (§5).**
 2. ~~Guest checkout vs account required~~ — **RESOLVED 2026-09-26: guest checkout allowed, no account required.** Accounts stay optional (history, addresses, wishlist, reviews). The schema still assumes accounts (`orders.user_id not null`, `AUTH_REQUIRED`, voucher/loyalty/blacklist keyed on `profiles`); the guest-safe changes are listed under the Order form task in TODO.md and land with it.
-3. Voucher discount cap amount.
-4. Loyalty gift notification method + fulfillment method.
-5. Loyalty progress visibility on account page.
-6. Sanity CMS vs site_content table in admin (recommendation: drop Sanity).
-7. Announcement bar management (hardcoded for now).
+3. ~~Voucher discount cap amount~~ — **RESOLVED 2026-10-17 (client): no cap.** `AUTO-FIRST5` stays 10 % uncapped.
+4. Loyalty gift notification method + fulfillment method. **Direction changed 2026-10-17 (client):** count by money spent, not by number of orders (10 sock-only orders would cost the shop), and make it a game-like "buy more, get more" reward ladder. No design yet; Claude to propose one. The every-10-orders rule in §5 stays until then.
+5. Loyalty progress visibility on account page. Waits on the new design in item 4.
+6. ~~Sanity CMS vs site_content table in admin~~ — **RESOLVED 2026-10-17 (client): no CMS.** The client edits homepage banners and copy in the code himself (with his own coding agent).
+7. ~~Announcement bar management~~ — **RESOLVED 2026-10-17 (client): stays hardcoded**; the client edits it in the code himself.
 
 ## 9. Out of Scope
 

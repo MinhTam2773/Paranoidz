@@ -6,7 +6,7 @@ Pick from TODO.md → "Now" first. Starting an item: move it to TODO.md → "Now
 
 ## Features — admin (DASHBOARD_DESIGN.md §6)
 
-- [ ] Gift pool (+ empty-pool banner for pending awards) — `/gift-pool` is already in the sidebar ("Kho quà tặng") and 404s until built. Marking awards fulfilled waits on ARCHITECTURE.md §8.4.
+- [ ] _(On hold: the client wants a spend-based, game-like loyalty program instead, TODO Now #5 / ARCHITECTURE.md §8.4. Re-read this item once that design exists.)_ Gift pool (+ empty-pool banner for pending awards) — `/gift-pool` is already in the sidebar ("Kho quà tặng") and 404s until built. Marking awards fulfilled waits on ARCHITECTURE.md §8.4.
 - [ ] Shipping rates editor (`shipping_rates` / `shipping_provinces`) — only if SPX changes prices often; until then update the rows by migration. Lower priority since checkout uses SPX's live fee (the table is only the fallback).
 
 ## Features — storefront / auth
@@ -18,6 +18,7 @@ Pick from TODO.md → "Now" first. Starting an item: move it to TODO.md → "Now
 
 - [ ] Grab delivery option for HCMC orders (client, 2026-10-09). **2026-10-17 update:** the delivery-method choice now exists — radio "Giao thường / ⚡ Hoả tốc nội thành HCM" on the product page + checkout section 02 (client- and server-side block when the city isn't TP. Hồ Chí Minh), `orders.delivery_method` ('standard' / 'express'), admin manual-placement guide for express orders. Express pricing still open (flat / shop calls to quote / free — client to choose). Partner APIs: Ahamove registered, waiting on their reply; GrabExpress needs a partnership (~2–3 weeks); Xanh SM has no public API. SPX can't create express orders through the system (checkout shows ₫ -).
 - [ ] **BigSeller Open API — ask after the website is finished** (decided 2026-10-12). The client runs Shopee (2 shops) and TikTok Shop through BigSeller (Free plan, 3/3 stores). Until then, Shopee and the website keep **separate stock counts for the same shirts**, and the client has to adjust both by hand. Guides: `help.bigseller.com/vi/detailPage/…api-bigseller.9410` + `…website-tự-phát-triển.9424`. A website integration uses 2 APIs: `createManualOrder` (website → BigSeller; stock is held when the order is created and deducted when it ships) and `getInventoryListDetail` (website polls stock per SKU per warehouse; BigSeller warns the delay means overselling is still possible). Access: the client contacts BigSeller support → account-specific docs → build + test → pay by custom quote (no listed price, not part of any plan). The guides name no cancel API and no status callback, so ask about both, plus rate limits. It does **not** replace the SPX Open API: BigSeller has no shipping-fee quote, so live checkout prices still need SPX. BigSeller can create SPX shipments/labels itself (Settings → Third-party Logistics → SPX Express Vietnam, using the client's SPX user ID + secret key; not connected yet). Only one system may create SPX shipments: our admin or BigSeller, never both. Before building: make "BigSeller holds the real stock count" an ARCHITECTURE.md §8 decision, and BigSeller stock must reach Postgres through a function, never a raw UPDATE.
+- [ ] **Shopee Open API** (client, 2026-10-17): the client is applying for Shopee's API as an individual seller, to pull data from Shopee. Not waited on: the website's promo codes and combos stay separate from Shopee's. Plan an integration only once the client has the API access and says what he wants from it.
 
 ## Infra / CI
 
@@ -62,6 +63,10 @@ Pick from TODO.md → "Now" first. Starting an item: move it to TODO.md → "Now
 - **Header says LOGIN / REGISTER until hydration** for signed-in visitors (`AccountLink` reads the session client-side so the layout stays cookie-free and ISR keeps working).
 - **Feedback and collection pages fetch whole lists** (approach A: ISR + client-side tabs / sort / paging). Fine to a few hundred reviews / products per collection; past that, move to paged server queries.
 - **Collection sort / page aren't in the URL** — back from a product returns to page 1, default sort.
+- **`overflow-x: clip` on `html, body` hides sideways overflow** (`apps/storefront/src/app/globals.css`, PR #21). PR #21 also fixed the two real causes (scroll-snap in `ProductRow`, the sr-only text in the rating badge), so the clip is now only a mask. It makes S13 ("no sideways scroll at 375 px") pass even when something sticks out; the overflowing part is just cut off silently. Suggest to the client: remove the clip and let S13 catch regressions.
+- **"★ 5.0" shows on products with no reviews** (PR #19). The client's choice (Shopee-style); not a bug.
+- **The express note shows a second phone number, 0903715249** (`apps/storefront/src/lib/delivery-method.ts:17`), not the hotline 0345 267 709. The client's call.
+
 
 ### Admin
 
@@ -88,6 +93,10 @@ Pick from TODO.md → "Now" first. Starting an item: move it to TODO.md → "Now
 
 ### Pricing, security, rate limits
 
+- **Express orders pay the standard SPX fee** (PR #19). Express (HCMC only) is booked by hand on another service, so its real cost isn't charged to the customer. Price it before express gets real volume (client's call).
+- **`orders.delivery_method` is written by a second, service-role UPDATE after `place_order()`** (`apps/storefront/src/app/checkout/actions.ts:131-138`), not inside the function. If it fails, the order stays `standard` and only a log line says so. Move it into `place_order()` next time that function changes.
+- **The product-description sanitizer has no tests** (`apps/storefront/src/lib/sanitize-description.ts`, rendered with `dangerouslySetInnerHTML` in `products/[slug]/page.tsx:110`). Reviewed 2026-10-17: allowlist, output rebuilt from scratch, attributes re-quoted and escaped, `src` / `href` https-only. No bypass found. Keep it even though only the admin writes descriptions: the text partly comes from Shopee copy-paste, and an admin-session or service-key leak would otherwise become script on every product page. Add unit tests with known XSS payloads before anyone edits it.
+- **Phone numbers aren't verified (no OTP), by the client's choice** (2026-10-17: "càng ít phiền càng tốt"). The phone-related items (account phones here, review eligibility above) stay accepted risks.
 - **A promo code that can't be used still blocks the order even when a bundle would win** — `INVALID_VOUCHER` / `VOUCHER_ALREADY_USED` are raised before pricing. The customer removes the code and the bundle applies; the live checkout quote shows the code error before they order.
 - **Deleting an `auth.users` row hard-fails** once that user has ordered (`orders.user_id ... on delete restrict`). Intentional, to preserve order history — but there is no working "delete my account" path as a result.
 - **Rate limit trusts `x-real-ip` / `x-forwarded-for`** because Vercel overwrites them. If the storefront is ever served behind another proxy/CDN (Cloudflare etc.), those headers become client-controlled — switch to that proxy's trusted header (e.g. `cf-connecting-ip`) first. Limits are passed by each caller of `hitRateLimit()` (`checkout/actions.ts`: 5/phone, 10/IP; `order-lookup/actions.ts`: 10/phone, 20/IP per hour) — no migration needed to change them.

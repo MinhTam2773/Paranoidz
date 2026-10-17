@@ -8,52 +8,57 @@ Read this first (CLAUDE.md §7), update it last. It stays short on purpose; the 
 | `docs/LESSONS.md` | Tool / environment gotchas, by topic | Read the section for what you're about to touch (Supabase, SPX, browser pane, e2e…) |
 | `docs/DONE.md` | Every finished task with its verification notes | Grep it (`grep -n "SPX" docs/DONE.md`); don't read it whole (~150 KB) |
 
-**Last full review:** 2026-10-16, against `master` `c6299b8` (PRs #1–#17 all merged).
+**Last full review:** 2026-10-17, against `master` `14d668f` (PRs #1–#21 merged), plus the owner's chat with the client the same day.
 
 ---
 
 ## State of the world
 
-- **Live:** `paranoidz.vn` (storefront) and `admin.paranoidz.vn` (admin) on Vercel, functions in `sin1`. Vercel deploys `master` to production on merge → **push a PR's migrations to prod before merging it**.
-- **Databases:** prod `rbuoirnnroauzdjwwfij` (linked); test `paranoidz-test` `mnxbymkvectnvtcplrfj`. `apps/*/.env.local` point at **test**; prod values are in `apps/*/.env.prod.local`. Migrations go test → prod (workflow in `docs/LESSONS.md` § Supabase).
-- **Catalog:** 10 real products live on prod (pdz01–pdz08 tees / polos + 2 socks, imported from BigSeller 2026-10-12). No collections yet. Product names are still the long Shopee titles.
-- **Orders:** COD only. Admin creates the SPX shipment (one by one or in bulk), which also confirms a `pending` order; labels print from the admin; SPX's tracking webhook (`/api/spx/webhook`) moves orders to shipped / delivered / failed.
-- **Checkout price:** server-side `quote_order()` / `place_order()` (first-5 vs promo vs bundle, best wins) **+ a flash-sale discount on top** (client's PR #12) + SPX live shipping fee, with the `shipping_rates` table as a fallback. **Production runs on SPX test keys right now: see Now #1.**
+- **Live:** `paranoidz.vn` (storefront) and `admin.paranoidz.vn` (admin) on Vercel, functions in `sin1`. Vercel deploys `master` to production on merge, so **a PR's migrations must be on prod before it merges**.
+- **Databases:** prod `rbuoirnnroauzdjwwfij` (linked); test `paranoidz-test` `mnxbymkvectnvtcplrfj`. `apps/*/.env.local` point at **test**; prod values are in `apps/*/.env.prod.local`. All 31 repo migrations are on prod (checked 2026-10-17).
+- **Catalog:** 10 products live on prod (pdz01–pdz08 tees / polos + 2 socks). Descriptions are in. Names are still long, there are no size guides, colours mix English and Vietnamese, and no product has a category (prod only has the 4 English dev categories). There are no collections.
+- **Orders:** COD only. Admin creates the SPX shipment (one by one or in bulk), which also confirms a `pending` order; labels print from the admin; SPX's tracking webhook (`/api/spx/webhook`) moves orders along. Each order has a **delivery method** (standard / express "hoả tốc", PR #19). Express is HCMC only and booked by hand.
+- **Checkout price:** server-side `quote_order()` / `place_order()`. First-5 vs promo code vs combo → best wins, **then the flash sale stacks on top** for the window's 4 picked products (PR #19, `flash_sale_picks()`). Shipping: SPX live fee, `shipping_rates` table as fallback. **Production runs on SPX *test* keys** (owner's choice until SPX sends prod keys; see Now #1).
+- **Product cards (client's design):** "★ 5.0" shown when a product has no reviews (client's choice), Shopee sold count + gift badge (`products.shopee_sold_count`, `gift_label`, typed in the admin; empty on prod), "Hoả tốc HCM" badge.
 - **Messages:** order emails via Resend, new-order Zalo alert to the client, auth emails via Resend SMTP (templates still Supabase's defaults on prod, see "Waiting").
-- **CI:** GitHub Actions on a fresh local Supabase. It runs admin + db unit tests, `smoke`, `smoke:inventory` and Playwright e2e (S1–S13, A1–A13). Green on `master`. `master` isn't protected.
-- **Who commits:** the developer (`MinhTam2773`, with Claude) and the client **Tủn** (`tuanthanh971`), who sends storefront PRs directly (commit messages in Vietnamese without diacritics). Check `git log` for their work. It doesn't always reach this file.
+- **CI:** GitHub Actions on a fresh local Supabase: admin + db unit tests, `smoke`, `smoke:inventory`, Playwright e2e (S1–S13, A1–A13). Green on `14d668f`, but PRs #19 and #20 merged with CI red on 2026-10-17. Protecting `master` is in progress (Now #2).
+- **Who does what** (owner + client, 2026-10-17):
+  - **Storefront UI is the client's.** Tủn (`tuanthanh971`) builds it with his own GPT agent and sends PRs (commit messages in Vietnamese without diacritics).
+  - **The developer** (`MinhTam2773`, with Claude) does the database, server logic, admin, setup and reviews.
+  - **Merge rule:** all 4 PR checks green (CI `test` + the 3 Vercel checks), then the client may merge his own PR. His agent updates TODO.md for anything it changes.
+  - **Migrations:** the client's agent may apply them to the databases itself (owner's call, 2026-10-17). Check `supabase migration list --linked` after each of his merges.
 
 ## Now (in order)
 
-1. [ ] **URGENT: production runs on SPX's *test* keys** (owner, 2026-10-17: prod keys not received from SPX yet). Seen on paranoidz.vn 2026-10-17: checkout for 1 tee to Hà Nội / Phường Ba Đình shows **"₫21 · Giá trực tiếp từ SPX"**, total ₫125.121. That's the test host's fake fee. `quoteShipping()` only rejects fees *above* 3 × table, and `place_order()` accepts anything from 0 to 3 × table, so a real order would be charged ₫21. TẠO ĐƠN SPX in the prod admin would create the shipment on SPX's test system: a fake tracking number and no real pickup. To do: (a) check prod orders for `shipping_fee` < ₫1.000 or a test-host tracking number; (b) stop using the test keys in Production (remove `SPX_*` from both Vercel projects' Production + redeploy, so checkout uses the table and shipments go on spx.vn by hand until the prod keys arrive); (c) code guard: a lower bound in `quoteShipping()` too (SPX fee < table ÷ 3 → table), and refuse a `test-stable` host when `VERCEL_ENV=production`. Then, once SPX sends prod keys: register `https://paranoidz.vn/api/spx/webhook` with SPX, watch one real order move by itself, and compare the first real SPX quotes with the table.
-2. [ ] **A2 (admin order lifecycle) is flaky in CI.** It passes on retry. Not looked at yet.
+1. [ ] **SPX on test keys in production. Owner accepts this until SPX sends prod keys (2026-10-17).** Checkout charges SPX's fake test fee (₫21 to Hà Nội), and TẠO ĐƠN SPX in the prod admin creates the shipment on SPX's test system (no real pickup). One real order already went through like that: PZ-2026-0662 (2026-10-16, ₫21 shipping, cancelled). Until the keys arrive, ship real orders on spx.vn by hand. Optional code guard: a lower bound in `quoteShipping()` (SPX fee < table ÷ 3 → table). When the prod keys arrive: put them in both Vercel projects' Production, register `https://paranoidz.vn/api/spx/webhook` with SPX, watch one real order move by itself, compare the first real SPX quotes with the table.
+2. [ ] **Protect `master`.** Rule: require a PR (no approval needed) + the `test` check, admins may bypass (the client has `write`, so he can't). Started 2026-10-17 in GitHub settings but not saved; the owner finishes it: tick "Require status checks", add `test`, Create.
+3. [ ] **Discount stacking "like Shopee".** The client wants stacking (answer 2026-10-17): the final item price on product pages (flash sale included), and the customer picks promo code / combo at checkout. Owner + Claude to write the exact rules (ARCHITECTURE.md §5 "Discount stacking"), then a smoke case. The checkout voucher picker is storefront UI (client).
+4. [ ] **Free socks with clothing** (decided 2026-10-17, ARCHITECTURE.md §5): one random-colour pair per order with ≥ 1 clothing item. Needs a design: how `place_order()` adds the gift line and takes it from stock.
+5. [ ] **Loyalty program proposal.** The client wants it counted by money spent and game-like ("buy more, get more"), and asked Claude to propose one (ARCHITECTURE.md §8.4). Replaces the earlier gift-pool questions.
+6. [ ] **Publish Google + Facebook login** (client: yes, 2026-10-17). Steps in `docs/BACKLOG.md` → Features.
+7. [ ] **A2 (admin order lifecycle) is flaky in CI.** It passes on retry. Not looked at yet.
 
-## Waiting on the client / owner (dashboard or content, no code)
+## Waiting on the client / owner
 
-- [ ] **Excel export (branch `claude/modest-visvesvaraya-c77e68`, not merged):** send aT the client questions at the end of `docs/superpowers/specs/2026-10-17-orders-customers-excel-export-design.md` (e-invoice template, company invoices, columns, returns after delivery). Before merging, open one downloaded file of each kind in Excel by hand (diacritics, leading 0 in phones, money columns sum) — only checked by `read-excel-file` so far. No migration.
-- [ ] **Ask the client: is the flash sale meant to stack?** PR #12 (`20261016000002_flash_sale_pricing.sql`) makes `order_discount()` add an extra 10% during 6 daily 1-hour windows (0 / 9 / 12 / 15 / 18 / 21 h VN), **on top of** the first-5 / promo code / combo discount. Everything else in ARCHITECTURE.md §5 is "best one wins, never stacked", and checkout copy says "không cộng dồn". Example: a first-5 customer in a window gets 10% + 10%. Once answered: record the rule in ARCHITECTURE.md §5, fix the checkout copy if needed, add a smoke case. Also ask whether they want to edit the windows from the admin (today: rows in Supabase).
-- [ ] **SPX production keys** (app-id / app-secret from SPX, then the client's account user-id / secret). Ask SPX to send them privately, not in a group chat. Then TODO "Now" #1.
-
-- [ ] **Paste the auth email templates on prod.** In Authentication → Emails → Templates, for all 6: subject from `supabase/config.toml`'s `[auth.email.template.*]`, HTML from `supabase/templates/*.html`. Until then prod sends Supabase's default English emails, and the sign-up / reset links are the scanner-prone single-use ones (PR #17 only works with our templates). Then: do a real sign-up from a school / Outlook address, and remove ForgotPasswordForm's "Hãy mở liên kết trên trình duyệt này" line.
+- [ ] **Hide the "Outlet 2026" / "New collection" nav links** for now (client, 2026-10-17). Storefront UI, so Tủn's agent does it. Both 404 today.
+- [ ] **Categories:** the client is creating them (Áo thun, Polo, Tất…). Delete the 4 English dev categories on prod afterwards.
+- [ ] **Catalog content:** the client says names / descriptions are done. Still open: no size guides, English colour names (Black, Cream, Mint Blue…), long names.
+- [ ] **Policy page:** the client says the return policy "already exists", but `app/policy/page.tsx` still shows `[số ngày]` and `[cửa hàng / khách hàng]`. Get the text and put it in (storefront UI → client).
+- [ ] **Brand story:** the client asked Claude to write the storytelling for `/branding`. The page has copy now (PR #19); check if it's the final one.
+- [ ] **Promo code format `pdz000001`–`pdz009999`:** confirm it means one batch of unique single-use codes.
+- [ ] **Excel export (merged, PR #18):** send aT the open questions at the end of `docs/superpowers/specs/2026-10-17-orders-customers-excel-export-design.md`. Open one downloaded file of each kind in Excel by hand (diacritics, leading 0 in phones, money columns sum).
+- [ ] **SPX production keys:** the client asks SPX to send them privately, not in a group chat. Then Now #1.
+- [ ] **Paste the auth email templates on prod.** In Authentication → Emails → Templates, for all 6: subject from `supabase/config.toml`'s `[auth.email.template.*]`, HTML from `supabase/templates/*.html`. Until then prod sends Supabase's default English emails, and the sign-up / reset links are the scanner-prone single-use ones. Then: a real sign-up from a school / Outlook address, and remove ForgotPasswordForm's "Hãy mở liên kết trên trình duyệt này" line.
 - [ ] **Test project auth (Owner role only):** custom SMTP like prod (separate Resend key `paranoidz-test-smtp`), the same templates with `[TEST] ` subjects, and the broken redirect entry. Delete it and add `https://*-minhtam2773s-projects.vercel.app/**`.
-- [ ] **Collections `Outlet 2026` / `New collection`** (slugs `outlet-2026` / `new-collection`) in admin → Bộ sưu tập. Both nav links 404 on prod today, and the homepage collection cards stay hidden until active collections exist. The cards have never been seen with real data.
-- [ ] **Categories** (Áo thun, Polo, Tất…) on prod, one per product.
-- [ ] **Catalog content:** shorter product names, Vietnamese colour names, description / size guide. Decide what Sck1 ("[QUÀ TẶNG]" socks) is for.
-- [ ] **Branding + Policy copy:** both are placeholders. Return terms are still in `[brackets]` in `app/policy/page.tsx`.
-- [ ] **GitHub → Settings → Branches → protect `master`**, require the `test` check (PRs #7–#10 merged while CI was red).
 - [ ] **First real BigSeller stock-out / stock-in upload:** watch that BigSeller accepts the Vietnamese headers (never tried). Press ĐÃ NHẬP VÀO BIGSELLER only after both files are accepted (`docs/BACKLOG.md` debt has the fallback).
-- [ ] **SPX bank verification** (COD payouts) was still "Pending Verification" on 2026-10-15. Check before the first real order.
 - [ ] **Secrets hygiene:** rotate the `paranoidz-test` DB password (it was shared in a chat) and update `supabase/.env.test.local`. Swap the legacy `service_role` JWT in the test `.env.local`s for an `sb_secret_` key.
 - [ ] **Mail:** DKIM for the `paranoidz.vn` mailbox (ask the mail host). Move Resend to a client-owned account at handover.
-- [ ] **Google / Facebook login are still in testing mode.** Publishing needs the steps in `docs/BACKLOG.md` → Features.
 
 ## Blocked — pending client decisions
 
-ARCHITECTURE.md §8 items 3–7: voucher cap, loyalty gift notification + fulfilment, loyalty progress on the account page, CMS vs `site_content`, announcement bar management. **Do not implement** until resolved. (Voucher cap: `AUTO-FIRST5` is seeded uncapped, `cap_amount = null` in `supabase/seed.sql`; once decided, change it there and on prod, no migration needed.)
+ARCHITECTURE.md §8.4 / §8.5 (loyalty): waits on the proposal in Now #5. §8.3 (voucher cap), §8.6 (CMS) and §8.7 (announcement bar) were resolved on 2026-10-17: no cap, no CMS, the client edits banners and the announcement bar in the code himself.
 
 ## Last session
 
-- 2026-10-16: TODO.md split into this file + `docs/BACKLOG.md` / `docs/DONE.md` / `docs/LESSONS.md`. Every item was re-checked against `master` `c6299b8`. Stale entries were dropped; entries for the client's PRs #6–#12 were added to DONE.md from their commits (not re-verified).
-- 2026-10-17: found prod checkout charging SPX test-host fees (₫21, Now #1). Owner decided the client's live design wins over DESIGN.md. Flash-sale stacking question parked for the client. CI on `3cd939a` failed once on a Google Fonts download during `next build` (Vercel built the same commit fine); re-ran it.
-- 2026-10-17: DESIGN.md rewritten from the live storefront (client's design, PRs #6–#12); checked on paranoidz.vn at 1280px and 375px. Design gaps found on the way are in `docs/BACKLOG.md` → Carried debt → Storefront.
-- 2026-10-17: scoped and built the orders + customers Excel export (spec `docs/superpowers/specs/2026-10-17-orders-customers-excel-export-design.md`; DONE.md). PR #18 (`claude/modest-visvesvaraya-c77e68`). A2 failed once in the local admin e2e run and passed alone (Now #2).
+- 2026-10-17: audit of PRs #18–#21 and prod. #19 / #20 merged with CI red. For ~22 min after #19 a second `place_order()` (PUBLIC execute) was live. Checked afterwards: anon gets `42501` on `place_order` / `quote_order` / `order_discount`, and the only order since 2026-10-16 is PZ-2026-0662 (before that window). Recorded the client's answers (ARCHITECTURE.md §5 / §8, this file). Started the `master` protection rule (not saved: Now #2).
+- 2026-10-17: DESIGN.md rewritten from the live storefront; Excel export built (PR #18); found prod charging SPX test-host fees.
