@@ -55,6 +55,7 @@ Auth providers: email/password, Google, Facebook. Phone number required and **un
 | Guest order lookup          | Server only      | Order number + phone, rate limited; returns status, items, totals, ward/city only — no name, street, phones, email or note (order numbers are sequential, so a known phone + guessing must not reveal an address) |
 | Loyalty gift trigger        | Server / DB      | Counter math, pool selection |
 | Admin realtime order feed   | Client (admin)   | RLS restricts channel to admin role |
+| Orders / customers Excel export | Server only (admin) | Personal data. Server action: `requireAdmin()` + admin client, file built per request and sent to the admin's browser; never stored, cached or emailed by us (decided 2026-10-17, spec `docs/superpowers/specs/2026-10-17-orders-customers-excel-export-design.md`) |
 
 ### 2.3 RLS posture
 
@@ -273,4 +274,4 @@ The client wants SPX's **live** price at checkout (SPX runs promotions, so a fix
 
 ## 9. Out of Scope
 
-Payment gateways, Shopee integration (stock reaches Shopee through BigSeller, §3.1; BigSeller's Open API comes after launch), carrier APIs other than SPX (§5 "SPX Open API"), newsletter/email marketing, mobile apps, multi-language (the site is Vietnamese-only, not bilingual), multi-admin roles, analytics dashboards.
+Payment gateways, Shopee integration (stock reaches Shopee through BigSeller, §3.1; BigSeller's Open API comes after launch), carrier APIs other than SPX (§5 "SPX Open API"), newsletter/email marketing, mobile apps, multi-language (the site is Vietnamese-only, not bilingual), multi-admin roles, analytics dashboards. Files in other systems' import formats (accounting / e-invoice software), except BigSeller's stock files (§3.1): the orders / customers Excel export (§2.2) is for the client's own records only.

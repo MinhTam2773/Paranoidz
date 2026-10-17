@@ -55,3 +55,4 @@ ARCHITECTURE.md §8 items 3–7: voucher cap, loyalty gift notification + fulfil
 
 - 2026-10-16: TODO.md split into this file + `docs/BACKLOG.md` / `docs/DONE.md` / `docs/LESSONS.md`. Every item was re-checked against `master` `c6299b8`. Stale entries were dropped; entries for the client's PRs #6–#12 were added to DONE.md from their commits (not re-verified).
 - 2026-10-17: found prod checkout charging SPX test-host fees (₫21, Now #1). Owner decided the client's live design wins over DESIGN.md. Flash-sale stacking question parked for the client. CI on `3cd939a` failed once on a Google Fonts download during `next build` (Vercel built the same commit fine); re-ran it.
+- 2026-10-17: scoped the orders + customers Excel export with the owner (spec `docs/superpowers/specs/2026-10-17-orders-customers-excel-export-design.md`, docs exception added). Not built. Its client questions are at the end of the spec; send them to aT.
