@@ -75,8 +75,13 @@ end $$;
 
 grant execute on function public.flash_sale_picks(timestamptz) to anon, authenticated, service_role;
 
-create or replace function public.order_discount(p_phone text, p_subtotal numeric, p_counts jsonb, p_voucher_code text,
-  p_items jsonb default null -- [{"variant_id": "...", "qty": 1}]; lets flash sale price only picked lines
+-- order_discount() gains p_items, which changes its signature: drop the old
+-- 4-arg version first. (CREATE OR REPLACE with a new parameter would create a
+-- second overload that keeps the default PUBLIC execute privilege.)
+drop function if exists public.order_discount(text, numeric, jsonb, text);
+
+create function public.order_discount(p_phone text, p_subtotal numeric, p_counts jsonb, p_voucher_code text,
+  p_items jsonb default null) -- [{"variant_id": "...", "qty": 1}]: lets flash sale price only picked lines
 returns jsonb
 language plpgsql set search_path = public
 as $$
@@ -195,7 +200,7 @@ begin
   );
 end $$;
 
-revoke execute on function public.order_discount(text, numeric, jsonb, text) from public, anon, authenticated;
+revoke execute on function public.order_discount(text, numeric, jsonb, text, jsonb) from public, anon, authenticated;
 
 create or replace function public.place_order(
   p_items           jsonb,      -- [{"variant_id": "...", "qty": 1}, ...]
@@ -403,7 +408,7 @@ begin
   );
 end $$;
 
-create function public.quote_order(p_items jsonb, p_phone text default null, p_voucher_code text default null)
+create or replace function public.quote_order(p_items jsonb, p_phone text default null, p_voucher_code text default null)
 returns jsonb
 language plpgsql security definer set search_path = public
 as $$
