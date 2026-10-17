@@ -27,7 +27,7 @@ Read this first (CLAUDE.md §7), update it last. It stays short on purpose; the 
 
 Spec: `docs/superpowers/specs/2026-10-17-orders-customers-excel-export-design.md`. No migration.
 
-- [ ] Row builders + paging helper (`apps/admin/src/lib/exports/`) with `node:test` unit tests
+- [x] Row builders + paging helper (`apps/admin/src/lib/exports/`) with `node:test` unit tests
 - [ ] Server actions: orders (date range + tab + search) and customers (all / search), `requireAdmin()` first
 - [ ] XUẤT EXCEL on `/orders` (inline Từ ngày / Đến ngày + TẢI FILE) and `/customers` (direct download)
 - [ ] Playwright admin case A14 (orders file + customers file)
