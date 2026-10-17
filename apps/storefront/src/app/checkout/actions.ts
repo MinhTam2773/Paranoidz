@@ -122,20 +122,11 @@ export async function placeOrder(input: CheckoutInput): Promise<CheckoutResult> 
     // A table quote is left to place_order() (NULL), which computes the same fee itself.
     p_shipping_fee: shipping.source === "spx" ? shipping.fee : undefined,
     p_spx_voucher: shipping.voucherCode ?? undefined,
+    p_delivery_method: deliveryMethod,
   });
   if (error) {
     if (!/^[A-Z_]+(:|$)/.test(error.message)) console.error("place_order failed", error);
     return explain(error.message);
-  }
-
-  // Delivery method isn't a place_order() param (that function is frozen); set it directly.
-  // place_order() already validated everything else, so this is just a label for fulfillment.
-  if (deliveryMethod === "express") {
-    const { error: dmError } = await admin
-      .from("orders")
-      .update({ delivery_method: "express" })
-      .eq("id", (data as { order_id: string }).order_id);
-    if (dmError) console.error("delivery_method update failed", dmError);
   }
 
   const order = data as { order_id: string; order_number: string; subtotal: number; discount: number; shipping_fee: number; total: number };
