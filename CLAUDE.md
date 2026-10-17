@@ -48,7 +48,7 @@ Design tokens are law. Never invent colors, fonts, radii, or spacing not defined
 - **UI language: Vietnamese only — storefront AND admin** (decided 2026-10-01). Every user-facing string (labels, buttons, errors, emails, metadata titles) is written in Vietnamese with full diacritics. No i18n library and no English fallback: multi-language stays out of scope (ARCHITECTURE.md §9). Code, comments, commit messages and these docs stay in English. `<html lang="vi">`. English copy already in the storefront is debt until the Vietnamese pass (TODO.md).
 - Storefront copy: uppercase for headings/nav/buttons, sentence case for body (see DESIGN.md).
 - Order numbers: `PZ-YYYY-NNNN` from the Postgres sequence.
-- One feature per session. Update `TODO.md` at the end of every session. Commit after each green step with a conventional message (`feat:`, `fix:`, `chore:`).
+- One feature per session. Update `TODO.md` at the end of every session (§7). Commit after each green step with a conventional message (`feat:`, `fix:`, `chore:`).
 
 ---
 
@@ -90,10 +90,10 @@ Adapted from Andrej Karpathy's observations on LLM coding failures. These govern
 
 ## 7. Session workflow
 
-1. Read `TODO.md` for current phase and next task.
-2. Read the relevant spec section (DESIGN.md / DASHBOARD_DESIGN.md / ARCHITECTURE.md) and any screenshot in `design-refs/`.
+1. Read `TODO.md` (state of the world, "Now", what's waiting on the client), then `git log --oneline -20` — the client also pushes PRs that may not be in TODO.md. Empty "Now" → pick from `docs/BACKLOG.md`.
+2. Read the relevant spec section (DESIGN.md / DASHBOARD_DESIGN.md / ARCHITECTURE.md), any screenshot in `design-refs/`, and the matching section of `docs/LESSONS.md`.
 3. State plan + assumptions + success criteria (2–5 lines).
 4. Implement the ONE task.
 5. Verify against the criteria. Fix until green.
-6. Update `TODO.md`, commit.
-7. Any lesson learned during the session (tool quirk, failed approach, non-obvious constraint) goes into `TODO.md` → "Known gaps — carried debt" before the session ends.
+6. Update `TODO.md` (keep it short: state, "Now", waiting, last session), move the finished entry with its verification notes to `docs/DONE.md`, commit.
+7. Any lesson learned during the session (tool quirk, failed approach, non-obvious constraint) goes into `docs/LESSONS.md` under its topic; a product gap you leave unfixed goes into `docs/BACKLOG.md` → "Carried debt".

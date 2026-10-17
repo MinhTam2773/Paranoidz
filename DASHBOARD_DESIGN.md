@@ -145,6 +145,7 @@ Bottom-right, dark `#111111` background, white text, 3s auto-dismiss. Success pr
   - Đã tiếp nhận: **Thời gian lấy hàng** select (SPX's next 3 days, earliest selected; if SPX can't be reached, an `--accent` line and no button) + primary **TẠO ĐƠN SPX & IN PHIẾU (n)** ("Đang tạo…" while running).
   - Đã tạo vận đơn: primary **IN PHIẾU (n)**; rows without a tracking number have no checkbox.
   - The label opens in a new tab. After a run the bar becomes a results panel: "Đã tạo n vận đơn", then each failure as "<order number> — <reason>" linking to the order, and a close button. No modal — shipments can be cancelled from the order page.
+- **List → Excel export** (2026-10-17, spec `docs/superpowers/specs/2026-10-17-orders-customers-excel-export-design.md`): secondary **XUẤT EXCEL** top-right opens an inline row (no modal) — **Từ ngày** / **Đến ngày** (order date, default 1st of this month → today) + primary **TẢI FILE**; the current status tab and search apply too. Downloads one `.xlsx` with sheets "Đơn hàng" (one row per order) and "Sản phẩm" (one row per item). For the client's own records only; nothing in the database changes.
 - **Detail**: customer block (name, phones, email, address, note; refusal count + blacklist indicator), items table with snapshots, totals block (subtotal / discount + voucher code / total), status timeline, and a single primary action that advances the lifecycle (confirmed→SHIP, shipped→DELIVERED; `pending` has none — creating the SPX shipment confirms it) plus secondary Cancel / Delivery failed where valid. Every transition calls `transition_order_status()` — never a raw status write. On an order with an SPX shipment, MARK DELIVERED / Delivery failed first check SPX's own status; if SPX doesn't say delivered / returning yet, the modal closes with an error toast "SPX chưa báo đã giao / hoàn hàng (hiện tại: <SPX status in Vietnamese>)…" and nothing changes.
 - **Detail → "Vận chuyển SPX" card** (ARCHITECTURE.md §5 "SPX Open API"), right column between the payment and status cards, same card style:
   - `pending` (or `confirmed` from before 2026-10-16), no shipment: form (labels above inputs) — **Phường / xã giao hàng** (native select of SPX's wards for the order's province, pre-selected when the typed ward matches ignoring accents and the "Phường / Xã" prefix; the typed ward is shown under it as a hint), **Thời gian lấy hàng** (select of SPX pickup slots for the next 3 days: "<date> · <time range>", loaded with the card; if SPX can't be reached, an `--accent` line and no button). Primary **TẠO ĐƠN SPX** (full width, "Đang tạo…" disabled while pending). No modal — a shipment can be cancelled. SPX refusals show as an error toast: Vietnamese sentence + SPX's own message in brackets.
@@ -158,6 +159,7 @@ Bottom-right, dark `#111111` background, white text, 3s auto-dismiss. Success pr
 
 ### 6.4 Customers
 - **List**: name, phone, email, delivered count, refusal count, blacklist badge, joined date. Search by name/phone.
+- **List → Excel export** (2026-10-17, same spec as §6.2): secondary **XUẤT EXCEL** top-right downloads a "Khách hàng" `.xlsx` of all customers (or the current search) at once.
 - **Detail**: profile info, addresses, full order history table, loyalty progress ("7 / 10 delivered → next gift"), pending `loyalty_awards`, blacklist toggle (confirmation modal).
 
 ### 6.5 Bundles
@@ -196,7 +198,7 @@ List: product, customer, rating stars, content preview, visible toggle, date. De
 - NEVER build modal-based CRUD for products/bundles/collections — full pages only.
 - NEVER introduce new colors, fonts, or radii beyond this file + DESIGN.md.
 - NEVER show the service_role key or any Supabase internals in the UI.
-- NEVER add features not in ARCHITECTURE.md scope (no analytics charts, no export — except the BigSeller stock files, §6.10 — no multi-admin).
+- NEVER add features not in ARCHITECTURE.md scope (no analytics charts, no export — except the BigSeller stock files, §6.10, and the orders / customers Excel files for the client's own records, §6.2 / §6.4 — no multi-admin).
 
 ---
 

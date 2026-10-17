@@ -38,6 +38,16 @@ jobs:
       - name: Start local Supabase
         run: supabase start -x studio,realtime,imgproxy,edge-runtime,logflare,vector,supavisor
 
+      # Auth fetches our email templates from Kong at boot; when Kong isn't listening yet ("connection
+      # refused" in its log) it sends Supabase's English defaults from then on. Restarted once the
+      # stack is up, it loads ours, whose links S11 / S12 follow to /auth/confirm.
+      - name: Reload auth email templates
+        run: |
+          since=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          docker restart supabase_auth_Paranoidz
+          for i in $(seq 1 30); do [ "$(docker inspect -f '{{.State.Health.Status}}' supabase_auth_Paranoidz)" = healthy ] && break; sleep 2; done
+          if docker logs --since "$since" supabase_auth_Paranoidz 2>&1 | grep templatemailer_template_body_http_error; then exit 1; fi
+
       # The smoke scripts read apps/admin/.env.local. The e2e tests read `supabase status` themselves.
       - name: Point the smoke scripts at local Supabase
         run: |

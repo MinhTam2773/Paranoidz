@@ -1,0 +1,96 @@
+# BACKLOG.md — not started yet
+
+Pick from TODO.md → "Now" first. Starting an item: move it to TODO.md → "Now". Finished: move it to `docs/DONE.md`. Check ARCHITECTURE.md §8 (pending decisions) and §9 (out of scope) before starting anything here.
+
+---
+
+## Features — admin (DASHBOARD_DESIGN.md §6)
+
+- [ ] Gift pool (+ empty-pool banner for pending awards) — `/gift-pool` is already in the sidebar ("Kho quà tặng") and 404s until built. Marking awards fulfilled waits on ARCHITECTURE.md §8.4.
+- [ ] Shipping rates editor (`shipping_rates` / `shipping_provinces`) — only if SPX changes prices often; until then update the rows by migration. Lower priority since checkout uses SPX's live fee (the table is only the fallback).
+
+## Features — storefront / auth
+
+- [ ] **Publish Google login + take the Facebook app Live.** `https://paranoidz.vn/policy#privacy` now exists, but its copy is still a draft (TODO.md → Waiting). Current state:
+  - **Google + Facebook login are configured but NOT public (2026-09-27).** Google: Cloud project `paranoidz` (separate from the owner's Rezume project), web client "Paranoidz storefront (Supabase)", redirect URI = the Supabase callback, consent screen External / **Testing** — only listed test users (owner's Gmail) can sign in; Publish needs Branding home page + privacy policy URL on an owned, authorized domain. Meta: app `Paranoidz` (ID 1534780648453132), Facebook Login use case with `email` + `public_profile`, valid OAuth redirect = the Supabase callback (confirmed by Meta's validator), **Unpublished / development** — only app roles can log in; going Live needs icon, privacy policy URL, data-deletion URL, category (+ Meta may ask for business verification / App Review). Both enabled in Supabase with the secrets pasted by the owner (never in git/chat); `/auth/v1/settings` reports google + facebook true; both buttons reach the real Google / Facebook sign-in pages. A full provider sign-in → callback → phone step is not yet tested. Consent screens say "continue to rbuoirnnroauzdjwwfij.supabase.co" — a Supabase custom domain (paid add-on) fixes that.
+
+## Later (client: "thôi làm sau")
+
+- [ ] Grab delivery option for HCMC orders (client, 2026-10-09). Needs: how the fee is priced (Grab quotes per trip), a delivery-method choice at checkout, and `place_order()` taking the method.
+- [ ] **BigSeller Open API — ask after the website is finished** (decided 2026-10-12). The client runs Shopee (2 shops) and TikTok Shop through BigSeller (Free plan, 3/3 stores). Until then, Shopee and the website keep **separate stock counts for the same shirts**, and the client has to adjust both by hand. Guides: `help.bigseller.com/vi/detailPage/…api-bigseller.9410` + `…website-tự-phát-triển.9424`. A website integration uses 2 APIs: `createManualOrder` (website → BigSeller; stock is held when the order is created and deducted when it ships) and `getInventoryListDetail` (website polls stock per SKU per warehouse; BigSeller warns the delay means overselling is still possible). Access: the client contacts BigSeller support → account-specific docs → build + test → pay by custom quote (no listed price, not part of any plan). The guides name no cancel API and no status callback, so ask about both, plus rate limits. It does **not** replace the SPX Open API: BigSeller has no shipping-fee quote, so live checkout prices still need SPX. BigSeller can create SPX shipments/labels itself (Settings → Third-party Logistics → SPX Express Vietnam, using the client's SPX user ID + secret key; not connected yet). Only one system may create SPX shipments: our admin or BigSeller, never both. Before building: make "BigSeller holds the real stock count" an ARCHITECTURE.md §8 decision, and BigSeller stock must reach Postgres through a function, never a raw UPDATE.
+
+## Infra / CI
+
+- [ ] **CI can't see deployment problems** (noted 2026-10-16). CI builds the commit on the runner against a local Supabase with every env var blank, so it never touches Vercel: missing / wrong env vars (e.g. the SPX keys), invalid SPX credentials or a Vercel-only build difference all pass CI. Worse, checkout **silently** falls back to the `shipping_fee()` table when SPX fails, so a deploy without SPX keys still takes orders at table prices and nobody notices — S3 only ever tests that fallback. Proposed, not built: (1) a post-deploy check — GitHub workflow on Vercel's `deployment_status`, hitting the preview URL read-only and asserting one shipping quote came from SPX, not the table (needs a server-only way to tell which source priced it, no keys exposed; no orders — the preview writes to `paranoidz-test` and Zalos the client); (2) make the production fallback loud — log it and alert the developer (email / Zalo) when prod prices from the table.
+- [ ] **Checkout on a Vercel preview has never been exercised** (preview → `paranoidz-test`; it would send a `[TEST]` Zalo to the client's chat).
+- [ ] **`smoke` can't run on `paranoidz-test` any more** (2026-10-16): it throws "no in-stock White paranoid-logo-tee variant" at case 4 — the test project's catalog drifted from `dev.sql` (imports / edits). Re-seed that product's stock on test, or make the smoke pick any in-stock colourway. Local CI (fresh `supabase start` + seed) is unaffected.
+- [ ] **The full smoke suite (`pnpm --filter @paranoidz/db smoke`) needs ≥ 4 variants with stock ≥ 8** of the dev seed (CI's fresh local database has them). Against prod or test it would temporarily hold real stock. Give it its own temporary product like `scripts/inventory-smoke.ts` does before relying on it again.
+
+## Before launch
+
+- **Check prod for leftover dev accounts before launch** — the 2026-10-12 cleanup removed the dev catalog, all orders and the test customer rows, but nothing records deleting the seeded auth users `customer*@paranoidz.test` (fixed id prefix `c0000000-`; seeded on prod 2026-09-25 by `supabase/seeds/dev.sql`). Check `auth.users` on prod and delete them, then drop `./seeds/dev.sql` + `./seeds/dev_size_guides.sql` from `supabase/config.toml` `sql_paths` (local / CI seed — the smoke suite and e2e rely on them, so give those their own fixtures first).
+- **`order_number_seq` has gaps from smoke runs** (`last_value` = 3 after the first run). Real orders will not start at `PZ-2026-0001` unless it is reset with `setval` before launch. Each smoke run consumes ~3 more.
+
+---
+
+## Carried debt — known gaps, deliberately not fixed
+
+### Storefront
+
+- **The admin never revalidates the storefront** — catalog pages are ISR (60 s), so admin product / bundle edits, stock restored by a cancel or delivery failure, and a sell-out show up to 60 s late. A slug that was prefetched before it existed (every page prefetches the nav's collection links) stays cached as a 404 for up to 60 s. `/cart` and `place_order()` read live stock, so nothing oversells. Fix: a revalidation endpoint on the storefront that admin actions call.
+- **No "ADD BUNDLE TO CART" button** (Stitch "with Bundle" has one): each bundle product needs its own size/colour, so the cards link to each product page instead. Add a per-product picker if the client wants one-tap bundles.
+- **Design gaps seen while rewriting DESIGN.md (2026-10-17, live on paranoidz.vn):** at 1280px the four desktop nav labels wrap onto two lines (each link 34px tall: "OUTLET / 2026"); the desktop header has no Trang chủ / Thương hiệu / Chính sách links (only the mobile menu has all seven; Chính sách is also in the footer); the homepage has no `<h1>` since the carousel replaced the hero title; the carousel arrows are 40px, under the 44px touch-target rule. Ask the client before changing any of it (their design).
+- **Dead storefront code left by the redesign:** `NavLinks()` in `components/layout/NavLinks.tsx` (only `isActive` is still imported), `PhotoHero` in `components/home/VideoHero.tsx` (and the `.text-display` utility only it uses), and `QuickAdd`'s round-button branch (`barTrigger` is always true). The product page's sticky info column and checkout's summary still stick at `lg:top-36` (144px) under what is now a 72px header.
+- **Mobile menu social links are still placeholders** — `SOCIAL_LINKS` in `apps/storefront/src/lib/site.ts` (rendered by `MobileNav`) are `#`, while `Footer.tsx` hardcodes the real TikTok / Fanpage / Zalo links since PR #12. Point both at one list. `STORE_ADDRESSES` in `site.ts` is empty and no longer read anywhere.
+- **Product page choices the specs don't cover:** colours are dots when the admin picked a hex, text buttons otherwise (2026-10-12; `ColorOptions`, shared with the quick-add sheet); care instructions are one plain-text line (Stitch's icon list would need structured care data); no SKU or "You may also like" yet. Size guide table scrolls horizontally inside its box at 375px (long Height values).
+- **Size order on the product page is a hardcoded list** (`SIZE_ORDER` in `ProductView.tsx`: XS…XXL, FREE); unknown sizes sort last. Variants have no sort column — add one if the client uses other size labels.
+- **Account cart, not browser-tested:** `clearCart()` after a signed-in cart checkout (needs a real order) and the refocus re-read with a second device. Both are small paths in `lib/cart.ts`; check them when the next checkout test runs. If another device adds items while `/cart` is open, refocusing can flash "Sản phẩm này không còn bán" for those lines until their details load.
+- **Cart subtotal count includes unavailable lines' qty** in the "Subtotal (N)" label (price excludes them). Cosmetic; revisit if it confuses.
+- **The `shipping_rates` fallback table holds SPX's public estimator prices (2026-10-09), not the client's account rates** (checkout uses SPX's live fee whenever SPX answers). The client should create one real order per zone in their SPX account and compare; if different, update `shipping_rates`. SPX also re-weighs at pickup — the shop absorbs any difference (ARCHITECTURE.md §5).
+- **Addresses SPX doesn't serve are only caught when the shipment is created.** SPX's estimator answered "Địa chỉ ngoài khu vực giao nhận" for Đặc khu Côn Đảo (TP. HCM). Wards now come from SPX's own list (`spx_locations`), but when SPX refuses to quote, checkout falls back to the table fee and still takes the order; the admin finds out at TẠO ĐƠN SPX.
+- **Parcel weight is a flat 300 g per unit** (`shipping_fee()` + `UNIT_GRAMS` on the admin order page). The client sells tees only; heavier items (hoodies, pants are in the dev seed only) would need a weight per variant.
+- **Homepage loads every active product in one query** and cuts the sections in JS. Fine at ~10 products; move the sections to their own filtered queries if the catalog reaches the hundreds.
+- **BEST SELLER counts pending and confirmed orders too** (anything not cancelled / delivery_failed), so test or fake COD orders shape it. Tighten to delivered-only in `best_seller_ids()` if fake COD orders skew it.
+- **Customer replies not browser-tested** (reply, own-reply delete) — writing, editing, photo upload / removal and deleting a review were tested 2026-10-09 with the owner's account (that order has since been deleted). The rules are covered by smoke case 14; e2e S10 posts a review, A11 adds a brand reply.
+- **Search matches words only — no synonyms, no stemming** (`simple` config): "đen" (black) prefix-matches "denim"; "hoodies" doesn't match "hoodie" (the prefix works the other way); "the hoodie" finds nothing. Product names are now the client's Vietnamese Shopee titles, so "áo" works; add a small synonym table if customers search with words the titles don't use.
+- **Search has no pagination or sort** (10 products). Add both with the catalog's.
+- **Saved addresses have no label** ("Home" / "Office"): `addresses.label` exists but the form doesn't set it — cards show name + street, which is enough to tell them apart so far. Seed addresses still carry old `district` values (Quận 1 …) and pre-2025 ward names; checkout doesn't read `district`.
+- **Checkout has no "save this address" option** — addresses are only created from `/account`. Add a checkbox on checkout if customers ask.
+- **Address validation errors come from the server round trip** (no live per-field checks like checkout). Fine for a form used rarely; reuse checkout's `onInput`/`onBlur` pattern if it feels slow.
+- **Wishlist on other devices shows the pending heart only where it was tapped** (localStorage). A guest who taps a heart on the phone and confirms signup on a laptop gets the account, not the heart.
+- **Order history has no pagination** (all of a user's orders in one query). Fine for a few dozen; add a limit + "show more" if heavy buyers appear.
+- **Header says LOGIN / REGISTER until hydration** for signed-in visitors (`AccountLink` reads the session client-side so the layout stays cookie-free and ISR keeps working).
+- **Feedback and collection pages fetch whole lists** (approach A: ISR + client-side tabs / sort / paging). Fine to a few hundred reviews / products per collection; past that, move to paged server queries.
+- **Collection sort / page aren't in the URL** — back from a product returns to page 1, default sort.
+
+### Admin
+
+- **ARCHITECTURE.md §2.2 "Admin realtime order feed — RLS restricts channel to admin role"** has no backing policy: orders have no admin SELECT policy. Add an `is_admin` policy (or broadcast from the server) when building the feed.
+- **Order emails have no admin-side counterpart yet**: status changes (confirmed / shipped) send nothing; the shop alert is email + Zalo.
+- **Customer confirmation gets no plain-text part** (HTML only); Resend generates one, insights were clean.
+- **UNVERIFIED: BigSeller accepting the website's Vietnamese-header stock-out / stock-in files (2026-10-14).** The headers match BigSeller's Vietnamese templates byte for byte, but no file has been uploaded to BigSeller yet (owner: don't touch production BigSeller). First real export: watch the upload — if BigSeller rejects the header row, the English headers are in git history (`stock-files.ts` before 2026-10-14) and switching BigSeller back to English is the workaround. Only press ĐÃ NHẬP VÀO BIGSELLER after both files are accepted.
+- **Orders list doesn't update by itself** — no realtime feed yet (ARCHITECTURE.md §2.2); new orders appear on reload / navigation.
+- **Product save is not one transaction** (`saveProduct`): every check that can fail (validation, category, SKU clash, ordered-variant removal) runs before the first write, and stock goes last through `set_variant_stocks()`; a DB error mid-way could still leave a partial save (the message says what was saved). Move it into one RPC if that ever happens in practice.
+- **Variants can't be renamed** (colour/size fixed once saved — images and orders key on them). To fix a typo: add the right variant, set the wrong one's stock to 0, delete it if it was never ordered.
+- **Image files of deleted gallery rows can stay in Storage** when an order snapshot uses them (deliberate). Over time `products/<slug>/` may hold files no gallery row references; a cleanup would have to check `order_items.image_snapshot` first.
+- **Customer name search needs the diacritics** ("khách thử" finds Khách Thử, "khach thu" does not) — `ilike` compares accents. Same for product names. An `unaccent` index would fix both if the client asks.
+- **Customer email = latest order email**, not necessarily the account's; the detail page shows both. Guests have no account email.
+- **Loyalty awards can't be marked fulfilled yet** — `loyalty_awards.status` stays `pending` until §8.4 (notification / fulfilment method) is decided; the customer page only displays them.
+- **Confirm-modal markup is now repeated in 3 components** (`OrderActions`, `ImageManager`, `BlacklistToggle`) — extract a shared `ConfirmDialog` next time one is touched.
+- **Collections can't be deleted** (not in DASHBOARD_DESIGN.md §6.6) — switch one off instead. Add a delete with a confirmation if the client asks.
+
+### Reviews + Storage
+
+- **Hidden review photos still open by direct URL** — `review-images` is public like `product-images`; hiding only takes the photo off the page (paths are unguessable uuids). Make the bucket private + signed URLs if a takedown must be complete.
+- **Abandoned review-photo uploads stay in Storage** — a file uploaded with a signed URL but never attached (tab closed between upload and `addReviewImage`) has no row. Same gap as the admin product photos; a periodic sweep of objects without a row would clean both.
+- **Review eligibility trusts the profile phone, which isn't verified** (no OTP). Someone who sets their profile phone to a real guest buyer's number (if no other account has it) could review that buyer's products. Low stakes (reviews only); revisit if phone verification is added.
+- **Reviews: no pagination, no reply rate limit, no stars on product cards.** All visible reviews load with the page. Any signed-in customer can reply as often as they like — admin hide is the remedy. Add limits if spam shows up.
+
+### Pricing, security, rate limits
+
+- **A promo code that can't be used still blocks the order even when a bundle would win** — `INVALID_VOUCHER` / `VOUCHER_ALREADY_USED` are raised before pricing. The customer removes the code and the bundle applies; the live checkout quote shows the code error before they order.
+- **Deleting an `auth.users` row hard-fails** once that user has ordered (`orders.user_id ... on delete restrict`). Intentional, to preserve order history — but there is no working "delete my account" path as a result.
+- **Rate limit trusts `x-real-ip` / `x-forwarded-for`** because Vercel overwrites them. If the storefront is ever served behind another proxy/CDN (Cloudflare etc.), those headers become client-controlled — switch to that proxy's trusted header (e.g. `cf-connecting-ip`) first. Limits are passed by each caller of `hitRateLimit()` (`checkout/actions.ts`: 5/phone, 10/IP; `order-lookup/actions.ts`: 10/phone, 20/IP per hour) — no migration needed to change them.
+- **Every checkout attempt that reaches the DB counts**, including a customer's own voucher typos. A legit buyer behind a busy carrier CGNAT IP could hit the IP limit in a peak hour; the message points to the hotline. Revisit the numbers once real traffic exists.
+- **Account phones are self-typed and unique**, so someone can add another person's number first and block them from using it on their own account (message points to the hotline). Nothing is gained by it — every rule keys on `orders.phone`. Only fix is SMS OTP (per-message cost). `savePhone` also tells a signed-in user whether a number is on another account; not rate-limited (needs a confirmed account per try).
+- **The checkout quote can be used to test promo codes** — 60 quotes / IP / hour (vs 10 orders); a per-IP limit doesn't stop IP rotation. Fine while codes are few and long-ish; if guessing shows up in `rate_limits`, lower the `quote` limits or only quote codes on blur.
