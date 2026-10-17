@@ -644,9 +644,11 @@ export type Database = {
           category_id: string | null
           created_at: string
           description: string | null
+          gift_label: string | null
           id: string
           is_active: boolean
           name: string
+          shopee_sold_count: number
           size_guide: Json | null
           slug: string
           updated_at: string
@@ -656,9 +658,11 @@ export type Database = {
           category_id?: string | null
           created_at?: string
           description?: string | null
+          gift_label?: string | null
           id?: string
           is_active?: boolean
           name: string
+          shopee_sold_count?: number
           size_guide?: Json | null
           slug: string
           updated_at?: string
@@ -668,9 +672,11 @@ export type Database = {
           category_id?: string | null
           created_at?: string
           description?: string | null
+          gift_label?: string | null
           id?: string
           is_active?: boolean
           name?: string
+          shopee_sold_count?: number
           size_guide?: Json | null
           slug?: string
           updated_at?: string

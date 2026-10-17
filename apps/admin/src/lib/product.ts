@@ -23,6 +23,8 @@ export type ProductInput = {
   description: string;
   careInstructions: string;
   sizeGuide: string;
+  shopeeSoldCount: number;
+  giftLabel: string;
   isActive: boolean;
   variants: VariantInput[];
 };
@@ -151,6 +153,8 @@ export function validateProduct(input: ProductInput) {
       name, slug, description: description || null, care_instructions: careInstructions || null,
       size_guide: guide.value as Json | null, is_active: input.isActive,
       category_id: input.categoryId || null,
+      shopee_sold_count: Math.max(0, Math.floor(input.shopeeSoldCount || 0)),
+      gift_label: input.giftLabel.trim() || null,
     },
     variants,
   };
