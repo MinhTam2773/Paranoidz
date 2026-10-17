@@ -48,7 +48,7 @@ export function RegisterForm({ next }: { next: string }) {
       password: v.password,
       options: {
         data: { full_name: v.fullName.trim(), phone: normalizePhone(v.phone) },
-        emailRedirectTo: `${location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
+        emailRedirectTo: `${location.origin}/auth/confirm?next=${encodeURIComponent(next)}`,
       },
     });
     setPending(false);

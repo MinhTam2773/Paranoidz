@@ -18,9 +18,9 @@ export function ForgotPasswordForm() {
       return document.getElementById("email")?.focus();
     }
     setPending(true);
-    // The link signs them in (/auth/callback) and lands on the new-password form.
+    // The link opens /auth/confirm, whose button signs them in and lands on the new-password form.
     const { error } = await createClient().auth.resetPasswordForEmail(email, {
-      redirectTo: `${location.origin}/auth/callback?next=${encodeURIComponent("/account/password")}`,
+      redirectTo: `${location.origin}/auth/confirm?next=${encodeURIComponent("/account/password")}`,
     });
     setPending(false);
     if (error?.code === "over_email_send_rate_limit") return setError("Hiện chưa thể gửi email. Vui lòng thử lại sau một giờ.");
