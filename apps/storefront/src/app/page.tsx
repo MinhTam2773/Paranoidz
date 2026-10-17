@@ -46,44 +46,39 @@ export default async function HomePage() {
   const byId = new Map(cards.map(({ card }) => [card.id, card]));
   const newGoods = cards.slice(0, GRID_SIZE).map(({ card }) => card);
   const best = bestSellers.data!.flatMap(({ product_id }) => byId.get(product_id) ?? []);
-  const onSale = cards
-    .map(({ card }) => card)
-    .filter((c) => !c.soldOut && c.originalPrice !== null && c.originalPrice > c.price)
-    .slice(0, ROW_SIZE);
   // Flash sale: extra discount on the selling price during an active window.
   const flashState = getFlashSaleState((flashWindows.data ?? []) as FlashSaleWindow[]);
-  const flashCards =
-    flashState?.active && flashState.discountPercent > 0
-      ? onSale.map((c) => ({
-          ...c,
-          // Stacked: flash price vs the TRUE original, so the badge shows the total % off.
-          price: flashPrice(c.price, flashState.discountPercent),
-          variants: c.variants.map((v) => ({
-            ...v,
-            original_price: v.original_price,
-            price: flashPrice(v.price, flashState.discountPercent),
-          })),
-        }))
-      : onSale;
-  // Flash sale shows only 4 random products per window — seeded by the window
-  // timestamp so the picks stay stable for the whole window instead of
-  // reshuffling on every render.
-  const flashSeed = flashState ? (flashState.active ? flashState.endsAt : flashState.nextStartsAt) : 0;
-  const flashCardsShown = (() => {
-    const arr = [...flashCards];
-    let s = (flashSeed >>> 0) || 1;
-    const rand = () => {
-      s ^= s << 13;
-      s ^= s >>> 17;
-      s ^= s << 5;
-      return (s >>> 0) / 4294967296;
-    };
-    for (let i = arr.length - 1; i > 0; i--) {
-      const j = Math.floor(rand() * (i + 1));
-      [arr[i], arr[j]] = [arr[j], arr[i]];
-    }
-    return arr.slice(0, 4);
-  })();
+  // Flash sale (option B, 2026-10-17): the discounted products are picked
+  // server-side by public.flash_sale_picks() — deterministic per window, so the
+  // homepage, checkout quote and place_order() all price the same 4 products.
+  // Active window: picks at flash prices; otherwise a teaser of the next
+  // window's picks at normal prices.
+  const { data: pickIds } = flashState
+    ? await supabase.rpc(
+        "flash_sale_picks",
+        flashState.active ? {} : { p_at: new Date(flashState.nextStartsAt).toISOString() },
+      )
+    : { data: null };
+  const flashCards = ((pickIds ?? []) as string[])
+    .map((id) => byId.get(id))
+    .filter(
+      (c): c is ProductCardData =>
+        !!c && !c.soldOut && c.originalPrice !== null && c.originalPrice > c.price,
+    )
+    .map((c) =>
+      flashState?.active && flashState.discountPercent > 0
+        ? {
+            ...c,
+            // Stacked: flash price vs the TRUE original, so the badge shows the total % off.
+            price: flashPrice(c.price, flashState.discountPercent),
+            variants: c.variants.map((v) => ({
+              ...v,
+              original_price: v.original_price,
+              price: flashPrice(v.price, flashState.discountPercent),
+            })),
+          }
+        : c,
+    );
   const categoryRows = categories
     .data!.map((c) => ({
       name: c.name,
@@ -144,7 +139,7 @@ export default async function HomePage() {
           ]}
         />
 
-        {flashState && <FlashSale state={flashState} cards={flashCardsShown} />}
+        {flashState && <FlashSale state={flashState} cards={flashCards} />}
 
         {categoryRows.map((row, i) => (
           <RowSection key={row.name} index={String(i + 2).padStart(2, "0")} title={row.name} href="/products">

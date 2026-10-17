@@ -1139,6 +1139,10 @@ export type Database = {
           variant_id: string
         }[]
       }
+      flash_sale_picks: {
+        Args: { p_at?: string }
+        Returns: string[]
+      }
       has_delivered_product: {
         Args: { p_product_id: string }
         Returns: boolean
