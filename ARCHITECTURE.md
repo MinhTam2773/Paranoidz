@@ -152,7 +152,7 @@ Order numbers: `PZ-YYYY-NNNN` from a Postgres sequence (concurrency-safe, 4+ dig
 ### First-5-orders voucher (auto)
 - Eligibility at placement: count of that **phone's** orders NOT IN (`cancelled`, `delivery_failed`) < 5 — guest or signed in, phone only.
 - Cancelled/refused orders release their slot (`voucher_uses.released_at`).
-- 10% auto-applied. If customer enters a promo code too, apply the BETTER of the two — no stacking (Shopee-style).
+- 10% auto-applied. If customer enters a promo code too, apply the BETTER of the two — no stacking. **Superseded by Pricing v2 below once built** ("Khách mua lần đầu": 10 % on every order, stacks).
 - Promo codes are redeemable ONCE per customer (enforced by a partial unique index on `voucher_uses`); a released slot frees the code again. `auto_first5` is exempt — it applies to all 5 qualifying orders.
 - Discount cap: PENDING client decision.
 
@@ -160,7 +160,7 @@ Order numbers: `PZ-YYYY-NNNN` from a Postgres sequence (concurrency-safe, 4+ dig
 - A bundle = a set of products + a flat ₫ `discount_amount`. Any variant (size/colour) of each product counts.
 - Applies **per complete set**: 2 tees + 2 caps in a tee+cap bundle = discount ×2.
 - **Each unit counts toward one bundle only.** When bundles overlap, `place_order()` picks the combination of sets that saves the most (`best_bundles()`, exhaustive search — cheap because orders are capped at 20 units).
-- **No stacking with vouchers**: the order gets the better of (bundle total) vs (first-5 / promo). A tie goes to the bundle, so the customer keeps their promo use. When the bundle wins, no `voucher_uses` row is written.
+- **No stacking with vouchers** (**superseded by Pricing v2 below once built**: combos stack with vouchers): the order gets the better of (bundle total) vs (first-5 / promo). A tie goes to the bundle, so the customer keeps their promo use. When the bundle wins, no `voucher_uses` row is written.
 - The bundle total is capped at the subtotal. `orders.applied_bundles` snapshots what was applied (`[{bundle_id, name, discount_amount, sets}]`), NULL when no bundle discount priced the order.
 
 ### Live checkout price — decided 2026-10-11
@@ -201,13 +201,23 @@ The client wants SPX's **live** price at checkout (SPX runs promotions, so a fix
   - **Manual final steps (2026-10-16).** `delivered` and `delivery_failed` are terminal, so a later callback can't fix a wrong click. On an order with an SPX tracking number, the admin's **Đánh dấu đã giao** / **Giao thất bại** first ask SPX (1.3 Track Order, `v1/order/batch_search_order`) and go ahead only if SPX already says 4001 (delivered) / 6001–6003 (returning / returned); otherwise, or if SPX can't be reached, the order stays as it is and the toast shows SPX's current status. Orders without an SPX shipment keep the plain buttons.
 - **One shipper per order.** Website orders get SPX shipments only from our admin; BigSeller keeps handling Shopee / TikTok orders. Never both for the same order.
 
-### Discount stacking — under review (2026-10-17)
-- **What the code does today:** first-5 vs promo code vs combo → the best one wins (above). The **flash sale** (client, PRs #12 / #19: `flash_sale_windows` + `flash_sale_picks()`, 4 picked products per daily window) takes an extra % off those products' lines **on top of** that winner, inside `order_discount()`.
-- **Client's wish (2026-10-17):** discounts stack "like Shopee": the price shown on the homepage / product pages is the final item price (flash sale already in it), and the customer picks the promo code / combo themselves at checkout. Exact rules (which ones combine, which are one per order) are not decided yet; until they are, don't change `order_discount()` again.
-- **Promo code format (client):** codes like `pdz000001`–`pdz009999` (to confirm: one batch of unique single-use codes?).
+### Pricing v2 ("like Shopee") — decided 2026-10-17 (client), NOT BUILT YET
+Replaces "best one wins, no stacking" (First-5 and Bundles above, and `order_discount()` today) once built. Until then the code still runs the old rules. The client's choice was option B of the mock-up (https://claude.ai/artifact/E66SgJPvf8NSQnHpWAarcy).
+
+Applied in this order, each step on what the previous one left:
+1. **Item price:** list price, or during a flash-sale window the flash price for that window's picked products (`flash_sale_picks()`). The storefront shows this as the product's price, and the order must charge exactly that price.
+2. **Combo:** −₫`discount_amount` per complete set, as today (`best_bundles()`). **Flash-sale products count** toward combos.
+3. **Vouchers the customer picks at checkout** (a list of applicable codes, like Shopee; the server re-checks every pick). They are applied **one after another**, each % on the amount left after the previous one (10 % then 15 % = 23,5 %, not 25 %).
+   - **"Khách mua lần đầu"**: one fixed code, 10 %, usable on **every** order with **no** per-phone limit ("lần đầu" is only a name). Replaces the first-5 rule (5 orders per phone, auto-applied) and its label "Ưu đãi 5 đơn đầu".
+   - **Other promo codes** the client creates in the admin (campaigns). They stack with "lần đầu" and with combos.
+4. **Free shipping:** orders with **≥ 2 clothing items** (tees, polos, any garment; socks don't count) on **standard** delivery pay no shipping. **Express ("hoả tốc") never gets free shipping.** The shop pays SPX as usual. This reverses §8.1 for 2+ shirt orders.
+5. **Gift:** one pair of socks per order with ≥ 1 clothing item (see below). An order with 2+ shirts gets both the gift and free shipping.
+6. **No cap** on the total discount. If a product sells at a loss, the client raises its price.
+
+Still open (TODO.md → Waiting): free shipping waives the whole fee or only up to an amount; how many other promo codes one order may carry besides "lần đầu"; what the `pdz000001`–`pdz009999` codes are for. "Save a voucher before you can use it" (vouchers shown on the homepage, saved ones listed at checkout) only "if needed": later, not part of v2.
 
 ### Free socks with clothing — decided 2026-10-17 (client)
-- Every order with at least one clothing item (tee, polo, any higher-priced garment — not socks) gets **one** pair of socks: the "Màu Ngẫu Nhiên" (random colour) SKU. One pair per order, however many shirts.
+- Every order with at least one clothing item (tee, polo, any higher-priced garment — not socks) gets **one** pair of socks (confirmed again 2026-10-17: 2+ shirt orders get the socks **and** free shipping): the "Màu Ngẫu Nhiên" (random colour) SKU. One pair per order, however many shirts.
 - Not built yet: today only `products.gift_label` exists (a badge typed by hand). The gift must come out of stock like any variant (inside `place_order()`), so it also shows in the BigSeller export.
 
 ### Loyalty program
@@ -273,7 +283,7 @@ The client wants SPX's **live** price at checkout (SPX runs promotions, so a fix
 
 ## 8. Pending Decisions (do NOT implement until resolved)
 
-1. ~~Free shipping: all orders vs orders over ₫1.000.000~~ — **RESOLVED 2026-10-09: no free shipping; the customer pays SPX-rate shipping (§5).**
+1. ~~Free shipping: all orders vs orders over ₫1.000.000~~ — **RESOLVED 2026-10-09: no free shipping; the customer pays SPX-rate shipping (§5).** **Amended 2026-10-17 (client):** free shipping for standard-delivery orders with ≥ 2 clothing items (§5 Pricing v2).
 2. ~~Guest checkout vs account required~~ — **RESOLVED 2026-09-26: guest checkout allowed, no account required.** Accounts stay optional (history, addresses, wishlist, reviews). The schema still assumes accounts (`orders.user_id not null`, `AUTH_REQUIRED`, voucher/loyalty/blacklist keyed on `profiles`); the guest-safe changes are listed under the Order form task in TODO.md and land with it.
 3. ~~Voucher discount cap amount~~ — **RESOLVED 2026-10-17 (client): no cap.** `AUTO-FIRST5` stays 10 % uncapped.
 4. Loyalty gift notification method + fulfillment method. **Direction changed 2026-10-17 (client):** count by money spent, not by number of orders (10 sock-only orders would cost the shop), and make it a game-like "buy more, get more" reward ladder. No design yet; Claude to propose one. The every-10-orders rule in §5 stays until then.
