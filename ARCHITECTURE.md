@@ -214,7 +214,7 @@ Applied in this order, each step on what the previous one left:
 5. **Gift:** one pair of socks per order with ≥ 1 clothing item (see below). An order with 2+ shirts gets both the gift and free shipping.
 6. **No cap** on the total discount. If a product sells at a loss, the client raises its price.
 
-Still open (TODO.md → Waiting): free shipping waives the whole fee or only up to an amount; how many other promo codes one order may carry besides "lần đầu"; what the `pdz000001`–`pdz009999` codes are for. "Save a voucher before you can use it" (vouchers shown on the homepage, saved ones listed at checkout) only "if needed": later, not part of v2.
+Still open (TODO.md → Waiting): free shipping waives the whole fee or only up to an amount; how many other promo codes one order may carry besides "lần đầu". **`pdz000001`–`pdz009999` codes = rewards for returning customers** (client, 2026-10-17): they belong to the loyalty design (§8.4); how they are earned, their value, expiry and whether each is tied to one phone are not decided yet. "Save a voucher before you can use it" (vouchers shown on the homepage, saved ones listed at checkout) only "if needed": later, not part of v2.
 
 ### Free socks with clothing — decided 2026-10-17 (client)
 - Every order with at least one clothing item (tee, polo, any higher-priced garment — not socks) gets **one** pair of socks (confirmed again 2026-10-17: 2+ shirt orders get the socks **and** free shipping): the "Màu Ngẫu Nhiên" (random colour) SKU. One pair per order, however many shirts.
