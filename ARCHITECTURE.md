@@ -214,10 +214,15 @@ Applied in this order, each step on what the previous one left:
 5. **Gift:** one pair of socks per order with ≥ 1 clothing item (see below). An order with 2+ shirts gets both the gift and free shipping.
 6. **No cap** on the total discount. If a product sells at a loss, the client raises its price.
 
-Still open (TODO.md → Waiting): free shipping waives the whole fee or only up to an amount; how many other promo codes one order may carry besides "lần đầu". **`pdz000001`–`pdz009999` codes = rewards for returning customers** (client, 2026-10-17): they belong to the loyalty design (§8.4); how they are earned, their value, expiry and whether each is tied to one phone are not decided yet. "Save a voucher before you can use it" (vouchers shown on the homepage, saved ones listed at checkout) only "if needed": later, not part of v2.
+Database design: `docs/superpowers/specs/2026-10-17-pricing-v2-design.md`. Owner's calls (2026-10-18):
+- "Clothing" = `products.earns_perks`, one tick per product in the admin ("Được freeship & tặng tất"), default on. ≥ 1 such item → gift, ≥ 2 → free shipping.
+- Gift out of stock → the order goes through without it, flagged for the admin.
+- If the total moved between the checkout preview and Đặt hàng (a flash window ended or started, the SPX fee changed), `place_order()` refuses with `PRICE_CHANGED` before touching stock. The page tells the customer why and shows the new total. The customer is never charged a total they didn't see.
+
+Still open (TODO.md → Waiting): the "Khách mua lần đầu" code; free shipping waives the whole fee or only up to an amount; how many other promo codes one order may carry besides "lần đầu". **`pdz000001`–`pdz009999` codes = rewards for returning customers** (client, 2026-10-17): they belong to the loyalty design (§8.4); how they are earned, their value, expiry and whether each is tied to one phone are not decided yet. "Save a voucher before you can use it" (vouchers shown on the homepage, saved ones listed at checkout) only "if needed": later, not part of v2.
 
 ### Free socks with clothing — decided 2026-10-17 (client)
-- Every order with at least one clothing item (tee, polo, any higher-priced garment — not socks) gets **one** pair of socks (confirmed again 2026-10-17: 2+ shirt orders get the socks **and** free shipping): the "Màu Ngẫu Nhiên" (random colour) SKU. One pair per order, however many shirts.
+- Every order with at least one clothing item (tee, polo, any higher-priced garment — not socks; in the database: `products.earns_perks`) gets **one** pair of socks (confirmed again 2026-10-17: 2+ shirt orders get the socks **and** free shipping): the "Màu Ngẫu Nhiên" (random colour) SKU. One pair per order, however many shirts.
 - Not built yet: today only `products.gift_label` exists (a badge typed by hand). The gift must come out of stock like any variant (inside `place_order()`), so it also shows in the BigSeller export.
 
 ### Loyalty program
