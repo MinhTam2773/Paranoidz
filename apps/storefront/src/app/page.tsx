@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { createPublicClient } from "@paranoidz/db/public";
 import { HomeTabs } from "@/components/home/HomeTabs";
 import { Marquee, Lookbook } from "@/components/home/HomepageV2";
+import { GachaSection } from "@/components/home/GachaSection";
 import { Faq } from "@/components/home/Faq";
 import { FlashSale } from "@/components/home/FlashSale";
 import { Testimonials } from "@/components/home/Testimonials";
@@ -99,6 +100,7 @@ export default async function HomePage() {
   return (
     <>
       <HeroCarousel />
+      <GachaSection />
       <Marquee />
 
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-14 px-4 py-14 lg:gap-20 lg:px-6 lg:py-20">

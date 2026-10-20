@@ -23,7 +23,7 @@ export default async function OrderDetailPage({ params }: PageProps<"/orders/[nu
     .from("orders")
     // One literal: supabase-js infers the row type from it.
     .select(
-      "id, order_number, status, created_at, recipient_name, phone, secondary_phone, email, address, ward, district, city, note, subtotal, discount, shipping_fee, total, applied_bundles, delivery_method, spx_tracking_no, spx_ward, spx_fee, spx_created_at, order_items(id, name_snapshot, color_snapshot, size_snapshot, price_snapshot, image_snapshot, qty), order_status_history(id, status, note, created_at), voucher_uses(vouchers(code))",
+      "id, order_number, status, created_at, recipient_name, phone, secondary_phone, email, address, ward, district, city, note, subtotal, discount, shipping_fee, total, applied_bundles, delivery_method, gacha_discount, gacha_code, gacha_gift, spx_tracking_no, spx_ward, spx_fee, spx_created_at, order_items(id, name_snapshot, color_snapshot, size_snapshot, price_snapshot, image_snapshot, qty), order_status_history(id, status, note, created_at), voucher_uses(vouchers(code))",
     )
     .eq("order_number", number)
     .order("created_at", { referencedTable: "order_status_history" })
@@ -118,6 +118,18 @@ export default async function OrderDetailPage({ params }: PageProps<"/orders/[nu
                 <div className="flex justify-between gap-4">
                   <dt className="text-text-secondary">Giảm giá{discountSource && ` (${discountSource})`}</dt>
                   <dd>−{formatVnd(order.discount)}</dd>
+                </div>
+              )}
+              {order.gacha_code && (
+                <div className="flex justify-between gap-4">
+                  <dt className="text-text-secondary">Quà quay thưởng ({order.gacha_code})</dt>
+                  <dd>{order.gacha_discount > 0 ? `−${formatVnd(order.gacha_discount)}` : order.gacha_gift ? "Tặng kèm" : "Freeship"}</dd>
+                </div>
+              )}
+              {order.gacha_gift && (
+                <div className="flex justify-between gap-4">
+                  <dt className="text-text-secondary">Quà tặng kèm</dt>
+                  <dd className="text-right font-semibold">{order.gacha_gift}</dd>
                 </div>
               )}
               <div className="flex justify-between gap-4"><dt className="text-text-secondary">Phí vận chuyển</dt><dd>{formatVnd(order.shipping_fee)}</dd></div>

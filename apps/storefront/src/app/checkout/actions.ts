@@ -18,7 +18,7 @@ import { isSpxWard, spxWards } from "@/lib/wards";
 export type CheckoutInput = { items: { variantId: string; qty: number }[]; addressId?: string; deliveryMethod?: string } & CheckoutValues;
 
 export type CheckoutResult =
-  | { ok: true; order: { orderNumber: string; subtotal: number; discount: number; shippingFee: number; total: number; phone: string; deliveryMethod: string } }
+  | { ok: true; order: { orderNumber: string; subtotal: number; discount: number; gachaDiscount: number; gachaGift: string | null; shippingFee: number; total: number; phone: string; deliveryMethod: string } }
   | { ok: false; message?: string; fieldErrors?: FieldErrors };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -41,6 +41,17 @@ async function subtotalOf(items: CheckoutInput["items"]) {
 
 const PHONE_HELP = "Nhập số di động Việt Nam: 10 chữ số, bắt đầu bằng 03, 05, 07, 08 hoặc 09.";
 
+// Gacha prize-code errors (place_order / gacha_quote_code) → the same wording
+// at preview and at submit, shown under the code field.
+function gachaMessage(code: string): string | null {
+  if (code === "GACHA_INVALID") return "Mã quà không hợp lệ.";
+  if (code === "GACHA_USED") return "Mã quà này đã được sử dụng.";
+  if (code === "GACHA_EXPIRED") return "Mã quà đã hết hạn.";
+  if (code === "GACHA_MIN_NOT_MET") return "Đơn chưa đạt giá trị tối thiểu để dùng mã quà này.";
+  if (code === "GACHA_NO_SHIRT") return "Mã quà áo miễn phí cần có ít nhất 1 áo trong giỏ hàng.";
+  return null;
+}
+
 // place_order() error codes → what the customer sees (and which field it belongs to).
 function explain(code: string): CheckoutResult {
   if (code === "INVALID_PHONE") return { ok: false, fieldErrors: { phone: PHONE_HELP } };
@@ -49,6 +60,8 @@ function explain(code: string): CheckoutResult {
   if (code === "VOUCHER_EXHAUSTED") return { ok: false, fieldErrors: { voucher: "Mã đã hết lượt sử dụng." } };
   if (code === "VOUCHER_ALREADY_USED")
     return { ok: false, fieldErrors: { voucher: "Số điện thoại này đã dùng mã này rồi." } };
+  const gachaError = gachaMessage(code);
+  if (gachaError) return { ok: false, fieldErrors: { voucher: gachaError } };
   if (code.startsWith("OUT_OF_STOCK") || code.startsWith("PRODUCT_INACTIVE"))
     return { ok: false, message: "Một số sản phẩm vừa hết hàng hoặc không còn bán. Vui lòng kiểm tra lại giỏ hàng." };
   if (code === "SHIPPING_UNAVAILABLE")
@@ -106,6 +119,10 @@ export async function placeOrder(input: CheckoutInput): Promise<CheckoutResult> 
   const shipping = await quoteShipping(f.city, f.ward, unitsOf(items), subtotal);
   if (!shipping) return explain("SHIPPING_UNAVAILABLE");
 
+  // A GACHA-… code in the code field is a game prize, not a promo voucher:
+  // it travels as its own parameter and lands on its own discount line.
+  const gachaCode = f.voucher.trim().toUpperCase().startsWith("GACHA-") ? f.voucher.trim().toUpperCase() : undefined;
+
   const { data, error } = await admin.rpc("place_order", {
     p_items: items.map((i) => ({ variant_id: i.variantId, qty: i.qty })),
     p_recipient_name: f.name,
@@ -116,20 +133,21 @@ export async function placeOrder(input: CheckoutInput): Promise<CheckoutResult> 
     p_ward: f.ward,
     p_city: f.city, // one of the 34 post-2025 provinces; districts no longer exist (p_district unused)
     p_note: f.note || undefined,
-    p_voucher_code: f.voucher || undefined,
+    p_voucher_code: gachaCode ? undefined : f.voucher || undefined,
     p_user_id: claims?.claims.sub,
     p_address_id: addressId,
     // A table quote is left to place_order() (NULL), which computes the same fee itself.
     p_shipping_fee: shipping.source === "spx" ? shipping.fee : undefined,
     p_spx_voucher: shipping.voucherCode ?? undefined,
     p_delivery_method: deliveryMethod,
+    p_gacha_code: gachaCode,
   });
   if (error) {
     if (!/^[A-Z_]+(:|$)/.test(error.message)) console.error("place_order failed", error);
     return explain(error.message);
   }
 
-  const order = data as { order_id: string; order_number: string; subtotal: number; discount: number; shipping_fee: number; total: number };
+  const order = data as { order_id: string; order_number: string; subtotal: number; discount: number; gacha_discount: number; gacha_gift: string | null; shipping_fee: number; total: number };
 
   // Stock changed: refresh the ISR catalog + the ordered products now rather than within 60s.
   const { data: variants } = await admin
@@ -146,6 +164,8 @@ export async function placeOrder(input: CheckoutInput): Promise<CheckoutResult> 
       orderNumber: order.order_number,
       subtotal: order.subtotal,
       discount: order.discount,
+      gachaDiscount: order.gacha_discount,
+      gachaGift: order.gacha_gift,
       shippingFee: order.shipping_fee,
       total: order.total,
       phone: normalizePhone(f.phone)!,
@@ -216,7 +236,9 @@ export async function quoteOrder(input: { items: CheckoutInput["items"]; phone: 
   const { data, error } = await createAdminClient().rpc("quote_order", {
     p_items: items.map((i) => ({ variant_id: i.variantId, qty: i.qty })),
     p_phone: phone || undefined,
-    p_voucher_code: voucher || undefined,
+    // Gacha prize codes are quoted separately (quoteGachaCode); quote_order
+    // would only reject them as INVALID_VOUCHER.
+    p_voucher_code: voucher.toUpperCase().startsWith("GACHA-") ? undefined : voucher || undefined,
   });
   if (error) {
     if (!/^[A-Z_]+(:|$)/.test(error.message)) console.error("quote_order failed", error);
@@ -238,5 +260,48 @@ export async function quoteOrder(input: { items: CheckoutInput["items"]; phone: 
     bundles: (q.bundles ?? []).map((b) => ({ name: b.name, sets: b.sets })),
     phoneKnown: q.phone_known,
     voucherError: q.voucher_error ? voucherMessage(q.voucher_error) : null,
+  };
+}
+
+export type GachaQuote =
+  | { ok: true; prizeType: string; tier: string; discount: number; freeship: boolean; gift: string | null }
+  | { ok: false; message: string };
+
+// Checkout preview of a gacha prize code (GACHA-…): gacha_quote_code() prices
+// the cart from the database and reports the effect — a money discount, free
+// shipping, or a physical gift. Display only; place_order() re-validates and
+// redeems at submit. null = can't quote now (rate limited or failed).
+export async function quoteGachaCode(input: { items: CheckoutInput["items"]; code: string }): Promise<GachaQuote | null> {
+  const items = validItems(input?.items);
+  const code = typeof input?.code === "string" ? input.code.trim().toUpperCase().slice(0, 30) : "";
+  if (!items || !code.startsWith("GACHA-")) return null;
+
+  try {
+    if (!(await hitRateLimit("quote", "", { ip: 60, phone: 0 }))) return null;
+  } catch (limitError) {
+    console.error("hit_rate_limit failed", limitError);
+    return null;
+  }
+
+  const { data, error } = await createAdminClient().rpc("gacha_quote_code", {
+    p_code: code,
+    p_items: items.map((i) => ({ variant_id: i.variantId, qty: i.qty })),
+  });
+  if (error) {
+    console.error("gacha_quote_code failed", error);
+    return null;
+  }
+  const q = data as {
+    ok: boolean; error?: string; prize_type?: string; tier?: string;
+    discount?: number; freeship?: boolean; gift?: string | null;
+  };
+  if (!q.ok) return { ok: false, message: gachaMessage(q.error ?? "") ?? "Mã quà không hợp lệ." };
+  return {
+    ok: true,
+    prizeType: q.prize_type ?? "",
+    tier: q.tier ?? "",
+    discount: q.discount ?? 0,
+    freeship: !!q.freeship,
+    gift: q.gift ?? null,
   };
 }

@@ -5,7 +5,7 @@ import { createAdminClient } from "@paranoidz/db/admin";
 // hit_rate_limit(): 1-hour windows, one counter set per scope. true = allowed.
 // Vercel overwrites x-real-ip / x-forwarded-for with the real client IP, so they can't be spoofed
 // there. No IP (unexpected off Vercel) → only the phone limit applies.
-export async function hitRateLimit(scope: "order" | "lookup" | "quote" | "shipping", phone: string, limits: { ip: number; phone: number }) {
+export async function hitRateLimit(scope: "order" | "lookup" | "quote" | "shipping" | "gacha", phone: string, limits: { ip: number; phone: number }) {
   const h = await headers();
   const ip = h.get("x-real-ip") ?? h.get("x-forwarded-for")?.split(",")[0].trim() ?? "";
   const { data, error } = await createAdminClient().rpc("hit_rate_limit", {

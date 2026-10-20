@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState, useTransition, type FocusEvent, type FormEvent, type ReactNode } from "react";
 import { getCartItems, type CartItem } from "@/app/cart/actions";
-import { placeOrder, previewShipping, quoteOrder, type CheckoutResult, type OrderQuote } from "@/app/checkout/actions";
+import { placeOrder, previewShipping, quoteGachaCode, quoteOrder, type CheckoutResult, type GachaQuote, type OrderQuote } from "@/app/checkout/actions";
 import type { SavedAddress } from "@/components/account/AddressBook";
 import { clearCart, useCart, useCartReady, type CartLine } from "@/lib/cart";
 import {
@@ -20,6 +20,7 @@ import {
   type FieldErrors,
 } from "@/lib/checkout-validation";
 import { formatVnd } from "@/lib/format";
+import { GACHA_PRIZES, isGachaCode, type GachaPrizeType } from "@/lib/gacha";
 import {
   DELIVERY_METHODS,
   deliveryMethodLabel,
@@ -114,6 +115,9 @@ export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; acc
   const [phone, setPhone] = useState(initial?.phone ?? account?.phone ?? "");
   const [voucher, setVoucher] = useState("");
   const [quote, setQuote] = useState<{ key: string; value: OrderQuote | null } | null>(null);
+  // Gacha prize codes (GACHA-…) share the code field but quote separately:
+  // their effect is its own summary line, never part of the voucher discount.
+  const [gachaQuote, setGachaQuote] = useState<{ key: string; value: GachaQuote | null } | null>(null);
   // Delivery method: pre-selected from the product-page choice (localStorage).
   const [deliveryMethod, setDeliveryMethodState] = useState<DeliveryMethod>(() => getDeliveryMethod());
   const pickDelivery = (m: DeliveryMethod) => {
@@ -125,6 +129,7 @@ export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; acc
   const quotePhone = normalizePhone(phone) ?? "";
   const quoteVoucher = voucher.trim().toUpperCase();
   const quoteKey = `${linesKey}|${quotePhone}|${quoteVoucher}`;
+  const gachaKey = `${linesKey}|${quoteVoucher}`;
 
   useEffect(() => {
     let cancelled = false;
@@ -163,6 +168,21 @@ export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; acc
       clearTimeout(timer);
     };
   }, [linesKey, quotePhone, quoteVoucher]);
+
+  useEffect(() => {
+    if (!linesKey || !isGachaCode(quoteVoucher)) return;
+    let cancelled = false;
+    const items = linesKey.split(",").map((s) => ({ variantId: s.split(":")[0], qty: Number(s.split(":")[1]) }));
+    const timer = setTimeout(() => {
+      quoteGachaCode({ items, code: quoteVoucher }).then((value) => {
+        if (!cancelled) setGachaQuote({ key: `${linesKey}|${quoteVoucher}`, value });
+      });
+    }, 400);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [linesKey, quoteVoucher]);
 
   // FormData of the form includes the voucher (form="checkout-form") and the city's hidden input.
   function values(): CheckoutValues {
@@ -274,6 +294,12 @@ export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; acc
           {placed.discount > 0 && (
             <div className="flex justify-between"><dt className="text-text-secondary">Giảm giá</dt><dd className="text-accent">−{formatVnd(placed.discount)}</dd></div>
           )}
+          {placed.gachaDiscount > 0 && (
+            <div className="flex justify-between"><dt className="text-text-secondary">Quà quay thưởng</dt><dd className="text-accent">−{formatVnd(placed.gachaDiscount)}</dd></div>
+          )}
+          {placed.gachaGift && (
+            <div className="flex justify-between"><dt className="text-text-secondary">Quà tặng kèm</dt><dd>{placed.gachaGift}</dd></div>
+          )}
           <div className="flex justify-between"><dt className="text-text-secondary">Phí vận chuyển</dt><dd>{formatVnd(placed.shippingFee)}</dd></div>
           <div className="flex justify-between"><dt className="text-text-secondary">Phương thức giao hàng</dt><dd>{deliveryMethodLabel(placed.deliveryMethod === "express" ? "express" : "standard")}</dd></div>
           <div className="flex justify-between border-t border-border pt-3">
@@ -302,6 +328,12 @@ export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; acc
   const priced = quote?.value ?? null; // last answer, possibly for older inputs while re-quoting
   const fresh = quote?.key === quoteKey ? quote.value : undefined;
   const shippingKnown = !!city && !!ward && typeof shippingFee === "number";
+  // Gacha prize preview: only the fresh answer for the current code + lines counts.
+  const gachaFresh = gachaQuote?.key === gachaKey ? gachaQuote.value : undefined;
+  const gachaApplied = isGachaCode(quoteVoucher) && gachaFresh?.ok ? gachaFresh : null;
+  const gachaError = isGachaCode(quoteVoucher) && gachaFresh && !gachaFresh.ok ? gachaFresh.message : undefined;
+  const gachaDiscount = gachaApplied?.discount ?? 0;
+  const shippingDue = gachaApplied?.freeship ? 0 : shippingKnown ? shippingFee : undefined;
   const discountLabel =
     priced?.source === "auto_first5" ? `Ưu đãi 5 đơn đầu (−${priced.pct}%)`
     : priced?.source === "promo" ? `Mã ${priced.code} (−${priced.pct}%)`
@@ -483,7 +515,7 @@ export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; acc
             ))}
           </ul>
 
-          <Field name="voucher" label="Mã giảm giá" error={errors.voucher ?? fresh?.voucherError ?? undefined}>
+          <Field name="voucher" label="Mã giảm giá" error={errors.voucher ?? (isGachaCode(quoteVoucher) ? gachaError : fresh?.voucherError ?? undefined)}>
             {(p) => <input {...p} form="checkout-form" className={`${p.className} h-11 uppercase`} autoComplete="off" maxLength={MAX_LENGTH.voucher} />}
           </Field>
 
@@ -505,13 +537,26 @@ export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; acc
                 <dd className="shrink-0 text-accent">−{formatVnd(priced.flashDiscount)}</dd>
               </div>
             )}
+            {gachaApplied && (
+              <div className="flex justify-between gap-4">
+                <dt className="min-w-0 wrap-break-word text-text-secondary">
+                  🎁 Quà quay thưởng{GACHA_PRIZES[gachaApplied.prizeType as GachaPrizeType] ? ` (${GACHA_PRIZES[gachaApplied.prizeType as GachaPrizeType].short})` : ""}
+                </dt>
+                <dd className="shrink-0 text-accent">
+                  {gachaDiscount > 0 ? `−${formatVnd(gachaDiscount)}` : gachaApplied.gift ? "Tặng kèm đơn" : "Miễn phí ship"}
+                </dd>
+              </div>
+            )}
+            {gachaApplied?.gift && (
+              <p className="-mt-1 text-caption text-text-muted">{gachaApplied.gift} — shop sẽ bỏ vào gói hàng của bạn.</p>
+            )}
             {priced?.source === "auto_first5" && !priced.phoneKnown && (
               <p className="-mt-1 text-caption text-text-muted">Áp dụng cho 5 đơn đầu tiên của mỗi số điện thoại — kiểm tra lại khi bạn nhập số.</p>
             )}
             <div className="flex justify-between gap-4">
               <dt className="text-text-secondary">Phí vận chuyển <span className="text-caption text-text-muted">(SPX Express)</span></dt>
-              {shippingKnown ? (
-                <dd>{formatVnd(shippingFee)}</dd>
+              {typeof shippingDue === "number" ? (
+                <dd>{formatVnd(shippingDue)}{gachaApplied?.freeship && <span className="text-caption text-text-muted"> — quà quay thưởng</span>}</dd>
               ) : (
                 <dd className="text-right text-caption text-text-secondary">
                   {!city ? "Chọn tỉnh / thành phố" : !ward ? "Chọn phường / xã" : shippingFee === undefined ? "Đang tính…" : "Tính khi đặt hàng"}
@@ -520,14 +565,14 @@ export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; acc
             </div>
             {priced ? (
               <div className="flex justify-between gap-4 border-t border-border pt-3">
-                <dt className="text-nav uppercase">{shippingKnown ? "Tổng thanh toán" : "Tổng (chưa gồm phí vận chuyển)"}</dt>
-                <dd className="shrink-0 text-price">{formatVnd(subtotal - priced.discount + (shippingKnown ? shippingFee : 0))}</dd>
+                <dt className="text-nav uppercase">{typeof shippingDue === "number" ? "Tổng thanh toán" : "Tổng (chưa gồm phí vận chuyển)"}</dt>
+                <dd className="shrink-0 text-price">{formatVnd(subtotal - priced.discount - gachaDiscount + (shippingDue ?? 0))}</dd>
               </div>
             ) : (
-              shippingKnown && (
+              typeof shippingDue === "number" && (
                 <div className="flex justify-between gap-4 border-t border-border pt-3">
                   <dt className="text-nav uppercase">Tổng trước giảm giá</dt>
-                  <dd className="text-price">{formatVnd(subtotal + shippingFee)}</dd>
+                  <dd className="text-price">{formatVnd(subtotal - gachaDiscount + shippingDue)}</dd>
                 </div>
               )
             )}
