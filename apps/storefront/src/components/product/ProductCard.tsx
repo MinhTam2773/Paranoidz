@@ -94,15 +94,16 @@ export function ProductCard({ product, eager = false }: { product: ProductCardDa
         )}
       </div>
       {colors.length > 0 && (
-        <ul aria-label="Màu sắc" className="-mx-1.5 mt-1 flex flex-wrap">
+        // One row always (owner 2026-10-20): colour chips never wrap; a long name truncates.
+        <ul aria-label="Màu sắc" className="-mx-1 mt-1 flex flex-nowrap">
           {colors.map((c) => (
-            <li key={c.name}>
+            <li key={c.name} className="min-w-0">
               <button
                 type="button"
                 onClick={() => setColor(c.name)}
                 aria-pressed={c.name === color}
                 aria-label={c.hex ? c.name : undefined}
-                className="flex h-11 min-w-11 items-center justify-center px-1.5"
+                className={`flex h-11 max-w-full items-center justify-center px-1 ${c.hex ? "min-w-11" : ""}`}
               >
                 {c.hex ? (
                   <span
@@ -111,7 +112,7 @@ export function ProductCard({ product, eager = false }: { product: ProductCardDa
                   />
                 ) : (
                   <span
-                    className={`rounded-sm border px-2 py-1 text-caption ${c.name === color ? "border-text-primary text-text-primary" : "border-border text-text-secondary"}`}
+                    className={`max-w-full truncate whitespace-nowrap rounded-sm border px-1.5 py-1 text-[11px] ${c.name === color ? "border-text-primary text-text-primary" : "border-border text-text-secondary"}`}
                   >
                     {c.name}
                   </span>
@@ -133,34 +134,32 @@ export function ProductCard({ product, eager = false }: { product: ProductCardDa
           const hasReal = reviewCount > 0 && ratingAverage >= 3;
           const shown = hasReal ? ratingAverage : 5;
           return (
-            <>
-              <p className="flex w-fit flex-wrap items-center gap-1.5">
-                {/* relative: contains the absolutely-positioned sr-only text (S13 2026-10-17:
-                    without it, the sr-only sat at x=377px, widening the page to 378px). */}
-                <span className="relative flex items-center gap-1 rounded-sm border border-warning px-1.5 py-0.5 text-caption">
-                  <span aria-hidden className="text-warning">★</span>
-                  <span className="text-text-primary">{shown.toFixed(1)}</span>
-                  {hasReal && <span className="text-text-secondary">({reviewCount})</span>}
-                  <span className="sr-only">
-                    {hasReal ? `điểm trung bình, ${reviewCount} đánh giá` : "đánh giá 5 sao"}
-                  </span>
+            // Rating, express badge, sold count and gift share one row (owner 2026-10-20);
+            // on a narrow card the row wraps, stars + express first.
+            <p className="flex w-fit max-w-full flex-wrap items-center gap-1.5">
+              {/* relative: contains the absolutely-positioned sr-only text (S13 2026-10-17:
+                  without it, the sr-only sat at x=377px, widening the page to 378px). */}
+              <span className="relative flex items-center gap-1 whitespace-nowrap rounded-sm border border-warning px-1.5 py-0.5 text-caption">
+                <span aria-hidden className="text-warning">★</span>
+                <span className="text-text-primary">{shown.toFixed(1)}</span>
+                {hasReal && <span className="text-text-secondary">({reviewCount})</span>}
+                <span className="sr-only">
+                  {hasReal ? `điểm trung bình, ${reviewCount} đánh giá` : "đánh giá 5 sao"}
                 </span>
-                {shopeeSoldCount > 0 && (
-                  <span className="text-caption text-text-secondary">Đã bán {shopeeSoldCount}</span>
-                )}
-              </p>
-              <p className="flex w-fit flex-wrap items-center gap-1.5">
-                <span className="flex items-center gap-1 rounded-sm bg-accent/10 px-1.5 py-0.5 text-caption font-medium text-accent">
-                  <span aria-hidden>⚡</span>Hoả tốc HCM
+              </span>
+              <span className="flex items-center gap-1 whitespace-nowrap rounded-sm bg-accent/10 px-1.5 py-0.5 text-caption font-medium text-accent">
+                <span aria-hidden>⚡</span>Hoả tốc HCM
+              </span>
+              {shopeeSoldCount > 0 && (
+                <span className="whitespace-nowrap text-caption text-text-secondary">Đã bán {shopeeSoldCount}</span>
+              )}
+              {giftLabel && (
+                <span className="flex items-center gap-1 whitespace-nowrap rounded-sm bg-accent/10 px-1.5 py-0.5 text-caption font-medium text-accent">
+                  <span aria-hidden>🎁</span>
+                  {giftLabel}
                 </span>
-                {giftLabel && (
-                  <span className="flex items-center gap-1 rounded-sm bg-accent/10 px-1.5 py-0.5 text-caption font-medium text-accent">
-                    <span aria-hidden>🎁</span>
-                    {giftLabel}
-                  </span>
-                )}
-              </p>
-            </>
+              )}
+            </p>
           );
         })()}
       </Link>

@@ -7,6 +7,7 @@ import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
 import { searchSuggestions } from "@/app/search/actions";
 import type { ProductCardData } from "@/components/product/ProductCard";
 import { formatVnd } from "@/lib/format";
+import { parseOrderNumber } from "@/lib/order-number";
 import { SearchIcon } from "./icons";
 
 const MIN_CHARS = 2;
@@ -17,6 +18,8 @@ const DEBOUNCE_MS = 250;
 // stays, dimmed, while the next one loads). ↑/↓ + Enter open a product; Enter with nothing
 // highlighted submits the full search. 16px text below lg so iOS Safari doesn't zoom on focus.
 // `onNavigate`: a suggestion was picked (the mobile header closes its search panel).
+// The box doubles as the order-tracking entry (owner 2026-10-20): a query that parses as an
+// order number pins a tracking shortcut on top of the dropdown, and Enter goes straight there.
 export function SearchForm({
   autoFocus,
   defaultValue = "",
@@ -35,6 +38,12 @@ export function SearchForm({
   const request = useRef(0);
   const listId = useId();
   const query = value.trim();
+  // One box for products and orders (owner 2026-10-20): a query that parses as an order
+  // number offers a tracking shortcut on top of the product suggestions. A bare 10-digit
+  // phone is excluded — the parser would misread it as year+number, and a phone alone
+  // cannot look an order up anyway.
+  const orderNumber = /^0\d{9}$/.test(query.replace(/[\s.]/g, "")) ? null : parseOrderNumber(query);
+  const orderHref = orderNumber ? `/order-lookup?order=${orderNumber}` : null;
 
   useEffect(() => {
     const id = ++request.current; // any answer still in flight is now stale
@@ -61,7 +70,8 @@ export function SearchForm({
     return () => document.removeEventListener("pointerdown", onPointer);
   }, [open]);
 
-  const shown = open && query.length >= MIN_CHARS && suggestions !== null;
+  const shownProducts = open && query.length >= MIN_CHARS && suggestions !== null;
+  const shown = shownProducts || (open && orderHref !== null);
   const searchHref = `/search?q=${encodeURIComponent(query)}`;
   const hrefs = suggestions?.products.length ? [...suggestions.products.map((p) => `/products/${p.slug}`), searchHref] : [];
 
@@ -93,7 +103,20 @@ export function SearchForm({
   const optionClass = (i: number) => (i === active ? "bg-bg-tertiary" : "");
 
   return (
-    <form ref={formRef} action="/search" role="search" className="relative w-full">
+    <form
+      ref={formRef}
+      action="/search"
+      role="search"
+      className="relative w-full"
+      onSubmit={(e) => {
+        // Enter on an exact order number goes to tracking, not product results.
+        if (orderHref && active < 0) {
+          e.preventDefault();
+          picked();
+          router.push(orderHref);
+        }
+      }}
+    >
       <SearchIcon
         width={18}
         height={18}
@@ -113,8 +136,8 @@ export function SearchForm({
         }}
         onFocus={() => setOpen(true)}
         onKeyDown={onKeyDown}
-        placeholder="Tìm sản phẩm..."
-        aria-label="Tìm sản phẩm"
+        placeholder="Tìm sản phẩm, mã đơn..."
+        aria-label="Tìm sản phẩm hoặc tra cứu đơn hàng"
         aria-expanded={shown}
         aria-controls={listId}
         aria-autocomplete="list"
@@ -126,13 +149,27 @@ export function SearchForm({
         <div
           id={listId}
           role="listbox"
-          aria-label="Gợi ý sản phẩm"
-          aria-busy={suggestions.query !== query}
+          aria-label="Gợi ý tìm kiếm"
+          aria-busy={suggestions !== null && suggestions.query !== query}
           className={`absolute inset-x-0 top-full z-20 mt-1 flex flex-col overflow-hidden rounded-sm border border-border bg-bg-primary shadow-2 transition-opacity duration-200 ${
-            suggestions.query !== query ? "opacity-60" : ""
+            suggestions !== null && suggestions.query !== query ? "opacity-60" : ""
           }`}
         >
-          {suggestions.products.map((p, i) => {
+          {orderHref && (
+            <Link
+              href={orderHref}
+              onClick={picked}
+              className="flex h-11 shrink-0 items-center gap-2 border-b border-border bg-accent/5 px-3 text-product-name text-text-primary"
+            >
+              <span aria-hidden>📦</span>
+              <span className="min-w-0 truncate">
+                Tra cứu đơn hàng <span className="font-semibold">{orderNumber}</span>
+              </span>
+            </Link>
+          )}
+          {suggestions !== null && (
+            <>
+              {suggestions.products.map((p, i) => {
             const onSale = p.originalPrice !== null && p.originalPrice > p.price;
             return (
               <Link
@@ -173,10 +210,12 @@ export function SearchForm({
             >
               Xem tất cả kết quả
             </Link>
-          ) : (
+          ) : orderHref ? null : (
             <p className="px-3 py-3 text-product-name wrap-break-word text-text-muted">
               Không có sản phẩm nào khớp với &ldquo;{suggestions.query}&rdquo;.
             </p>
+          )}
+            </>
           )}
         </div>
       )}

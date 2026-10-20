@@ -8,14 +8,15 @@ const MARQUEE_ITEMS = ["Paranoidz", "Streetwear Việt Nam", "BST 2026", "Back t
 export function Marquee() {
   const row = [...MARQUEE_ITEMS, ...MARQUEE_ITEMS, ...MARQUEE_ITEMS];
   return (
-    <div className="overflow-hidden border-y border-border bg-bg-dark py-5 text-text-on-dark" aria-hidden>
+    // Smaller type on mobile (owner 2026-10-20): the h1 band dwarfed a phone screen.
+    <div className="overflow-hidden border-y border-border bg-bg-dark py-3 text-text-on-dark sm:py-5" aria-hidden>
       <div className="flex w-max animate-ticker items-center">
         {[0, 1].map((half) => (
           <div key={half} className="flex w-max items-center">
             {row.map((item, i) => (
               <span key={`${half}-${i}`} className="flex items-center">
-                <span className="px-8 font-logo text-h1 uppercase italic">{item}</span>
-                <span className="text-accent text-h2">✦</span>
+                <span className="px-4 font-logo text-h3 uppercase italic sm:px-8 sm:text-h2 lg:text-h1">{item}</span>
+                <span className="text-base text-accent sm:text-h3 lg:text-h2">✦</span>
               </span>
             ))}
           </div>
