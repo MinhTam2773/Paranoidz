@@ -32,6 +32,21 @@ const LOOKS = [
   { src: "/home/look-4.jpg", alt: "Áo thun Paranoidz màu xám ngồi quán cà phê" },
   { src: "/home/look-5.jpg", alt: "Áo thun đen Paranoidz" },
   { src: "/home/look-6.jpg", alt: "Áo polo trắng Paranoidz" },
+  // Customer review photos from Shopee (collected 2026-10-20) — real buyers
+  // wearing the products, not flat-lays.
+  { src: "/home/look-7.jpg", alt: "Khách mặc áo thun pdz01 màu xanh mint chụp gương" },
+  { src: "/home/look-8.jpg", alt: "Khách mặc áo thun pdz01 màu xám phối mũ lưỡi trai" },
+  { src: "/home/look-9.jpg", alt: "Khách mặc áo thun pdz01 màu xám chụp gương" },
+  { src: "/home/look-10.jpg", alt: "Khách mặc áo thun pdz01 màu xám, cận cảnh chất vải" },
+  { src: "/home/look-11.jpg", alt: "Khách mặc áo thun đen pdz04 dập nổi ngoài phố" },
+  { src: "/home/look-12.jpg", alt: "Khách mặc áo thun đen pdz04 chụp gương" },
+  { src: "/home/look-13.jpg", alt: "Khách mặc áo thun đen pdz04 phối quần short" },
+  { src: "/home/look-14.jpg", alt: "Khách mặc áo thun đen pdz04 ngoài trời" },
+  { src: "/home/look-15.jpg", alt: "Khách mặc áo thun đen pdz04 ngồi ghế gỗ ngoài trời" },
+  { src: "/home/look-16.jpg", alt: "Khách mặc áo polo pdz06 màu trắng kem" },
+  { src: "/home/look-17.jpg", alt: "Khách mặc áo polo pdz06 màu nâu phối quần short" },
+  { src: "/home/look-18.jpg", alt: "Khách mặc áo polo pdz06 màu nâu" },
+  { src: "/home/look-19.jpg", alt: "Khách mặc áo polo pdz06 màu nâu phối quần sáng màu" },
 ];
 
 // Vertical TikTok clips — native 9:16, text overlays are fine here because
@@ -47,7 +62,7 @@ export function Lookbook() {
       <div className="mb-8 flex items-end justify-between border-b border-border pb-4">
         <h2 className="text-h2 uppercase">
           <span className="mr-3 text-accent">✦</span>
-          Ngoài đời thật
+          Đời thực
         </h2>
         <span className="shrink-0 text-nav uppercase text-text-secondary">Khách mặc Paranoidz</span>
       </div>
