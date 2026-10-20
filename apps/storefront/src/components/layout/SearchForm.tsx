@@ -149,7 +149,7 @@ export function SearchForm({
         <div
           id={listId}
           role="listbox"
-          aria-label="Gợi ý tìm kiếm"
+          aria-label="Gợi ý sản phẩm"
           aria-busy={suggestions !== null && suggestions.query !== query}
           className={`absolute inset-x-0 top-full z-20 mt-1 flex flex-col overflow-hidden rounded-sm border border-border bg-bg-primary shadow-2 transition-opacity duration-200 ${
             suggestions !== null && suggestions.query !== query ? "opacity-60" : ""
