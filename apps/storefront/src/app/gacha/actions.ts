@@ -1,36 +1,55 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
+import { cookies } from "next/headers";
 import { createAdminClient } from "@paranoidz/db/admin";
-import { normalizePhone } from "@/lib/checkout-validation";
 import { hitRateLimit } from "@/lib/rate-limit";
-import type { GachaPrize, GachaSpinResult, GachaState, GachaTaskId } from "@/lib/gacha";
+import { GACHA_COOKIE, type GachaPrize, type GachaSpinResult, type GachaState, type GachaTaskId } from "@/lib/gacha";
 
 // Gacha prize game (2026-10-20): every rule — the daily free spin, mission
-// grants and caps, the weighted draw, the monthly shirt cap, the pity rule —
-// is enforced by the gacha_* functions in the database. These actions only
-// validate the phone, rate-limit, and translate the result. Nothing about the
-// draw is decided or trusted on the client.
+// grants and caps, the weighted draw, the monthly shirt cap, the pity rule,
+// the global daily prize cap — is enforced by the gacha_* functions in the
+// database. These actions only resolve the player, rate-limit, and
+// translate the result. Nothing about the draw is decided or trusted on
+// the client.
+//
+// The player is an opaque key the server issues as the `pdz_gacha` cookie
+// (httpOnly, one year): no phone number, no account. The browser never
+// chooses or even sees another player's key — the cookie is read here, on
+// the server, on every call.
 
 const TASK_IDS: GachaTaskId[] = ["view3", "cart", "like", "follow"];
 
+/** The caller's player key, minted and stored as a cookie on first visit. */
+async function playerKey(): Promise<string> {
+  const store = await cookies();
+  const existing = store.get(GACHA_COOKIE)?.value;
+  if (existing) return existing;
+  const key = randomUUID();
+  store.set(GACHA_COOKIE, key, {
+    httpOnly: true,
+    sameSite: "lax",
+    path: "/",
+    maxAge: 60 * 60 * 24 * 365,
+  });
+  return key;
+}
+
 type StateJson = {
-  phone: string;
   spins_left: number;
   tasks_today: string[];
   prizes: { code: string; prize_type: GachaPrize["prizeType"]; tier: GachaPrize["tier"]; status: GachaPrize["status"]; expires_at: string; issued_at: string }[];
 };
 
-export async function getGachaState(rawPhone: string): Promise<GachaState | null> {
-  const phone = typeof rawPhone === "string" ? normalizePhone(rawPhone) : null;
-  if (!phone) return null;
-  const { data, error } = await createAdminClient().rpc("gacha_get_state", { p_phone: phone });
+export async function getGachaState(): Promise<GachaState | null> {
+  const key = await playerKey();
+  const { data, error } = await createAdminClient().rpc("gacha_get_state", { p_player_key: key });
   if (error) {
     console.error("gacha_get_state failed", error);
     return null;
   }
   const s = data as StateJson;
   return {
-    phone: s.phone,
     spinsLeft: s.spins_left,
     tasksToday: s.tasks_today.filter((t): t is GachaTaskId => (TASK_IDS as string[]).includes(t)),
     prizes: s.prizes.map((p) => ({
@@ -46,21 +65,23 @@ export async function getGachaState(rawPhone: string): Promise<GachaState | null
 
 export type SpinOutcome = { ok: true; spin: GachaSpinResult } | { ok: false; message: string };
 
-export async function spinGacha(rawPhone: string): Promise<SpinOutcome> {
-  const phone = typeof rawPhone === "string" ? normalizePhone(rawPhone) : null;
-  if (!phone) return { ok: false, message: "Số điện thoại chưa hợp lệ." };
+export async function spinGacha(): Promise<SpinOutcome> {
+  const key = await playerKey();
   try {
-    if (!(await hitRateLimit("gacha", phone, { ip: 60, phone: 30 }))) {
+    if (!(await hitRateLimit("gacha", key, { ip: 60, phone: 30 }))) {
       return { ok: false, message: "Bạn thao tác hơi nhanh — đợi một lát rồi thử lại nhé." };
     }
   } catch (limitError) {
     console.error("hit_rate_limit failed", limitError);
     return { ok: false, message: "Đã có lỗi xảy ra. Vui lòng thử lại." };
   }
-  const { data, error } = await createAdminClient().rpc("gacha_spin", { p_phone: phone });
+  const { data, error } = await createAdminClient().rpc("gacha_spin", { p_player_key: key });
   if (error) {
     if (error.message.startsWith("NO_SPINS")) {
       return { ok: false, message: "Bạn đã hết lượt quay. Làm nhiệm vụ để lấy thêm lượt nhé." };
+    }
+    if (error.message.startsWith("DAILY_CAP")) {
+      return { ok: false, message: "Hôm nay shop đã phát hết quà trong ngày. Mai quay lại nhé!" };
     }
     console.error("gacha_spin failed", error);
     return { ok: false, message: "Đã có lỗi xảy ra. Vui lòng thử lại." };
@@ -74,19 +95,18 @@ export async function spinGacha(rawPhone: string): Promise<SpinOutcome> {
 
 export type ClaimOutcome = { ok: true; spinsLeft: number } | { ok: false; message: string };
 
-export async function claimGachaTask(rawPhone: string, task: string): Promise<ClaimOutcome> {
-  const phone = typeof rawPhone === "string" ? normalizePhone(rawPhone) : null;
-  if (!phone) return { ok: false, message: "Số điện thoại chưa hợp lệ." };
+export async function claimGachaTask(task: string): Promise<ClaimOutcome> {
   if (!(TASK_IDS as string[]).includes(task)) return { ok: false, message: "Nhiệm vụ không hợp lệ." };
+  const key = await playerKey();
   try {
-    if (!(await hitRateLimit("gacha", phone, { ip: 60, phone: 30 }))) {
+    if (!(await hitRateLimit("gacha", key, { ip: 60, phone: 30 }))) {
       return { ok: false, message: "Bạn thao tác hơi nhanh — đợi một lát rồi thử lại nhé." };
     }
   } catch (limitError) {
     console.error("hit_rate_limit failed", limitError);
     return { ok: false, message: "Đã có lỗi xảy ra. Vui lòng thử lại." };
   }
-  const { data, error } = await createAdminClient().rpc("gacha_claim_task", { p_phone: phone, p_task: task });
+  const { data, error } = await createAdminClient().rpc("gacha_claim_task", { p_player_key: key, p_task: task });
   if (error) {
     if (error.message.startsWith("TASK_ALREADY_CLAIMED")) {
       return { ok: false, message: "Nhiệm vụ này bạn đã nhận hôm nay rồi." };

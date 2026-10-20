@@ -36,7 +36,8 @@ export const GACHA_TASKS: { id: GachaTaskId; name: string; reward: number }[] = 
   { id: "follow", name: "Theo dõi TikTok @paranoidz.vn", reward: 1 },
 ];
 
-export const GACHA_PHONE_KEY = "pdz_gacha_phone";
+/** Name of the cookie that carries the player's opaque identity key (set by app/gacha/actions.ts). */
+export const GACHA_COOKIE = "pdz_gacha";
 
 /** Prize codes live in their own namespace so checkout never confuses them with promo vouchers. */
 export function isGachaCode(code: string) {
@@ -53,7 +54,6 @@ export type GachaPrize = {
 };
 
 export type GachaState = {
-  phone: string;
   spinsLeft: number;
   tasksToday: GachaTaskId[];
   prizes: GachaPrize[];

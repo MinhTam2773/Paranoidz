@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 import { after } from "next/server";
 import { createAdminClient } from "@paranoidz/db/admin";
 import { createClient } from "@paranoidz/db/server";
@@ -12,6 +13,7 @@ import { hitRateLimit } from "@/lib/rate-limit";
 import { quoteShipping } from "@/lib/shipping-quote";
 import { HOTLINE } from "@/lib/site";
 import { isSpxWard, spxWards } from "@/lib/wards";
+import { GACHA_COOKIE } from "@/lib/gacha";
 
 // addressId: the saved address the form was filled from, if untouched (links orders.address_id).
 // deliveryMethod: "standard" | "express", chosen on the product page / checkout (validated below).
@@ -123,6 +125,11 @@ export async function placeOrder(input: CheckoutInput): Promise<CheckoutResult> 
   // it travels as its own parameter and lands on its own discount line.
   const gachaCode = f.voucher.trim().toUpperCase().startsWith("GACHA-") ? f.voucher.trim().toUpperCase() : undefined;
 
+  // The gacha cookie player (if this browser ever played): the order's +2
+  // spin grant lands on that player inside place_order(). Read-only — a
+  // browser without the cookie simply gets no grant.
+  const gachaPlayer = (await cookies()).get(GACHA_COOKIE)?.value || undefined;
+
   const { data, error } = await admin.rpc("place_order", {
     p_items: items.map((i) => ({ variant_id: i.variantId, qty: i.qty })),
     p_recipient_name: f.name,
@@ -141,6 +148,7 @@ export async function placeOrder(input: CheckoutInput): Promise<CheckoutResult> 
     p_spx_voucher: shipping.voucherCode ?? undefined,
     p_delivery_method: deliveryMethod,
     p_gacha_code: gachaCode,
+    p_gacha_player: gachaPlayer,
   });
   if (error) {
     if (!/^[A-Z_]+(:|$)/.test(error.message)) console.error("place_order failed", error);
