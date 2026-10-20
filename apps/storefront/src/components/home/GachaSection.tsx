@@ -2,12 +2,10 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type FormEvent } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { claimGachaTask, getGachaState, spinGacha } from "@/app/gacha/actions";
 import { useCart } from "@/lib/cart";
-import { formatPhone, normalizePhone } from "@/lib/checkout-validation";
 import {
-  GACHA_PHONE_KEY,
   GACHA_POOL,
   GACHA_PRIZES,
   GACHA_TASKS,
@@ -23,11 +21,13 @@ import { getRecentIds } from "@/lib/recently-viewed";
 // strip. The browser only animates — gacha_spin() on the server draws the
 // prize and hands back the result; the strip is then built so the winning
 // card lands under the marker. Filler cards use the same weights for looks.
+// The player is identified by the server-set `pdz_gacha` cookie (see
+// app/gacha/actions.ts); there is no sign-up gate of any kind.
 
 const CARD_W = 92;
 const GAP = 8;
 const STEP = CARD_W + GAP;
-const STRIP_LEN = 38;
+const STRIP_LEN = 48;
 const TARGET = 26;
 const SPIN_MS = 5550;
 
@@ -49,18 +49,6 @@ function drawFiller(): GachaPrizeType {
     if (r <= 0) return t;
   }
   return "miss";
-}
-
-// The saved phone lives in localStorage; read it the way lib/cart reads its
-// store (server snapshot = none) so hydration never disagrees.
-const subscribeNoop = () => () => {};
-function readSavedPhone(): string | null {
-  try {
-    const v = window.localStorage.getItem(GACHA_PHONE_KEY);
-    return v && normalizePhone(v) ? v : null;
-  } catch {
-    return null;
-  }
 }
 
 function PrizeCard({ type, win }: { type: GachaPrizeType; win: boolean }) {
@@ -101,11 +89,10 @@ function PrizeCard({ type, win }: { type: GachaPrizeType; win: boolean }) {
 
 export function GachaSection() {
   const cart = useCart();
-  const savedPhone = useSyncExternalStore(subscribeNoop, readSavedPhone, () => null);
-  const [phoneOverride, setPhoneOverride] = useState<string | null>(null);
-  const phone = phoneOverride ?? savedPhone;
   const [state, setState] = useState<GachaState | null>(null);
-  const [strip, setStrip] = useState<GachaPrizeType[]>(() => [...GACHA_POOL, ...GACHA_POOL].slice(0, 12));
+  const [strip, setStrip] = useState<GachaPrizeType[]>(() =>
+    Array.from({ length: 40 }, (_, i) => GACHA_POOL[i % GACHA_POOL.length]),
+  );
   const [offset, setOffset] = useState(0);
   const [anim, setAnim] = useState(false);
   const [spinning, setSpinning] = useState(false);
@@ -113,9 +100,6 @@ export function GachaSection() {
   const [flash, setFlash] = useState(0);
   const [result, setResult] = useState<GachaSpinResult | null>(null);
   const [status, setStatus] = useState("");
-  const [phoneOpen, setPhoneOpen] = useState(false);
-  const [phoneInput, setPhoneInput] = useState("");
-  const [phoneError, setPhoneError] = useState<string | null>(null);
   const [missionsOpen, setMissionsOpen] = useState(false);
   const [viewedCount, setViewedCount] = useState(() => getRecentIds().length);
   const [claimBusy, setClaimBusy] = useState<GachaTaskId | null>(null);
@@ -123,22 +107,22 @@ export function GachaSection() {
   const vpRef = useRef<HTMLDivElement>(null);
   const timers = useRef<number[]>([]);
 
-  const refresh = useCallback(async (forPhone: string) => {
-    const s = await getGachaState(forPhone);
+  const refresh = useCallback(async () => {
+    const s = await getGachaState();
     if (s) setState(s);
   }, []);
 
-  // Load the player's server state whenever the phone becomes known / changes.
+  // First visit works immediately: the state call mints the player cookie
+  // server-side and returns this player's balance, missions and prizes.
   useEffect(() => {
-    if (!phone) return;
     let cancelled = false;
-    getGachaState(phone).then((s) => {
+    getGachaState().then((s) => {
       if (!cancelled && s) setState(s);
     });
     return () => {
       cancelled = true;
     };
-  }, [phone]);
+  }, []);
 
   useEffect(() => {
     const stash = timers.current;
@@ -147,19 +131,15 @@ export function GachaSection() {
 
   async function onSpin() {
     if (spinning) return;
-    if (!phone) {
-      setPhoneOpen(true);
-      return;
-    }
     setSpinning(true);
     setResult(null);
     setWinIndex(null);
     setStatus("Đang mở...");
-    const out = await spinGacha(phone);
+    const out = await spinGacha();
     if (!out.ok) {
       setSpinning(false);
       setStatus(out.message);
-      void refresh(phone);
+      void refresh();
       return;
     }
     const prize = out.spin;
@@ -187,54 +167,29 @@ export function GachaSection() {
         setResult(prize);
         setStatus(prize.spinsLeft > 0 ? `Còn ${prize.spinsLeft} lượt nữa.` : "Bấm dấu + làm nhiệm vụ để lấy thêm lượt.");
         setSpinning(false);
-        void refresh(phone);
+        void refresh();
       }, SPIN_MS),
     );
   }
 
-  function submitPhone(e: FormEvent) {
-    e.preventDefault();
-    const normalized = normalizePhone(phoneInput);
-    if (!normalized) {
-      setPhoneError("Nhập số di động Việt Nam: 10 chữ số, bắt đầu bằng 03, 05, 07, 08 hoặc 09.");
-      return;
-    }
-    try {
-      window.localStorage.setItem(GACHA_PHONE_KEY, normalized);
-    } catch {
-      /* storage unavailable — the number still works for this session */
-    }
-    setPhoneOverride(normalized);
-    setPhoneOpen(false);
-    setPhoneError(null);
-    void getGachaState(normalized).then((s) => {
-      setState(s);
-      if (s) setStatus(`Bạn có ${s.spinsLeft} lượt quay. Chúc bạn may mắn!`);
-    });
-  }
-
   function openMissions() {
-    if (!phone) {
-      setPhoneOpen(true);
-      return;
-    }
     setViewedCount(getRecentIds().length);
     setClaimMsg(null);
     setMissionsOpen(true);
   }
 
   async function onClaim(task: GachaTaskId) {
-    if (!phone || claimBusy) return;
+    if (claimBusy) return;
     setClaimBusy(task);
     setClaimMsg(null);
-    const r = await claimGachaTask(phone, task);
+    const r = await claimGachaTask(task);
     setClaimBusy(null);
     if (r.ok) {
-      await refresh(phone);
+      await refresh();
       setClaimMsg("Đã cộng +1 lượt quay.");
     } else {
       setClaimMsg(r.message);
-      void refresh(phone);
+      void refresh();
     }
   }
 
@@ -248,7 +203,7 @@ export function GachaSection() {
   }
 
   const spinsLeft = state?.spinsLeft ?? 1;
-  const outOfSpins = !!phone && !!state && state.spinsLeft <= 0;
+  const outOfSpins = !!state && state.spinsLeft <= 0;
   const resultPrize = result ? GACHA_PRIZES[result.prizeType] : null;
   const resultTier = result ? GACHA_TIERS[result.tier] : null;
 
@@ -332,14 +287,6 @@ export function GachaSection() {
             </button>
           </span>
         </div>
-        {phone && (
-          <p className="mt-2 text-caption text-white/50">
-            Đang chơi với số {formatPhone(phone)} ·{" "}
-            <button type="button" className="underline" onClick={() => { setPhoneInput(phone); setPhoneOpen(true); }}>
-              Đổi số
-            </button>
-          </p>
-        )}
       </div>
 
       {/* Result */}
@@ -386,50 +333,6 @@ export function GachaSection() {
           })}
         </div>
       )}
-
-      {/* Phone modal */}
-      {phoneOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={() => setPhoneOpen(false)}>
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-label="Nhập số điện thoại"
-            className="relative w-full max-w-[350px] rounded-2xl border border-white/15 bg-[#14161c] p-5 text-white"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              type="button"
-              aria-label="Đóng"
-              onClick={() => setPhoneOpen(false)}
-              className="absolute right-2.5 top-2.5 flex h-[29px] w-[29px] items-center justify-center rounded-full bg-white/10 text-[13px] font-extrabold"
-            >
-              ✕
-            </button>
-            <div className="text-center text-[15.5px] font-extrabold uppercase tracking-wide">Nhập số điện thoại</div>
-            <p className="mt-1 text-center text-[12px] text-white/60">
-              Nhận 1 lượt quay miễn phí mỗi ngày. Lượt quay và quà của bạn được tính theo số này.
-            </p>
-            <form onSubmit={submitPhone} className="mt-4 flex flex-col gap-3">
-              <input
-                value={phoneInput}
-                onChange={(e) => setPhoneInput(e.target.value)}
-                type="tel"
-                inputMode="tel"
-                autoComplete="tel"
-                placeholder="0901 234 567"
-                aria-label="Số điện thoại"
-                aria-invalid={!!phoneError}
-                className="h-11 w-full rounded-lg border border-white/20 bg-white/10 px-3 text-base text-white placeholder:text-white/40 focus:border-white/60 focus:outline-none"
-              />
-              {phoneError && <p className="text-[12px] text-[#ff8a8a]">{phoneError}</p>}
-              <button type="submit" className="h-11 rounded-full bg-accent text-button uppercase text-text-on-dark transition-colors hover:bg-accent-hover">
-                Bắt đầu quay
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
-
       {/* Missions modal */}
       {missionsOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={() => setMissionsOpen(false)}>

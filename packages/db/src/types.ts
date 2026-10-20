@@ -1134,7 +1134,8 @@ export type Database = {
           expires_at: string
           id: string
           issued_at: string
-          phone: string
+          phone: string | null
+          player_key: string | null
           prize_type: string
           redeemed_at: string | null
           redeemed_order_id: string | null
@@ -1146,7 +1147,8 @@ export type Database = {
           expires_at: string
           id?: string
           issued_at?: string
-          phone: string
+          phone?: string | null
+          player_key?: string | null
           prize_type: string
           redeemed_at?: string | null
           redeemed_order_id?: string | null
@@ -1158,7 +1160,8 @@ export type Database = {
           expires_at?: string
           id?: string
           issued_at?: string
-          phone?: string
+          phone?: string | null
+          player_key?: string | null
           prize_type?: string
           redeemed_at?: string | null
           redeemed_order_id?: string | null
@@ -1171,14 +1174,17 @@ export type Database = {
         Row: {
           created_at: string
           phone: string
+          player_key: string | null
         }
         Insert: {
           created_at?: string
           phone: string
+          player_key?: string | null
         }
         Update: {
           created_at?: string
           phone?: string
+          player_key?: string | null
         }
         Relationships: []
       }
@@ -1189,7 +1195,8 @@ export type Database = {
           day: string
           id: string
           order_id: string | null
-          phone: string
+          phone: string | null
+          player_key: string | null
           source: string
         }
         Insert: {
@@ -1198,7 +1205,8 @@ export type Database = {
           day: string
           id?: string
           order_id?: string | null
-          phone: string
+          phone?: string | null
+          player_key?: string | null
           source: string
         }
         Update: {
@@ -1207,7 +1215,8 @@ export type Database = {
           day?: string
           id?: string
           order_id?: string | null
-          phone?: string
+          phone?: string | null
+          player_key?: string | null
           source?: string
         }
         Relationships: []
@@ -1218,7 +1227,8 @@ export type Database = {
           created_at: string
           funded_by: string
           id: string
-          phone: string
+          phone: string | null
+          player_key: string | null
           prize_type: string
           tier: string
         }
@@ -1227,7 +1237,8 @@ export type Database = {
           created_at?: string
           funded_by?: string
           id?: string
-          phone: string
+          phone?: string | null
+          player_key?: string | null
           prize_type: string
           tier: string
         }
@@ -1236,7 +1247,8 @@ export type Database = {
           created_at?: string
           funded_by?: string
           id?: string
-          phone?: string
+          phone?: string | null
+          player_key?: string | null
           prize_type?: string
           tier?: string
         }
@@ -1276,15 +1288,15 @@ export type Database = {
         Returns: string[]
       }
       gacha_balance: {
-        Args: { p_phone: string }
+        Args: { p_player_key: string }
         Returns: number
       }
       gacha_claim_task: {
-        Args: { p_phone: string; p_task: string }
+        Args: { p_player_key: string; p_task: string }
         Returns: Json
       }
       gacha_get_state: {
-        Args: { p_phone: string }
+        Args: { p_player_key: string }
         Returns: Json
       }
       gacha_quote_code: {
@@ -1292,7 +1304,7 @@ export type Database = {
         Returns: Json
       }
       gacha_spin: {
-        Args: { p_phone: string }
+        Args: { p_player_key: string }
         Returns: Json
       }
       gacha_today: {
@@ -1338,6 +1350,7 @@ export type Database = {
           p_district?: string
           p_email?: string
           p_gacha_code?: string
+          p_gacha_player?: string
           p_items: Json
           p_note?: string
           p_phone: string
