@@ -98,6 +98,34 @@
     from { transform: translateX(0); }
     to { transform: translateX(-50%); }
   }
+
+  /* Gacha game 2026-10-20: carousel marker pulse, legendary win glow,
+     result pop and the gold flash behind a RARE win. */
+  --animate-gacha-marker: gacha-marker 0.18s linear infinite alternate;
+  --animate-gacha-gold: gacha-gold 0.9s ease-in-out infinite alternate;
+  --animate-gacha-pop: gacha-pop 0.45s cubic-bezier(0.3, 1.5, 0.5, 1);
+  --animate-gacha-flash: gacha-flash 1.1s ease-out;
+
+  @keyframes gacha-marker {
+    from { filter: brightness(1); }
+    to { filter: brightness(1.7); }
+  }
+
+  @keyframes gacha-gold {
+    from { box-shadow: 0 0 0 2px #f5b301, 0 0 22px 0 rgba(245, 179, 1, 0.75); }
+    to { box-shadow: 0 0 0 2px #f5b301, 0 0 44px 8px rgba(245, 179, 1, 0.95); }
+  }
+
+  @keyframes gacha-pop {
+    from { transform: scale(0.85); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+
+  @keyframes gacha-flash {
+    0% { opacity: 0; }
+    25% { opacity: 1; }
+    100% { opacity: 0; }
+  }
 }
 
 @layer base {

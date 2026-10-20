@@ -458,6 +458,9 @@ export type Database = {
           discount: number
           district: string | null
           email: string | null
+          gacha_code: string | null
+          gacha_discount: number
+          gacha_gift: string | null
           id: string
           note: string | null
           order_number: string
@@ -488,6 +491,9 @@ export type Database = {
           discount?: number
           district?: string | null
           email?: string | null
+          gacha_code?: string | null
+          gacha_discount?: number
+          gacha_gift?: string | null
           id?: string
           note?: string | null
           order_number: string
@@ -518,6 +524,9 @@ export type Database = {
           discount?: number
           district?: string | null
           email?: string | null
+          gacha_code?: string | null
+          gacha_discount?: number
+          gacha_gift?: string | null
           id?: string
           note?: string | null
           order_number?: string
@@ -1119,6 +1128,120 @@ export type Database = {
         }
         Relationships: []
       }
+      gacha_codes: {
+        Row: {
+          code: string
+          expires_at: string
+          id: string
+          issued_at: string
+          phone: string
+          prize_type: string
+          redeemed_at: string | null
+          redeemed_order_id: string | null
+          status: string
+          tier: string
+        }
+        Insert: {
+          code: string
+          expires_at: string
+          id?: string
+          issued_at?: string
+          phone: string
+          prize_type: string
+          redeemed_at?: string | null
+          redeemed_order_id?: string | null
+          status?: string
+          tier: string
+        }
+        Update: {
+          code?: string
+          expires_at?: string
+          id?: string
+          issued_at?: string
+          phone?: string
+          prize_type?: string
+          redeemed_at?: string | null
+          redeemed_order_id?: string | null
+          status?: string
+          tier?: string
+        }
+        Relationships: []
+      }
+      gacha_players: {
+        Row: {
+          created_at: string
+          phone: string
+        }
+        Insert: {
+          created_at?: string
+          phone: string
+        }
+        Update: {
+          created_at?: string
+          phone?: string
+        }
+        Relationships: []
+      }
+      gacha_spin_grants: {
+        Row: {
+          amount: number
+          created_at: string
+          day: string
+          id: string
+          order_id: string | null
+          phone: string
+          source: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          day: string
+          id?: string
+          order_id?: string | null
+          phone: string
+          source: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          day?: string
+          id?: string
+          order_id?: string | null
+          phone?: string
+          source?: string
+        }
+        Relationships: []
+      }
+      gacha_spins: {
+        Row: {
+          code_id: string | null
+          created_at: string
+          funded_by: string
+          id: string
+          phone: string
+          prize_type: string
+          tier: string
+        }
+        Insert: {
+          code_id?: string | null
+          created_at?: string
+          funded_by?: string
+          id?: string
+          phone: string
+          prize_type: string
+          tier: string
+        }
+        Update: {
+          code_id?: string | null
+          created_at?: string
+          funded_by?: string
+          id?: string
+          phone?: string
+          prize_type?: string
+          tier?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -1151,6 +1274,30 @@ export type Database = {
       flash_sale_picks: {
         Args: { p_at?: string }
         Returns: string[]
+      }
+      gacha_balance: {
+        Args: { p_phone: string }
+        Returns: number
+      }
+      gacha_claim_task: {
+        Args: { p_phone: string; p_task: string }
+        Returns: Json
+      }
+      gacha_get_state: {
+        Args: { p_phone: string }
+        Returns: Json
+      }
+      gacha_quote_code: {
+        Args: { p_code: string; p_items: Json }
+        Returns: Json
+      }
+      gacha_spin: {
+        Args: { p_phone: string }
+        Returns: Json
+      }
+      gacha_today: {
+        Args: Record<PropertyKey, never>
+        Returns: string
       }
       has_delivered_product: {
         Args: { p_product_id: string }
@@ -1190,6 +1337,7 @@ export type Database = {
           p_delivery_method?: string
           p_district?: string
           p_email?: string
+          p_gacha_code?: string
           p_items: Json
           p_note?: string
           p_phone: string

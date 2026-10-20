@@ -57,7 +57,10 @@ export function HeroCarousel() {
     <section
       aria-label="Paranoidz nổi bật"
       aria-roledescription="carousel"
-      className="relative aspect-video w-full overflow-hidden bg-bg-dark"
+      // Height capped at half the viewport (owner 2026-10-20): the full 16:9
+      // band pushed everything else off the first screen now that the gacha
+      // game sits right below the hero. Slides crop via object-cover.
+      className="relative aspect-video max-h-[50svh] w-full overflow-hidden bg-bg-dark"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
