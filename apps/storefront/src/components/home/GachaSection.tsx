@@ -210,7 +210,7 @@ export function GachaSection() {
   return (
     <section
       aria-label="Chơi là có quà"
-      className="relative overflow-hidden py-8 text-text-on-dark lg:py-10"
+      className="relative overflow-hidden pt-3 pb-6 text-text-on-dark lg:pt-4 lg:pb-8"
       style={{ background: "radial-gradient(120% 100% at 50% 0%, #17130a 0%, #0b0c12 55%)" }}
     >
       <h2 className="px-4 text-center text-h2 uppercase">
@@ -220,7 +220,7 @@ export function GachaSection() {
       {/* Carousel viewport */}
       <div
         ref={vpRef}
-        className="relative mt-5 h-[118px] overflow-hidden border-y border-white/10"
+        className="relative mt-3 h-[118px] overflow-hidden border-y border-white/10"
         style={{
           background:
             "linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,0) 30%, rgba(255,255,255,0) 70%, rgba(255,255,255,.03))",
@@ -262,16 +262,16 @@ export function GachaSection() {
       </div>
 
       {/* Controls */}
-      <div className="px-4 pt-4 text-center">
+      <div className="px-4 pt-2 text-center">
         <button
           type="button"
           onClick={onSpin}
           disabled={spinning || outOfSpins}
-          className="rounded-full bg-accent px-10 py-3 text-button uppercase text-text-on-dark shadow-accent transition-all duration-200 enabled:hover:-translate-y-px enabled:hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-45"
+          className="rounded-full bg-accent px-10 py-2.5 text-button uppercase text-text-on-dark shadow-accent transition-all duration-200 enabled:hover:-translate-y-px enabled:hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-45"
         >
           {spinning ? "Đang quay..." : outOfSpins ? "Hết lượt" : "Quay ngay"}
         </button>
-        <div aria-live="polite" className="mt-2.5 min-h-[18px] text-[13px] text-white/85">
+        <div aria-live="polite" className="mt-2 min-h-[18px] text-[13px] text-white/85">
           {status}
         </div>
         <div className="mt-1">
