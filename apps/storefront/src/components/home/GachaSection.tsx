@@ -210,17 +210,17 @@ export function GachaSection() {
   return (
     <section
       aria-label="Chơi là có quà"
-      className="relative overflow-hidden pt-3 pb-6 text-text-on-dark lg:pt-4 lg:pb-8"
+      className="relative overflow-hidden pt-2 pb-4 text-text-on-dark lg:pt-4 lg:pb-8"
       style={{ background: "radial-gradient(120% 100% at 50% 0%, #17130a 0%, #0b0c12 55%)" }}
     >
-      <h2 className="px-4 text-center text-h2 uppercase">
+      <h2 className="px-4 text-center text-[22px] leading-[1.2] uppercase sm:text-h2">
         Chơi là <span style={{ color: "#f5b301" }}>có quà</span>
       </h2>
 
       {/* Carousel viewport */}
       <div
         ref={vpRef}
-        className="relative mt-3 h-[118px] overflow-hidden border-y border-white/10"
+        className="relative mt-2 h-[118px] overflow-hidden border-y border-white/10"
         style={{
           background:
             "linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,0) 30%, rgba(255,255,255,0) 70%, rgba(255,255,255,.03))",
@@ -271,12 +271,12 @@ export function GachaSection() {
         >
           {spinning ? "Đang quay..." : outOfSpins ? "Hết lượt" : "Quay ngay"}
         </button>
-        <div aria-live="polite" className="mt-2 min-h-[18px] text-[13px] text-white/85">
+        <div aria-live="polite" className="mt-1.5 min-h-[18px] text-[13px] text-white/85">
           {status}
         </div>
         <div className="mt-1">
-          <span className="inline-flex items-center gap-2 rounded-full bg-[#f4f1ea] py-[7px] pl-4 pr-[9px] text-[13.5px] font-semibold text-[#191c26]">
-            Lượt mở quà còn lại: <b className="text-[15px]">{spinsLeft}</b>
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-[#f4f1ea] py-[4px] px-3 text-[12px] font-semibold text-[#191c26]">
+            Lượt mở quà còn lại: <b className="text-[13px]">{spinsLeft}</b>
             <button
               type="button"
               onClick={openMissions}
