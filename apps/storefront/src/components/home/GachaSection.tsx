@@ -274,7 +274,7 @@ export function GachaSection() {
         <div aria-live="polite" className="mt-1.5 min-h-[18px] text-[13px] text-white/85">
           {status}
         </div>
-        <div className="mt-1">
+        <div className="mt-1 flex h-[26px] items-center justify-center">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-[#f4f1ea] py-[4px] px-3 text-[12px] font-semibold text-[#191c26]">
             Còn <b className="text-[13px]">{spinsLeft}</b> lượt
             <button
