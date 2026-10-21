@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { createPublicClient } from "@paranoidz/db/public";
 import { HomeTabs } from "@/components/home/HomeTabs";
@@ -19,6 +20,22 @@ import { productCardQuery, toProductCard } from "@/lib/catalog";
 // lookbook with real-life photos — inspired by hydrashop.vn / chuottrang.vn.
 // No newsletter block — out of scope per ARCHITECTURE.md §9.
 export const revalidate = 60;
+
+// SEO (audit 2026-10-21 #2): the homepage previously had no H1 and a 9-character title.
+// Title targets "áo thun local brand" + "streetwear Việt Nam"; the manifesto tagline below
+// doubles as the page's single H1.
+export const metadata: Metadata = {
+  title: "Paranoidz — Áo thun local brand, streetwear Việt Nam",
+  description:
+    "Streetwear Việt Nam — thiết kế táo bạo, chất liệu nghiêm túc, giá không trên trời. Thanh toán khi nhận hàng (COD).",
+  alternates: { canonical: "/" },
+  openGraph: {
+    title: "Paranoidz — Áo thun local brand, streetwear Việt Nam",
+    description:
+      "Streetwear Việt Nam — thiết kế táo bạo, chất liệu nghiêm túc, giá không trên trời. Thanh toán khi nhận hàng (COD).",
+    url: "/",
+  },
+};
 
 const GRID_SIZE = 6;
 const ROW_SIZE = 12;
@@ -159,9 +176,9 @@ export default async function HomePage() {
           <p className="mt-4 max-w-3xl text-h2 uppercase leading-tight lg:text-h1 lg:leading-[1.1]">
             Mặc kệ thiên hạ.<br />Mặc đẹp cho chính mình.
           </p>
-          <p className="mt-4 max-w-xl text-body text-text-on-dark/70">
+          <h1 className="mt-4 max-w-xl text-body text-text-on-dark/70">
             Streetwear Việt Nam — thiết kế táo bạo, chất liệu nghiêm túc, giá không trên trời.
-          </p>
+          </h1>
         </section>
 
         <section className="grid grid-cols-1 gap-px border border-border bg-border sm:grid-cols-3">

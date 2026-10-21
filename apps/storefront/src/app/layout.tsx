@@ -4,6 +4,7 @@ import { LoginModal } from "@/components/auth/LoginModal";
 import { AnnouncementBar } from "@/components/layout/AnnouncementBar";
 import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
+import { SITE_URL } from "@/lib/site";
 import "./globals.css";
 
 const inter = Inter({
@@ -20,8 +21,17 @@ const rajdhani = Rajdhani({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: "Paranoidz",
   description: "Paranoidz — thời trang streetwear. Thanh toán khi nhận hàng (COD).",
+  openGraph: {
+    title: "Paranoidz",
+    description: "Paranoidz — thời trang streetwear. Thanh toán khi nhận hàng (COD).",
+    url: SITE_URL,
+    siteName: "Paranoidz",
+    locale: "vi_VN",
+    type: "website",
+  },
 };
 
 export default function RootLayout({

@@ -3,6 +3,11 @@
 
 export const HOTLINE = "0345 267 709";
 
+// Canonical production origin for SEO: metadataBase, sitemap, robots and canonical URLs.
+// Deliberately NOT env-driven: Vercel preview deployments must canonicalise to production,
+// otherwise every preview would compete with paranoidz.vn in search results.
+export const SITE_URL = "https://paranoidz.vn";
+
 // DESIGN.md §4, Row 2 — order matters.
 export const NAV_LINKS = [
   { label: "Trang chủ", href: "/" },
