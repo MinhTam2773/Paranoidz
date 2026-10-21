@@ -9,6 +9,7 @@ import { RecentlyViewed } from "@/components/product/RecentlyViewed";
 import { ReviewSection, type ReviewData } from "@/components/product/ReviewSection";
 import { SizeGuide, isSizeGuide } from "@/components/product/SizeGuide";
 import { renderDescription } from "@/lib/sanitize-description";
+import { SITE_URL } from "@/lib/site";
 
 // ISR (ARCHITECTURE.md §2.2): every active product is prebuilt at deploy, then rebuilt at most once a
 // minute; slugs added later render on first visit. Shown stock is display only — place_order() re-checks.
@@ -80,8 +81,55 @@ async function getReviews(productId: string): Promise<ReviewData[]> {
 }
 
 export async function generateMetadata({ params }: PageProps<"/products/[slug]">): Promise<Metadata> {
-  const product = await getProduct((await params).slug);
-  return { title: product ? `${product.name} | Paranoidz` : "Không tìm thấy | Paranoidz" };
+  const slug = (await params).slug;
+  const product = await getProduct(slug);
+  if (!product) return { title: "Không tìm thấy | Paranoidz" };
+  const title = `${shortTitle(product.name)} | Paranoidz`;
+  const description = plainDescription(
+    product.description,
+    `${product.name} — Paranoidz. Thanh toán khi nhận hàng (COD).`,
+  );
+  const firstImage = product.images[0]?.url;
+  return {
+    title,
+    description,
+    alternates: { canonical: `/products/${slug}` },
+    openGraph: {
+      title,
+      description,
+      url: `/products/${slug}`,
+      images: firstImage ? [{ url: firstImage }] : undefined,
+    },
+  };
+}
+
+// SEO (audit 2026-10-21 #3): product names run long (pdz01 hit 92 chars with the brand
+// suffix and got cut off in search results). The name part is capped at 48 chars so the
+// full title stays under 60; a trailing product code (pdz01, QT01, …) is kept because
+// customers search by it, and the cut lands on a word boundary.
+function shortTitle(name: string): string {
+  const MAX_NAME = 48; // + " | Paranoidz" (12) = 60
+  if (name.length <= MAX_NAME) return name;
+  const code = name.match(/\s([A-Za-z]+\d+)$/)?.[1];
+  const base = code ? name.slice(0, -code.length - 1) : name;
+  const budget = MAX_NAME - (code ? code.length + 1 : 0) - 1; // -1 for "…"
+  let cut = base.slice(0, budget);
+  const lastSpace = cut.lastIndexOf(" ");
+  if (lastSpace > 20) cut = cut.slice(0, lastSpace);
+  return `${cut}…${code ? ` ${code}` : ""}`;
+}
+
+// SEO (audit 2026-10-21 #4, #5): descriptions are stored as rich text, but meta
+// descriptions and JSON-LD need plain text — strip tags, collapse whitespace, cap ~155
+// chars on a word boundary so Google doesn't have to rewrite the snippet.
+function plainDescription(html: string | null, fallback: string): string {
+  const text = (html ?? "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+  const src = text || fallback;
+  if (src.length <= 155) return src;
+  let cut = src.slice(0, 155);
+  const lastSpace = cut.lastIndexOf(" ");
+  if (lastSpace > 100) cut = cut.slice(0, lastSpace);
+  return `${cut}…`;
 }
 
 export default async function ProductPage({ params }: PageProps<"/products/[slug]">) {
@@ -91,8 +139,61 @@ export default async function ProductPage({ params }: PageProps<"/products/[slug
   const [offers, reviews] = await Promise.all([getBundleOffers(product.id), getReviews(product.id)]);
   const { slug } = await params;
 
+  // SEO (audit 2026-10-21 #5): Product + BreadcrumbList structured data so Google can
+  // show price and stock in rich results. Deliberately NO AggregateRating: the reviews tab
+  // currently shows 0 reviews, and rating schema without visible reviews violates Google's
+  // policy (audit #5). Add it only when real reviews are displayed on this page.
+  const prices = [...new Set(product.product_variants.map((v) => v.price))].sort((a, b) => a - b);
+  const inStock = product.product_variants.some((v) => v.stock > 0);
+  const productUrl = `${SITE_URL}/products/${slug}`;
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Product",
+        name: product.name,
+        image: product.images.map((i) => i.url),
+        description: plainDescription(
+          product.description,
+          `${product.name} — Paranoidz. Thanh toán khi nhận hàng (COD).`,
+        ),
+        brand: { "@type": "Brand", name: "Paranoidz" },
+        offers:
+          prices.length === 1
+            ? {
+                "@type": "Offer",
+                url: productUrl,
+                priceCurrency: "VND",
+                price: prices[0],
+                availability: inStock ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+                itemCondition: "https://schema.org/NewCondition",
+              }
+            : {
+                "@type": "AggregateOffer",
+                url: productUrl,
+                priceCurrency: "VND",
+                lowPrice: prices[0],
+                highPrice: prices[prices.length - 1],
+                offerCount: product.product_variants.length,
+              },
+      },
+      {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "Trang chủ", item: SITE_URL },
+          { "@type": "ListItem", position: 2, name: "Sản phẩm", item: `${SITE_URL}/products` },
+          { "@type": "ListItem", position: 3, name: product.name },
+        ],
+      },
+    ],
+  };
+
   return (
     <div className="mx-auto w-full max-w-7xl px-4 pb-16 lg:px-6">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }}
+      />
       <Breadcrumb items={[{ label: "Trang chủ", href: "/" }, { label: "Sản phẩm", href: "/products" }, { label: product.name }]} />
       <ProductView
         productId={product.id}
