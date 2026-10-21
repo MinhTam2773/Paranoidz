@@ -29,7 +29,7 @@ const GAP = 8;
 const STEP = CARD_W + GAP;
 const STRIP_LEN = 48;
 const TARGET = 26;
-const SPIN_MS = 5550;
+const SPIN_MS = 8550;
 
 const FILLER: [GachaPrizeType, number][] = [
   ["voucher10", 30],
@@ -159,7 +159,7 @@ export function GachaSection() {
         setOffset(finalX);
       }),
     );
-    timers.current.push(window.setTimeout(() => setStatus("Sắp dừng..."), 4000));
+    timers.current.push(window.setTimeout(() => setStatus("Sắp dừng..."), 7000));
     timers.current.push(
       window.setTimeout(() => {
         setWinIndex(TARGET);
@@ -230,7 +230,7 @@ export function GachaSection() {
           className="flex h-full items-center"
           style={{
             transform: `translateX(${offset}px)`,
-            transition: anim ? "transform 5.4s cubic-bezier(.07,.84,.08,1)" : "none",
+            transition: anim ? "transform 8.4s cubic-bezier(.07,.84,.08,1)" : "none",
             willChange: "transform",
           }}
         >
