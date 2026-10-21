@@ -100,8 +100,8 @@ export default async function HomePage() {
   return (
     <>
       <HeroCarousel />
-      <GachaSection />
       <Marquee />
+      <GachaSection />
 
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-14 px-4 py-14 lg:gap-20 lg:px-6 lg:py-20">
         {collectionCards.length > 0 && (
