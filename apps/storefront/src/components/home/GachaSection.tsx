@@ -281,7 +281,7 @@ export function GachaSection() {
               type="button"
               onClick={openMissions}
               aria-label="Lấy thêm lượt"
-              className="inline-flex h-[20px] w-[20px] items-center justify-center rounded-full border border-black/10 bg-white text-[14px] font-extrabold leading-none text-[#191c26] transition-transform hover:scale-110"
+              className="inline-flex h-[16px] w-[16px] items-center justify-center rounded-full border border-black/10 bg-white text-[12px] font-extrabold leading-none text-[#191c26] transition-transform hover:scale-110"
             >
               +
             </button>
