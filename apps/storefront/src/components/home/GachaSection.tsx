@@ -276,12 +276,12 @@ export function GachaSection() {
         </div>
         <div className="mt-1">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-[#f4f1ea] py-[4px] px-3 text-[12px] font-semibold text-[#191c26]">
-            Lượt mở quà còn lại: <b className="text-[13px]">{spinsLeft}</b>
+            Còn <b className="text-[13px]">{spinsLeft}</b> lượt
             <button
               type="button"
               onClick={openMissions}
               aria-label="Lấy thêm lượt"
-              className="inline-flex h-[25px] w-[25px] items-center justify-center rounded-full bg-[#23265e] text-[17px] font-extrabold leading-none text-white transition-transform hover:scale-110"
+              className="inline-flex h-[21px] w-[21px] items-center justify-center rounded-full bg-[#23265e] text-[15px] font-extrabold leading-none text-white transition-transform hover:scale-110"
             >
               +
             </button>
