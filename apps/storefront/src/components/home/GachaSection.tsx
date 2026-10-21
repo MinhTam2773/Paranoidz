@@ -27,8 +27,14 @@ import { getRecentIds } from "@/lib/recently-viewed";
 const CARD_W = 92;
 const GAP = 8;
 const STEP = CARD_W + GAP;
-const STRIP_LEN = 48;
-const TARGET = 26;
+// One loop of the strip = one full deck (48 cards). The spin travels about
+// two loops (~96 cards) before landing on the prize, so the strip visibly
+// laps the deck twice instead of stopping halfway through it (the old
+// TARGET 26 only covered half a deck).
+const DECK = 48;
+const LOOPS = 2;
+const TARGET = LOOPS * DECK; // 96
+const STRIP_LEN = TARGET + 4; // winner + near-miss + trailing cards
 const SPIN_MS = 8550;
 
 const FILLER: [GachaPrizeType, number][] = [
