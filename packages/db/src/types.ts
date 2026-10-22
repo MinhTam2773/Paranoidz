@@ -280,6 +280,183 @@ export type Database = {
         }
         Relationships: []
       }
+      flash_sale_windows: {
+        Row: {
+          created_at: string
+          discount_percent: number
+          duration_minutes: number
+          enabled: boolean
+          id: string
+          start_hour: number
+        }
+        Insert: {
+          created_at?: string
+          discount_percent?: number
+          duration_minutes?: number
+          enabled?: boolean
+          id?: string
+          start_hour: number
+        }
+        Update: {
+          created_at?: string
+          discount_percent?: number
+          duration_minutes?: number
+          enabled?: boolean
+          id?: string
+          start_hour?: number
+        }
+        Relationships: []
+      }
+      gacha_codes: {
+        Row: {
+          code: string
+          expires_at: string
+          id: string
+          issued_at: string
+          phone: string | null
+          player_key: string | null
+          prize_type: string
+          redeemed_at: string | null
+          redeemed_order_id: string | null
+          status: string
+          tier: string
+        }
+        Insert: {
+          code: string
+          expires_at: string
+          id?: string
+          issued_at?: string
+          phone?: string | null
+          player_key?: string | null
+          prize_type: string
+          redeemed_at?: string | null
+          redeemed_order_id?: string | null
+          status?: string
+          tier: string
+        }
+        Update: {
+          code?: string
+          expires_at?: string
+          id?: string
+          issued_at?: string
+          phone?: string | null
+          player_key?: string | null
+          prize_type?: string
+          redeemed_at?: string | null
+          redeemed_order_id?: string | null
+          status?: string
+          tier?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gacha_codes_redeemed_order_id_fkey"
+            columns: ["redeemed_order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gacha_players: {
+        Row: {
+          created_at: string
+          phone: string
+          player_key: string | null
+        }
+        Insert: {
+          created_at?: string
+          phone: string
+          player_key?: string | null
+        }
+        Update: {
+          created_at?: string
+          phone?: string
+          player_key?: string | null
+        }
+        Relationships: []
+      }
+      gacha_spin_grants: {
+        Row: {
+          amount: number
+          created_at: string
+          day: string
+          id: string
+          order_id: string | null
+          phone: string | null
+          player_key: string | null
+          source: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          day: string
+          id?: string
+          order_id?: string | null
+          phone?: string | null
+          player_key?: string | null
+          source: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          day?: string
+          id?: string
+          order_id?: string | null
+          phone?: string | null
+          player_key?: string | null
+          source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gacha_spin_grants_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gacha_spins: {
+        Row: {
+          code_id: string | null
+          created_at: string
+          funded_by: string
+          id: string
+          phone: string | null
+          player_key: string | null
+          prize_type: string
+          tier: string
+        }
+        Insert: {
+          code_id?: string | null
+          created_at?: string
+          funded_by?: string
+          id?: string
+          phone?: string | null
+          player_key?: string | null
+          prize_type: string
+          tier: string
+        }
+        Update: {
+          code_id?: string | null
+          created_at?: string
+          funded_by?: string
+          id?: string
+          phone?: string | null
+          player_key?: string | null
+          prize_type?: string
+          tier?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gacha_spins_code_id_fkey"
+            columns: ["code_id"]
+            isOneToOne: false
+            referencedRelation: "gacha_codes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       loyalty_awards: {
         Row: {
           created_at: string
@@ -1113,164 +1290,12 @@ export type Database = {
           },
         ]
       }
-      flash_sale_windows: {
-        Row: {
-          id: string
-          start_hour: number
-          duration_minutes: number
-          discount_percent: number
-          enabled: boolean
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          start_hour: number
-          duration_minutes?: number
-          discount_percent?: number
-          enabled?: boolean
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          start_hour?: number
-          duration_minutes?: number
-          discount_percent?: number
-          enabled?: boolean
-          created_at?: string
-        }
-        Relationships: []
-      }
-      gacha_codes: {
-        Row: {
-          code: string
-          expires_at: string
-          id: string
-          issued_at: string
-          phone: string | null
-          player_key: string | null
-          prize_type: string
-          redeemed_at: string | null
-          redeemed_order_id: string | null
-          status: string
-          tier: string
-        }
-        Insert: {
-          code: string
-          expires_at: string
-          id?: string
-          issued_at?: string
-          phone?: string | null
-          player_key?: string | null
-          prize_type: string
-          redeemed_at?: string | null
-          redeemed_order_id?: string | null
-          status?: string
-          tier: string
-        }
-        Update: {
-          code?: string
-          expires_at?: string
-          id?: string
-          issued_at?: string
-          phone?: string | null
-          player_key?: string | null
-          prize_type?: string
-          redeemed_at?: string | null
-          redeemed_order_id?: string | null
-          status?: string
-          tier?: string
-        }
-        Relationships: []
-      }
-      gacha_players: {
-        Row: {
-          created_at: string
-          phone: string
-          player_key: string | null
-        }
-        Insert: {
-          created_at?: string
-          phone: string
-          player_key?: string | null
-        }
-        Update: {
-          created_at?: string
-          phone?: string
-          player_key?: string | null
-        }
-        Relationships: []
-      }
-      gacha_spin_grants: {
-        Row: {
-          amount: number
-          created_at: string
-          day: string
-          id: string
-          order_id: string | null
-          phone: string | null
-          player_key: string | null
-          source: string
-        }
-        Insert: {
-          amount?: number
-          created_at?: string
-          day: string
-          id?: string
-          order_id?: string | null
-          phone?: string | null
-          player_key?: string | null
-          source: string
-        }
-        Update: {
-          amount?: number
-          created_at?: string
-          day?: string
-          id?: string
-          order_id?: string | null
-          phone?: string | null
-          player_key?: string | null
-          source?: string
-        }
-        Relationships: []
-      }
-      gacha_spins: {
-        Row: {
-          code_id: string | null
-          created_at: string
-          funded_by: string
-          id: string
-          phone: string | null
-          player_key: string | null
-          prize_type: string
-          tier: string
-        }
-        Insert: {
-          code_id?: string | null
-          created_at?: string
-          funded_by?: string
-          id?: string
-          phone?: string | null
-          player_key?: string | null
-          prize_type: string
-          tier: string
-        }
-        Update: {
-          code_id?: string | null
-          created_at?: string
-          funded_by?: string
-          id?: string
-          phone?: string | null
-          player_key?: string | null
-          prize_type?: string
-          tier?: string
-        }
-        Relationships: []
-      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      active_flash_sale_discount: { Args: never; Returns: number }
       adjust_variant_stock: {
         Args: { p_delta: number; p_reason?: string; p_variant_id: string }
         Returns: number
@@ -1295,34 +1320,19 @@ export type Database = {
           variant_id: string
         }[]
       }
-      flash_sale_picks: {
-        Args: { p_at?: string }
-        Returns: string[]
-      }
-      gacha_balance: {
-        Args: { p_player_key: string }
-        Returns: number
-      }
+      flash_sale_picks: { Args: { p_at?: string }; Returns: string[] }
+      gacha_balance: { Args: { p_player_key: string }; Returns: number }
       gacha_claim_task: {
         Args: { p_player_key: string; p_task: string }
         Returns: Json
       }
-      gacha_get_state: {
-        Args: { p_player_key: string }
-        Returns: Json
-      }
+      gacha_get_state: { Args: { p_player_key: string }; Returns: Json }
       gacha_quote_code: {
         Args: { p_code: string; p_items: Json }
         Returns: Json
       }
-      gacha_spin: {
-        Args: { p_player_key: string }
-        Returns: Json
-      }
-      gacha_today: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      gacha_spin: { Args: { p_player_key: string }; Returns: Json }
+      gacha_today: { Args: never; Returns: string }
       has_delivered_product: {
         Args: { p_product_id: string }
         Returns: boolean
@@ -1347,6 +1357,7 @@ export type Database = {
       order_discount: {
         Args: {
           p_counts: Json
+          p_items?: Json
           p_phone: string
           p_subtotal: number
           p_voucher_code: string
@@ -1432,12 +1443,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends (DefaultSchemaTableNameOrOptions extends {
+  TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never) = never,
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1461,11 +1472,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends (DefaultSchemaTableNameOrOptions extends {
+  TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never) = never,
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1486,11 +1497,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends (DefaultSchemaTableNameOrOptions extends {
+  TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never) = never,
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1511,11 +1522,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never) = never,
+    : never = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1528,11 +1539,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never) = never,
+    : never = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1557,3 +1568,4 @@ export const Constants = {
     },
   },
 } as const
+
