@@ -86,8 +86,9 @@ Every PR: smoke cases, migration test → smoke → prod, then merge (`master` i
    - The constraint with `shipping_discount` defaulting to 0.
 
    Nothing reads the new columns yet, so it's safe to ship alone.
+   *Built 2026-10-21 on `feat/pricing-v2-schema`.* Two things the plan missed: `orders_total_math` must keep `gacha_discount` (gacha game, 20261020000001), and dropping `unique (order_id)` makes the `voucher_uses` embed an array, so the admin order page and Excel export changed in the same PR.
 2. **PR B (YELLOW + a little RED):** admin fields.
-   - "Tính là áo" checkbox.
+   - "Được freeship & tặng tất" checkbox (`earns_perks`).
    - Gift-variant toggle.
    - On the promo-code form: "Hiện trong danh sách chọn mã" and type "Dùng mọi đơn".
 3. **PR C (RED, the big one):**
@@ -98,6 +99,13 @@ Every PR: smoke cases, migration test → smoke → prod, then merge (`master` i
 
    Quote and order must change together, so this is one PR. The migration goes on prod right before the merge.
 4. **Hand-off:** the `quote_order` response shape and the action's input go to Tủn for the picker.
+
+## Overlap with the gacha game (found 2026-10-21, decide before PR C)
+
+The gacha prizes (20261020000001) already give free shipping and socks, differently from v2:
+- **Gacha "freeship"** sets `shipping_fee = 0`, so the order loses what SPX charges the shop. v2 keeps the fee and records the waiver in `shipping_discount`. Proposal: PR C moves the gacha prize to `shipping_discount` too, so one rule covers both and reports see the real fee.
+- **Gacha socks** (`socks1` / `socks3`) are a packing note in `orders.gacha_gift` and don't take stock. The v2 gift line does take stock. Proposal: leave gacha socks alone in PR C (the client's feature), but tell him they're missing from stock and the BigSeller export.
+- **Gacha codes** live in `gacha_codes`, apart from `vouchers`, and price into `orders.gacha_discount`. v2's stacking order must say where they apply: proposal after the vouchers, as today (`least(gacha, subtotal − discount)`).
 
 ## Owner's answers (2026-10-18)
 
