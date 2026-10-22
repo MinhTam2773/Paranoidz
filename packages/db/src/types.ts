@@ -531,6 +531,8 @@ export type Database = {
           color_snapshot: string | null
           id: string
           image_snapshot: string | null
+          is_gift: boolean
+          list_price_snapshot: number | null
           name_snapshot: string
           order_id: string
           price_snapshot: number
@@ -544,6 +546,8 @@ export type Database = {
           color_snapshot?: string | null
           id?: string
           image_snapshot?: string | null
+          is_gift?: boolean
+          list_price_snapshot?: number | null
           name_snapshot: string
           order_id: string
           price_snapshot: number
@@ -557,6 +561,8 @@ export type Database = {
           color_snapshot?: string | null
           id?: string
           image_snapshot?: string | null
+          is_gift?: boolean
+          list_price_snapshot?: number | null
           name_snapshot?: string
           order_id?: string
           price_snapshot?: number
@@ -638,6 +644,7 @@ export type Database = {
           gacha_code: string | null
           gacha_discount: number
           gacha_gift: string | null
+          gift_missing: boolean
           id: string
           note: string | null
           order_number: string
@@ -646,6 +653,7 @@ export type Database = {
           phone: string
           recipient_name: string
           secondary_phone: string | null
+          shipping_discount: number
           shipping_fee: number
           spx_created_at: string | null
           spx_fee: number | null
@@ -673,6 +681,7 @@ export type Database = {
           gacha_code?: string | null
           gacha_discount?: number
           gacha_gift?: string | null
+          gift_missing?: boolean
           id?: string
           note?: string | null
           order_number: string
@@ -681,6 +690,7 @@ export type Database = {
           phone: string
           recipient_name: string
           secondary_phone?: string | null
+          shipping_discount?: number
           shipping_fee?: number
           spx_created_at?: string | null
           spx_fee?: number | null
@@ -708,6 +718,7 @@ export type Database = {
           gacha_code?: string | null
           gacha_discount?: number
           gacha_gift?: string | null
+          gift_missing?: boolean
           id?: string
           note?: string | null
           order_number?: string
@@ -716,6 +727,7 @@ export type Database = {
           phone?: string
           recipient_name?: string
           secondary_phone?: string | null
+          shipping_discount?: number
           shipping_fee?: number
           spx_created_at?: string | null
           spx_fee?: number | null
@@ -789,6 +801,7 @@ export type Database = {
           color_hex: string | null
           created_at: string
           id: string
+          is_order_gift: boolean
           original_price: number | null
           price: number
           product_id: string
@@ -802,6 +815,7 @@ export type Database = {
           color_hex?: string | null
           created_at?: string
           id?: string
+          is_order_gift?: boolean
           original_price?: number | null
           price: number
           product_id: string
@@ -815,6 +829,7 @@ export type Database = {
           color_hex?: string | null
           created_at?: string
           id?: string
+          is_order_gift?: boolean
           original_price?: number | null
           price?: number
           product_id?: string
@@ -839,6 +854,7 @@ export type Database = {
           category_id: string | null
           created_at: string
           description: string | null
+          earns_perks: boolean
           gift_label: string | null
           id: string
           is_active: boolean
@@ -855,6 +871,7 @@ export type Database = {
           category_id?: string | null
           created_at?: string
           description?: string | null
+          earns_perks?: boolean
           gift_label?: string | null
           id?: string
           is_active?: boolean
@@ -871,6 +888,7 @@ export type Database = {
           category_id?: string | null
           created_at?: string
           description?: string | null
+          earns_perks?: boolean
           gift_label?: string | null
           id?: string
           is_active?: boolean
@@ -1199,7 +1217,7 @@ export type Database = {
           {
             foreignKeyName: "voucher_uses_order_id_fkey"
             columns: ["order_id"]
-            isOneToOne: true
+            isOneToOne: false
             referencedRelation: "orders"
             referencedColumns: ["id"]
           },
@@ -1221,6 +1239,7 @@ export type Database = {
           expires_at: string | null
           id: string
           is_active: boolean
+          is_listed: boolean
           max_uses: number | null
           type: Database["public"]["Enums"]["voucher_type"]
           updated_at: string
@@ -1234,6 +1253,7 @@ export type Database = {
           expires_at?: string | null
           id?: string
           is_active?: boolean
+          is_listed?: boolean
           max_uses?: number | null
           type?: Database["public"]["Enums"]["voucher_type"]
           updated_at?: string
@@ -1247,6 +1267,7 @@ export type Database = {
           expires_at?: string | null
           id?: string
           is_active?: boolean
+          is_listed?: boolean
           max_uses?: number | null
           type?: Database["public"]["Enums"]["voucher_type"]
           updated_at?: string
@@ -1427,7 +1448,7 @@ export type Database = {
         | "delivered"
         | "cancelled"
         | "delivery_failed"
-      voucher_type: "auto_first5" | "promo"
+      voucher_type: "auto_first5" | "promo" | "standing"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1564,7 +1585,7 @@ export const Constants = {
         "cancelled",
         "delivery_failed",
       ],
-      voucher_type: ["auto_first5", "promo"],
+      voucher_type: ["auto_first5", "promo", "standing"],
     },
   },
 } as const

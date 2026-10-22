@@ -26,7 +26,7 @@ export type OrderRow = {
   spx_tracking_no: string | null; user_id: string | null;
   order_items: { sku_snapshot: string | null; name_snapshot: string; color_snapshot: string | null; size_snapshot: string | null; qty: number; price_snapshot: number }[];
   order_status_history: { status: OrderStatus; created_at: string }[];
-  voucher_uses: { vouchers: { code: string; type: string } | null } | null; // one per order at most
+  voucher_uses: { vouchers: { code: string; type: string } | null }[]; // several per order since pricing v2
 };
 export type CustomerRow = { phone: string; delivered_count: number; refusal_count: number; is_blacklisted: boolean };
 export type CustomerOrder = {
@@ -55,9 +55,8 @@ function closedAt(o: OrderRow) {
 }
 
 function voucherLabel(o: OrderRow) {
-  const v = o.voucher_uses?.vouchers;
-  if (!v) return null;
-  return v.type === "auto_first5" ? "5 ĐƠN ĐẦU" : v.code;
+  const labels = o.voucher_uses.flatMap(({ vouchers: v }) => (v ? [v.type === "auto_first5" ? "5 ĐƠN ĐẦU" : v.code] : []));
+  return labels.join(", ") || null;
 }
 
 export function orderSheets(orders: OrderRow[]) {
