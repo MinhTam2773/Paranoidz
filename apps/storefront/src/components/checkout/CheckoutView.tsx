@@ -30,6 +30,7 @@ import {
 } from "@/lib/delivery-method";
 import { ProvinceSelect } from "./ProvinceSelect";
 import { WardSelect } from "./WardSelect";
+import { PurchaseTracker } from "@/components/tracking/MetaPixel";
 
 type Placed = Extract<CheckoutResult, { ok: true }>["order"];
 
@@ -277,6 +278,7 @@ export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; acc
   if (placed) {
     return (
       <div role="status" className="flex max-w-xl flex-col gap-6">
+        <PurchaseTracker orderNumber={placed.orderNumber} value={placed.total} />
         <div className="flex flex-col gap-2">
           <h2 className="text-h3 uppercase">Cảm ơn bạn — đã đặt hàng thành công</h2>
           <p className="text-text-secondary">
