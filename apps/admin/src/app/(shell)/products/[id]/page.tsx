@@ -52,7 +52,6 @@ export default async function EditProductPage({ params }: PageProps<"/products/[
       <ImageManager productId={product.id} productName={product.name} images={images} colors={colors} />
       <ColorRename key={colorHexes.map((c) => `${c.name}:${c.hex}`).join("|")} productId={product.id} colors={colorHexes} images={images} />
       <GiftVariantPicker
-        key={variants.map((v) => `${v.id}:${v.is_order_gift}`).join("|")}
         productId={product.id}
         variants={variants.map((v) => ({ id: v.id, color: v.color, size: v.size, isGift: v.is_order_gift }))}
         elsewhere={gift && gift.product_id !== product.id ? `${gift.products?.name} · ${gift.color} / ${gift.size}` : null}
