@@ -11,7 +11,7 @@ export default async function NewPromoCodePage() {
         <h2 className="text-page-title">Mã giảm giá mới</h2>
         <p className="text-text-secondary">Không áp dụng cùng ưu đãi 5 đơn đầu: khách được mức giảm cao hơn trong hai mức.</p>
       </div>
-      <PromoCodeForm initial={{ code: "", discountPct: "", capAmount: "", maxUses: "", expiresOn: "", isActive: true }} />
+      <PromoCodeForm initial={{ type: "promo", code: "", discountPct: "", capAmount: "", maxUses: "", expiresOn: "", isActive: true, isListed: false }} />
     </div>
   );
 }
