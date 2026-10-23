@@ -70,6 +70,7 @@ Pick from TODO.md → "Now" first. Starting an item: move it to TODO.md → "Now
 
 ### Admin
 
+- **Editing a product doesn't save "Lượt bán Shopee" or "Quà tặng kèm"** (found 2026-10-22). `saveProduct`'s update (`apps/admin/src/app/(shell)/products/actions.ts`, the `products.update(...)` call) sends name, category, description, care, size guide, active (and `earns_perks`), but not `shopee_sold_count` / `gift_label`; only a new product gets them. The form shows "Đã lưu" anyway. Likely why those badges are empty on prod. Fix: add the two columns to the update, plus a test.
 - **ARCHITECTURE.md §2.2 "Admin realtime order feed — RLS restricts channel to admin role"** has no backing policy: orders have no admin SELECT policy. Add an `is_admin` policy (or broadcast from the server) when building the feed.
 - **Order emails have no admin-side counterpart yet**: status changes (confirmed / shipped) send nothing; the shop alert is email + Zalo.
 - **Customer confirmation gets no plain-text part** (HTML only); Resend generates one, insights were clean.
