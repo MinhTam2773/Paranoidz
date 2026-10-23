@@ -4,6 +4,7 @@ import { LoginModal } from "@/components/auth/LoginModal";
 import { AnnouncementBar } from "@/components/layout/AnnouncementBar";
 import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
+import { MetaPixel } from "@/components/tracking/MetaPixel";
 import { SITE_URL } from "@/lib/site";
 import "./globals.css";
 
@@ -45,6 +46,7 @@ export default function RootLayout({
       className={`${inter.variable} ${rajdhani.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
+        <MetaPixel />
         <AnnouncementBar />
         <Header />
         <main className="flex flex-1 flex-col">{children}</main>
