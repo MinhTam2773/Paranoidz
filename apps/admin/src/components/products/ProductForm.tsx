@@ -218,6 +218,14 @@ function ProductForm({ initial, categories, setNotice, onSaved }: {
               Đang bán (hiển thị trên cửa hàng)
             </label>
           </div>
+          <div className="flex flex-col gap-2">
+            <span className={label}>Ưu đãi đơn hàng</span>
+            <label className="flex h-10 items-center gap-3">
+              <input type="checkbox" checked={form.earnsPerks} onChange={(e) => set("earnsPerks", e.target.checked)} aria-describedby="earnsPerks-hint" className="size-5 accent-text-primary" />
+              Được freeship &amp; tặng tất
+            </label>
+            <p id="earnsPerks-hint" className="text-stat-label text-text-secondary">Đơn có từ 1 sản phẩm được tích: tặng 1 đôi tất. Từ 2 sản phẩm: miễn phí ship (giao thường). Bỏ tích cho tất, phụ kiện, quà tặng.</p>
+          </div>
           <Field id="description" label="Mô tả" error={err("description")} wide hint="Hỗ trợ ảnh và định dạng cơ bản (xuống dòng, in đậm, gạch đầu dòng).">
             <textarea ref={descRef} id="description" value={form.description} onChange={(e) => set("description", e.target.value)} rows={5} maxLength={20000} className={`${input} h-auto py-2 ${border("description")}`} {...aria("description")} />
             {!creating && (

@@ -17,7 +17,7 @@ export default async function NewProductPage() {
       <ProductEditor
         version="new"
         categories={categories ?? []}
-        initial={{ name: "", slug: "", categoryId: "", description: "", careInstructions: "", sizeGuide: "", shopeeSoldCount: 0, giftLabel: "", videoUrl: "", videoPosterUrl: "", isActive: false, variants: [] }}
+        initial={{ name: "", slug: "", categoryId: "", description: "", careInstructions: "", sizeGuide: "", shopeeSoldCount: 0, giftLabel: "", videoUrl: "", videoPosterUrl: "", earnsPerks: true, isActive: false, variants: [] }}
       />
     </div>
   );

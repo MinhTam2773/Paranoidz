@@ -73,9 +73,9 @@ export async function saveProduct(input: ProductInput): Promise<SaveResult> {
   }
 
   // Everything but the slug, which is fixed after creation (URLs, image paths).
-  const { name, category_id, description, care_instructions, size_guide, is_active, shopee_sold_count, gift_label, video_url, video_poster_url } = product;
+  const { name, category_id, description, care_instructions, size_guide, is_active, shopee_sold_count, gift_label, video_url, video_poster_url, earns_perks } = product;
   const { error: pErr } = await admin
-    .from("products").update({ name, category_id, description, care_instructions, size_guide, is_active, shopee_sold_count, gift_label, video_url, video_poster_url }).eq("id", input.id);
+    .from("products").update({ name, category_id, description, care_instructions, size_guide, is_active, shopee_sold_count, gift_label, video_url, video_poster_url, earns_perks }).eq("id", input.id);
   if (pErr) return { errors: { form: "Không thể lưu. Vui lòng thử lại." } };
 
   if (removed.length) await admin.from("product_variants").delete().in("id", removed.map((v) => v.id));
@@ -140,6 +140,28 @@ export async function setColorHex(productId: string, color: string, hex: string 
     .from("product_variants").update({ color_hex: hex }).eq("product_id", productId).eq("color", color).select("id");
   if (error) return { error: "Không thể lưu màu. Vui lòng thử lại." };
   if (!data.length) return { error: COLOR_ERRORS.COLOR_NOT_FOUND };
+  revalidatePath("/", "layout");
+  return {};
+}
+
+// The order gift (pricing v2): at most one variant in the catalog (unique index), so
+// the old gift is cleared before the new one is set. variantId null = this product's
+// variant stops being the gift.
+export async function setOrderGift(productId: string, variantId: string | null): Promise<{ error?: string }> {
+  await requireAdmin();
+  if (!UUID.test(productId) || (variantId !== null && !UUID.test(variantId))) return { error: "Không tìm thấy sản phẩm." };
+  const admin = createAdminClient();
+  if (variantId === null) {
+    const { error } = await admin.from("product_variants").update({ is_order_gift: false }).eq("product_id", productId).eq("is_order_gift", true);
+    if (error) return { error: "Không thể lưu. Vui lòng thử lại." };
+  } else {
+    const { data: own } = await admin.from("product_variants").select("id").eq("id", variantId).eq("product_id", productId).maybeSingle();
+    if (!own) return { error: "Biến thể không còn trên sản phẩm. Tải lại trang." };
+    const { error: clearErr } = await admin.from("product_variants").update({ is_order_gift: false }).eq("is_order_gift", true).neq("id", variantId);
+    if (clearErr) return { error: "Không thể lưu. Vui lòng thử lại." };
+    const { error } = await admin.from("product_variants").update({ is_order_gift: true }).eq("id", variantId);
+    if (error) return { error: "Không thể lưu. Vui lòng thử lại." };
+  }
   revalidatePath("/", "layout");
   return {};
 }
