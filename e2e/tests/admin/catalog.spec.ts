@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { ADMIN_STATE, ADMIN_URL, STOREFRONT_URL } from "../../env";
-import { seedProduct, uid, variantStock } from "../../fixtures/data";
+import { db, seedProduct, uid, variantStock } from "../../fixtures/data";
 
 test.use({ baseURL: ADMIN_URL, storageState: ADMIN_STATE });
 
@@ -26,6 +26,21 @@ test("A4 create a product → it renders on the storefront", async ({ page }) =>
   await page.goto(`${STOREFRONT_URL}/products/${slug}`);
   await expect(page.getByRole("heading", { level: 1, name })).toBeVisible();
   await expect(page.getByText("₫250.000").first()).toBeVisible();
+});
+
+// A15. Editing a product saves the storefront card badges (Shopee sold count, gift label).
+test("A15 edit a product → Shopee sold count and gift label are saved", async ({ page }) => {
+  const product = await seedProduct([{ size: "M", stock: 1 }]);
+
+  await page.goto(`/products/${product.id}`);
+  await page.locator("#shopeeSoldCount").fill("123");
+  await page.locator("#giftLabel").fill("Tặng tất");
+  await page.locator("form").getByRole("button", { name: "Lưu", exact: true }).click();
+  await expect(page.getByText("Đã lưu sản phẩm")).toBeVisible();
+
+  await expect
+    .poll(async () => (await db.from("products").select("shopee_sold_count, gift_label").eq("id", product.id).single()).data)
+    .toEqual({ shopee_sold_count: 123, gift_label: "Tặng tất" });
 });
 
 // A5. − / + / Lưu on the inventory page → adjust_variant_stock(); never below 0.
