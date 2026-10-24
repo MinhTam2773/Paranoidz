@@ -48,7 +48,7 @@ export default async function EditProductPage({ params }: PageProps<"/products/[
         <h2 className="text-page-title wrap-break-word">{product.name}</h2>
       </div>
       <ImageManager productId={product.id} productName={product.name} images={images} colors={colors} />
-      <ColorRename key={colorHexes.map((c) => `${c.name}:${c.hex}`).join("|")} productId={product.id} colors={colorHexes} />
+      <ColorRename key={colorHexes.map((c) => `${c.name}:${c.hex}`).join("|")} productId={product.id} colors={colorHexes} images={images} />
       <ProductEditor
         version={version}
         categories={categories ?? []}
