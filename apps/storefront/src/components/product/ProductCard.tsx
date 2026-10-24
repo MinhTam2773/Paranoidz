@@ -4,7 +4,6 @@ import Image from "next/image";
 import Link, { useLinkStatus } from "next/link";
 import { useState } from "react";
 import { formatVnd } from "@/lib/format";
-import { QuickAdd } from "./QuickAdd";
 import { WishlistButton } from "./WishlistButton";
 
 export type ProductCardData = {
@@ -25,14 +24,14 @@ export type ProductCardData = {
 };
 
 // DESIGN.md §4 product card (client reference 2026-10-12): borderless, rounded 3:4 image on
-// bg-secondary with hover zoom, sale / sold-out badge top-right, heart + quick-add buttons bottom-right,
+// bg-secondary with hover zoom, sale / sold-out badge top-right, heart bottom-right,
 // colour thumbnails below the photo, name, dual price, rating + express badge. Sold out (every variant at 0,
 // ARCHITECTURE.md §3) replaces the sale badge and drops the cart button. The rating defaults
 // to 5 stars (owner, 2026-10-17); real reviews take over from an average of 3 up (owner,
 // 2026-10-12). A thumbnail swaps the photo to that colour's first one and names the colour
 // on hover; a colour without its own photo keeps the old dot (hex) or name chip.
 // `eager`: above-the-fold cards, so the LCP image isn't lazy-loaded.
-// The buttons and dots sit beside the links, not inside them (a button inside <a> is invalid HTML);
+// The buttons and thumbnails sit beside the links, not inside them (a button inside <a> is invalid HTML);
 // the image link is a mouse/touch shortcut only, the text link is the one in the tab order.
 // Shown on the tapped card while its navigation is pending. Same-segment
 // navigation (PDP -> PDP) keeps the old page visible until the new one is
@@ -77,8 +76,8 @@ export function ProductCard({ product, eager = false }: { product: ProductCardDa
             />
           ))}
         </Link>
-        {/* Redesign 2026-10-16: badges top-left, wishlist top-right, quick-add as a
-            full-width bar — always visible on touch, slides up on hover-capable devices. */}
+        {/* Redesign 2026-10-16: badges top-left, wishlist top-right. No quick-add:
+            the card stays clean; buying happens on the product page. */}
         <div className="pointer-events-none absolute left-0 top-3 flex flex-col items-start gap-2">
           {soldOut ? (
             <span className="bg-bg-dark px-2.5 py-1 text-caption font-semibold uppercase tracking-[0.06em] text-text-on-dark">
@@ -102,16 +101,11 @@ export function ProductCard({ product, eager = false }: { product: ProductCardDa
         <div className="absolute right-2 top-2">
           <WishlistButton productId={id} className="rounded-full bg-bg-primary/90 shadow-1 backdrop-blur-sm" />
         </div>
-        {!soldOut && (
-          <div className="absolute inset-x-0 bottom-0 hoverable:translate-y-full hoverable:transition-transform hoverable:duration-300 hoverable:group-hover:translate-y-0 hoverable:group-focus-within:translate-y-0">
-            <QuickAdd product={product} color={color} onColor={setColor} barTrigger />
-          </div>
-        )}
       </div>
       {colors.length > 0 && (
         // One row always (owner 2026-10-20): colour chips never wrap; a long name truncates.
         // The tooltip uses peer/peer-hover, NOT group: the card root is already `group`
-        // (hover zoom + quick-add), so group-hover would show every tooltip at once.
+        // (hover zoom), so group-hover would show every tooltip at once.
         <ul aria-label="Màu sắc" className="-mx-1 mt-1 flex flex-nowrap">
           {colors.map((c) => (
             <li key={c.name} className="relative min-w-0">
