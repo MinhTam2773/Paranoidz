@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
+import Link, { useLinkStatus } from "next/link";
 import { useState } from "react";
 import { formatVnd } from "@/lib/format";
 import { QuickAdd } from "./QuickAdd";
@@ -33,6 +33,19 @@ export type ProductCardData = {
 // hex shows its name instead. `eager`: above-the-fold cards, so the LCP image isn't lazy-loaded.
 // The buttons and dots sit beside the links, not inside them (a button inside <a> is invalid HTML);
 // the image link is a mouse/touch shortcut only, the text link is the one in the tab order.
+// Shown on the tapped card while its navigation is pending. Same-segment
+// navigation (PDP -> PDP) keeps the old page visible until the new one is
+// ready, so without this a tap looks dead for the whole server round-trip.
+function PendingVeil() {
+  const { pending } = useLinkStatus();
+  if (!pending) return null;
+  return (
+    <span className="absolute inset-0 z-10 flex items-center justify-center bg-bg-primary/60">
+      <span className="size-8 animate-spin rounded-full border-2 border-border border-t-text-primary" />
+    </span>
+  );
+}
+
 export function ProductCard({ product, eager = false }: { product: ProductCardData; eager?: boolean }) {
   const { id, name, slug, imageUrl, imageColor, price, originalPrice, soldOut, colors, variants, reviewCount, ratingAverage, shopeeSoldCount, giftLabel } = product;
   const [color, setColor] = useState(() => (colors.some((c) => c.name === imageColor) ? imageColor : null));
@@ -50,6 +63,7 @@ export function ProductCard({ product, eager = false }: { product: ProductCardDa
     <div className="group flex flex-col" onPointerEnter={() => setWarm(true)} onFocus={() => setWarm(true)}>
       <div className="relative aspect-square overflow-hidden rounded-sm bg-bg-secondary">
         <Link href={href} tabIndex={-1} aria-hidden className="absolute inset-0">
+          <PendingVeil />
           {images.filter((src) => src !== null).map((src) => (
             <Image
               key={src}
@@ -122,7 +136,8 @@ export function ProductCard({ product, eager = false }: { product: ProductCardDa
           ))}
         </ul>
       )}
-      <Link href={href} className={`flex flex-1 flex-col gap-1.5 ${colors.length ? "pt-2" : "pt-3"}`}>
+      <Link href={href} className={`relative flex flex-1 flex-col gap-1.5 ${colors.length ? "pt-2" : "pt-3"}`}>
+        <PendingVeil />
         <h2 className="line-clamp-2 text-[15px] font-medium leading-snug text-text-primary">{name}</h2>
         <p className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
           <span className={`text-[17px] font-bold tracking-[0.01em] ${onSale ? "text-accent" : "text-text-primary"}`}>{formatVnd(price)}</span>

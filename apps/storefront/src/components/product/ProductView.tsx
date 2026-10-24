@@ -213,7 +213,11 @@ export function ProductView({
         </div>
 
         <div className="lg:col-span-5">
-          <div className="flex flex-col gap-6 lg:sticky lg:top-36">
+          {/* lg:z-30: the sticky column is a stacking context, so without its own
+              z-index the fixed buy bar (z-30) inside it loses to the
+              recently-viewed cards below, which come later in the DOM and paint
+              over the bar. Below lg the column is static, so no z is needed. */}
+          <div className="flex flex-col gap-6 lg:sticky lg:top-36 lg:z-30">
             <div className="flex flex-col gap-3">
               <div className="flex items-start justify-between gap-2">
                 <h1 className="text-h2 uppercase">{name}</h1>

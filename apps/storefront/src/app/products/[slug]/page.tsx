@@ -198,7 +198,9 @@ export default async function ProductPage({ params }: PageProps<"/products/[slug
   };
 
   return (
-    <div className="mx-auto w-full max-w-7xl px-4 pb-16 lg:px-6">
+    // pb-28 clears the fixed sticky buy bar (up to ~84px tall): without it the
+    // bar covers the last row of the recently-viewed rail at the page bottom.
+    <div className="mx-auto w-full max-w-7xl px-4 pb-28 lg:px-6">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }}
