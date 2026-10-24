@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { createAdminClient } from "@paranoidz/db/admin";
 import { OrderActions } from "@/components/orders/OrderActions";
+import { PaymentConfirmButton } from "@/components/orders/PaymentConfirmButton";
 import { SpxCard } from "@/components/orders/SpxCard";
 import { StatusBadge } from "@/components/StatusBadge";
 import { requireAdmin } from "@/lib/auth";
@@ -23,7 +24,7 @@ export default async function OrderDetailPage({ params }: PageProps<"/orders/[nu
     .from("orders")
     // One literal: supabase-js infers the row type from it.
     .select(
-      "id, order_number, status, created_at, recipient_name, phone, secondary_phone, email, address, ward, district, city, note, subtotal, discount, shipping_fee, total, applied_bundles, delivery_method, gacha_discount, gacha_code, gacha_gift, spx_tracking_no, spx_ward, spx_fee, spx_created_at, order_items(id, name_snapshot, color_snapshot, size_snapshot, price_snapshot, image_snapshot, qty), order_status_history(id, status, note, created_at), voucher_uses(vouchers(code))",
+      "id, order_number, status, created_at, recipient_name, phone, secondary_phone, email, address, ward, district, city, note, subtotal, discount, shipping_fee, total, applied_bundles, delivery_method, payment_method, payment_confirmed_at, gacha_discount, gacha_code, gacha_gift, spx_tracking_no, spx_ward, spx_fee, spx_created_at, order_items(id, name_snapshot, color_snapshot, size_snapshot, price_snapshot, image_snapshot, qty), order_status_history(id, status, note, created_at), voucher_uses(vouchers(code))",
     )
     .eq("order_number", number)
     .order("created_at", { referencedTable: "order_status_history" })
@@ -111,7 +112,7 @@ export default async function OrderDetailPage({ params }: PageProps<"/orders/[nu
 
         <div className="flex flex-col gap-6">
           <section className={card}>
-            <h3 className={cardTitle}>Thanh toán (COD)</h3>
+            <h3 className={cardTitle}>{order.payment_method === "bank_transfer" ? "Thanh toán (Chuyển khoản)" : "Thanh toán (COD)"}</h3>
             <dl className="flex flex-col gap-3">
               <div className="flex justify-between gap-4"><dt className="text-text-secondary">Tạm tính</dt><dd>{formatVnd(order.subtotal)}</dd></div>
               {order.discount > 0 && (
@@ -139,22 +140,50 @@ export default async function OrderDetailPage({ params }: PageProps<"/orders/[nu
                   {order.delivery_method === "express" ? "⚡ Hoả tốc (nội thành HCM)" : "Giao thường"}
                 </dd>
               </div>
+              {order.payment_method === "bank_transfer" && (
+                <>
+                  <div className="flex justify-between gap-4"><dt className="text-text-secondary">Ngân hàng</dt><dd>Techcombank</dd></div>
+                  <div className="flex justify-between gap-4"><dt className="text-text-secondary">Số tài khoản</dt><dd className="font-semibold">19076210110027</dd></div>
+                  <div className="flex justify-between gap-4"><dt className="text-text-secondary">Chủ tài khoản</dt><dd>HO KINH DOANH COOLSHIRTZ</dd></div>
+                  <div className="flex justify-between gap-4"><dt className="text-text-secondary">Nội dung chuyển khoản</dt><dd className="font-semibold">{order.order_number}</dd></div>
+                  <div className="flex justify-between gap-4">
+                    <dt className="text-text-secondary">Trạng thái</dt>
+                    <dd className={order.payment_confirmed_at ? "" : "font-semibold text-accent"}>
+                      {order.payment_confirmed_at ? `Đã nhận tiền lúc ${formatDateTime(order.payment_confirmed_at)}` : "Chờ xác nhận thanh toán"}
+                    </dd>
+                  </div>
+                </>
+              )}
               <div className="flex justify-between gap-4 border-t border-border pt-3 font-semibold">
-                <dt>Tổng thu hộ (COD)</dt><dd>{formatVnd(order.total)}</dd>
+                <dt>{order.payment_method === "bank_transfer" ? "Tổng cần chuyển khoản" : "Tổng thu hộ (COD)"}</dt><dd>{formatVnd(order.total)}</dd>
               </div>
             </dl>
+            {order.payment_method === "bank_transfer" && !order.payment_confirmed_at && (
+              <div className="mt-4">
+                <PaymentConfirmButton orderId={order.id} orderNumber={order.order_number} />
+              </div>
+            )}
             <p className="mt-4 text-text-secondary">
               Khối lượng gói hàng: {String((units * UNIT_GRAMS) / 1000).replace(".", ",")} kg ({units} sản phẩm)
             </p>
           </section>
 
-          {(order.spx_tracking_no || order.status === "pending" || order.status === "confirmed") && (
+          {order.payment_method === "bank_transfer" && !order.payment_confirmed_at ? (
             <section className={card}>
               <h3 className={cardTitle}>Vận chuyển SPX</h3>
-              <Suspense fallback={<p className="text-text-secondary">Đang tải dữ liệu SPX…</p>}>
-                <SpxCard order={order} />
-              </Suspense>
+              <p className="text-text-secondary">
+                Đơn chuyển khoản chưa được xác nhận thanh toán. Xác nhận đã nhận tiền ở mục Thanh toán trước khi tạo vận đơn SPX.
+              </p>
             </section>
+          ) : (
+            (order.spx_tracking_no || order.status === "pending" || order.status === "confirmed") && (
+              <section className={card}>
+                <h3 className={cardTitle}>Vận chuyển SPX</h3>
+                <Suspense fallback={<p className="text-text-secondary">Đang tải dữ liệu SPX…</p>}>
+                  <SpxCard order={order} />
+                </Suspense>
+              </section>
+            )
           )}
 
           <section className={card}>

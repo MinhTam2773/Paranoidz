@@ -28,6 +28,7 @@ import {
   setDeliveryMethod,
   type DeliveryMethod,
 } from "@/lib/delivery-method";
+import { BANK_TRANSFER, vietqrImageUrl, type PaymentMethod } from "@/lib/payment";
 import { ProvinceSelect } from "./ProvinceSelect";
 import { WardSelect } from "./WardSelect";
 import { PurchaseTracker } from "@/components/tracking/MetaPixel";
@@ -87,7 +88,7 @@ function Field({
   );
 }
 
-// COD checkout (ARCHITECTURE.md §4): delivery form + summary. Lines come from Buy It Now or the cart;
+// Checkout (ARCHITECTURE.md §4): delivery form + summary. Lines come from Buy It Now or the cart;
 // the order itself is priced and validated server-side by placeOrder → place_order().
 export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; account: CheckoutAccount }) {
   const cart = useCart();
@@ -125,6 +126,10 @@ export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; acc
     setDeliveryMethodState(m);
     setDeliveryMethod(m);
   };
+  // Payment method: COD is the default and keeps its old behavior. Bank transfer
+  // shows its details here; the QR itself needs the real order number, so it is
+  // rendered on the confirmation screen after the order is placed.
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cod");
   const isHcm = city === "TP. Hồ Chí Minh";
   const expressBlocked = deliveryMethod === "express" && city !== "" && !isHcm;
   const quotePhone = normalizePhone(phone) ?? "";
@@ -261,6 +266,7 @@ export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; acc
         items: lines.map((l) => ({ variantId: l.variantId, qty: l.qty })),
         addressId: addressId ?? undefined,
         deliveryMethod,
+        paymentMethod,
         ...v,
       });
       if (res.ok) {
@@ -281,16 +287,46 @@ export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; acc
         <PurchaseTracker orderNumber={placed.orderNumber} value={placed.total} />
         <div className="flex flex-col gap-2">
           <h2 className="text-h3 uppercase">Cảm ơn bạn — đã đặt hàng thành công</h2>
-          <p className="text-text-secondary">
-            Mã đơn hàng của bạn là <strong className="text-text-primary">{placed.orderNumber}</strong>. Chúng tôi sẽ chuẩn bị và giao hàng
-            đến bạn. Bạn thanh toán bằng tiền mặt khi nhận hàng.
-          </p>
+          {placed.paymentMethod === "bank_transfer" ? (
+            <p className="text-text-secondary">
+              Mã đơn hàng của bạn là <strong className="text-text-primary">{placed.orderNumber}</strong>. Bạn đã chọn chuyển khoản — quét
+              mã QR bên dưới để chuyển đúng số tiền, nội dung là mã đơn. Shop xác nhận đã nhận tiền rồi mới giao hàng.
+            </p>
+          ) : (
+            <p className="text-text-secondary">
+              Mã đơn hàng của bạn là <strong className="text-text-primary">{placed.orderNumber}</strong>. Chúng tôi sẽ chuẩn bị và giao hàng
+              đến bạn. Bạn thanh toán bằng tiền mặt khi nhận hàng.
+            </p>
+          )}
           <p className="text-text-secondary">
             Theo dõi trạng thái bất cứ lúc nào tại trang{" "}
             <Link href={`/order-lookup?order=${placed.orderNumber}`} className="text-text-primary underline">tra cứu đơn hàng</Link>{" "}
             bằng mã đơn và số điện thoại của bạn.
           </p>
         </div>
+        {placed.paymentMethod === "bank_transfer" && (
+          <div className="flex flex-col items-center gap-4 rounded-sm border border-border p-6">
+            {/* Plain <img>: the payment QR must load from the customer's own
+                browser, not through Next's image optimizer. */}
+            <img
+              src={vietqrImageUrl(placed.total, placed.orderNumber)}
+              alt={`Mã QR chuyển khoản cho đơn ${placed.orderNumber}`}
+              width={300}
+              height={300}
+              className="h-auto w-full max-w-[300px]"
+            />
+            <dl className="flex w-full flex-col gap-2 text-body">
+              <div className="flex justify-between gap-4"><dt className="text-text-secondary">Ngân hàng</dt><dd>{BANK_TRANSFER.bankName}</dd></div>
+              <div className="flex justify-between gap-4"><dt className="text-text-secondary">Số tài khoản</dt><dd className="font-semibold">{BANK_TRANSFER.accountNumber}</dd></div>
+              <div className="flex justify-between gap-4"><dt className="text-text-secondary">Chủ tài khoản</dt><dd>{BANK_TRANSFER.accountName}</dd></div>
+              <div className="flex justify-between gap-4"><dt className="text-text-secondary">Số tiền</dt><dd className="font-semibold">{formatVnd(placed.total)}</dd></div>
+              <div className="flex justify-between gap-4"><dt className="text-text-secondary">Nội dung chuyển khoản</dt><dd className="font-semibold">{placed.orderNumber}</dd></div>
+            </dl>
+            <p className="text-center text-caption text-text-secondary">
+              Chuyển đúng số tiền và nội dung mã đơn để shop đối soát nhanh. Shop xác nhận đã nhận tiền rồi mới giao hàng.
+            </p>
+          </div>
+        )}
         <dl className="flex flex-col gap-3 rounded-sm border border-border p-6">
           <div className="flex justify-between"><dt className="text-text-secondary">Tạm tính</dt><dd>{formatVnd(placed.subtotal)}</dd></div>
           {placed.discount > 0 && (
@@ -305,7 +341,7 @@ export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; acc
           <div className="flex justify-between"><dt className="text-text-secondary">Phí vận chuyển</dt><dd>{formatVnd(placed.shippingFee)}</dd></div>
           <div className="flex justify-between"><dt className="text-text-secondary">Phương thức giao hàng</dt><dd>{deliveryMethodLabel(placed.deliveryMethod === "express" ? "express" : "standard")}</dd></div>
           <div className="flex justify-between border-t border-border pt-3">
-            <dt className="text-nav uppercase">Tổng thanh toán khi nhận hàng</dt><dd className="text-price">{formatVnd(placed.total)}</dd>
+            <dt className="text-nav uppercase">{placed.paymentMethod === "bank_transfer" ? "Tổng cần chuyển khoản" : "Tổng thanh toán khi nhận hàng"}</dt><dd className="text-price">{formatVnd(placed.total)}</dd>
           </div>
         </dl>
         <Link href="/products" className={`${secondaryClass} max-w-xs`}>Tiếp tục mua sắm</Link>
@@ -496,6 +532,65 @@ export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; acc
         <p className="border border-border border-t-0 px-4 py-2.5 text-caption text-text-muted">
           Phí ship tính theo địa chỉ giao hàng và khối lượng đơn — mức bạn thấy là mức bạn trả, shop không thu thêm.
         </p>
+
+        {/* 03 — Payment method: COD keeps its old behavior; bank transfer shows
+            its details here, and the QR (which needs the real order number)
+            renders on the confirmation screen after the order is placed. */}
+        <h2 className="text-h3 uppercase"><span className="mr-2 text-accent">03</span>Phương thức thanh toán</h2>
+        <div role="radiogroup" aria-label="Phương thức thanh toán" className="flex flex-col gap-2">
+          <button
+            type="button"
+            role="radio"
+            aria-checked={paymentMethod === "cod"}
+            onClick={() => setPaymentMethod("cod")}
+            className={`border bg-bg-primary transition-colors duration-200 ${paymentMethod === "cod" ? "border-text-primary" : "border-border hover:border-border-hover"}`}
+          >
+            <span className="flex items-center gap-4 p-4">
+              <span
+                aria-hidden
+                className={`flex size-5 shrink-0 items-center justify-center rounded-full border-2 transition-colors duration-200 ${paymentMethod === "cod" ? "border-accent" : "border-border"}`}
+              >
+                {paymentMethod === "cod" && <span className="size-2.5 rounded-full bg-accent" />}
+              </span>
+              <span className="min-w-0 flex-1 text-left">
+                <span className="block text-nav font-bold uppercase">Thanh toán khi nhận hàng (COD)</span>
+                <span className="mt-0.5 block text-caption text-text-secondary">Trả tiền mặt khi nhận hàng, được kiểm hàng trước khi thanh toán.</span>
+              </span>
+            </span>
+          </button>
+          <button
+            type="button"
+            role="radio"
+            aria-checked={paymentMethod === "bank_transfer"}
+            onClick={() => setPaymentMethod("bank_transfer")}
+            className={`border bg-bg-primary transition-colors duration-200 ${paymentMethod === "bank_transfer" ? "border-text-primary" : "border-border hover:border-border-hover"}`}
+          >
+            <span className="flex items-center gap-4 p-4">
+              <span
+                aria-hidden
+                className={`flex size-5 shrink-0 items-center justify-center rounded-full border-2 transition-colors duration-200 ${paymentMethod === "bank_transfer" ? "border-accent" : "border-border"}`}
+              >
+                {paymentMethod === "bank_transfer" && <span className="size-2.5 rounded-full bg-accent" />}
+              </span>
+              <span className="min-w-0 flex-1 text-left">
+                <span className="block text-nav font-bold uppercase">Chuyển khoản ngân hàng (VietQR)</span>
+                <span className="mt-0.5 block text-caption text-text-secondary">Quét mã QR để chuyển khoản. Shop xác nhận đã nhận tiền rồi mới giao hàng.</span>
+              </span>
+            </span>
+          </button>
+        </div>
+        {paymentMethod === "bank_transfer" && (
+          <div className="rounded-sm border border-border p-4">
+            <p className="text-body">
+              Chuyển khoản tới {BANK_TRANSFER.bankName} — số tài khoản <strong>{BANK_TRANSFER.accountNumber}</strong> — chủ tài khoản{" "}
+              {BANK_TRANSFER.accountName}.
+            </p>
+            <p className="mt-2 text-caption text-text-secondary">
+              Sau khi đặt hàng, bạn sẽ nhận mã QR với đúng số tiền và nội dung là mã đơn. Chuyển đúng số tiền và nội dung mã đơn; shop xác
+              nhận đã nhận tiền rồi mới giao hàng.
+            </p>
+          </div>
+        )}
       </form>
 
       <aside className="lg:col-span-5">
@@ -583,9 +678,15 @@ export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; acc
             Khách hàng được giảm 10% cho 5 đơn đầu tiên, tự động áp dụng. Ưu đãi 5 đơn đầu, mã giảm giá và combo không cộng dồn — đơn hàng được mức giảm cao nhất.
           </p>
 
-          <p className="border-l-4 border-accent bg-accent-soft px-3 py-2 text-caption font-semibold uppercase text-text-primary">
-            Chỉ thanh toán khi nhận hàng (COD) — trả tiền khi bạn nhận được hàng.
-          </p>
+          {paymentMethod === "bank_transfer" ? (
+            <p className="border-l-4 border-accent bg-accent-soft px-3 py-2 text-caption font-semibold uppercase text-text-primary">
+              Chuyển khoản trước qua VietQR — shop xác nhận đã nhận tiền rồi mới giao hàng.
+            </p>
+          ) : (
+            <p className="border-l-4 border-accent bg-accent-soft px-3 py-2 text-caption font-semibold uppercase text-text-primary">
+              Chỉ thanh toán khi nhận hàng (COD) — trả tiền khi bạn nhận được hàng.
+            </p>
+          )}
 
           {problem && (
             <p className="text-caption text-accent">

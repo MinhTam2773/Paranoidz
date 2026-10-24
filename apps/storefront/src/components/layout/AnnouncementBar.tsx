@@ -5,7 +5,7 @@ import { HOTLINE } from "@/lib/site";
 import { CloseIcon } from "./icons";
 
 const ITEMS = [
-  "Thanh toán COD — nhận hàng rồi mới trả tiền",
+  "Thanh toán COD hoặc chuyển khoản VietQR",
   `Hotline: ${HOTLINE}`,
   "Giao hàng toàn quốc qua SPX Express",
   "Bộ sưu tập mới 2026 đã lên kệ",

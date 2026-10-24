@@ -54,6 +54,14 @@ export function OrderLookup({ defaultOrderNumber }: { defaultOrderNumber: string
           </p>
           <h2 className="text-h3 uppercase">{status.label}</h2>
           <p className="text-text-secondary">{status.detail}</p>
+          {order.paymentMethod === "bank_transfer" && !order.paymentConfirmed && (
+            <p className="border-l-4 border-accent bg-accent-soft px-3 py-2 text-caption font-semibold text-text-primary">
+              Đơn chuyển khoản — chờ shop xác nhận đã nhận tiền. Shop xác nhận rồi mới giao hàng.
+            </p>
+          )}
+          {order.paymentMethod === "bank_transfer" && order.paymentConfirmed && (
+            <p className="text-text-secondary">Đã nhận tiền chuyển khoản — đơn đang được xử lý.</p>
+          )}
         </div>
 
         {order.spxTrackingNo && (

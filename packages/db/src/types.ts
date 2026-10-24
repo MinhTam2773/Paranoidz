@@ -464,6 +464,8 @@ export type Database = {
           id: string
           note: string | null
           order_number: string
+          payment_confirmed_at: string | null
+          payment_method: string
           phone: string
           recipient_name: string
           secondary_phone: string | null
@@ -497,6 +499,8 @@ export type Database = {
           id?: string
           note?: string | null
           order_number: string
+          payment_confirmed_at?: string | null
+          payment_method?: string
           phone: string
           recipient_name: string
           secondary_phone?: string | null
@@ -530,6 +534,8 @@ export type Database = {
           id?: string
           note?: string | null
           order_number?: string
+          payment_confirmed_at?: string | null
+          payment_method?: string
           phone?: string
           recipient_name?: string
           secondary_phone?: string | null

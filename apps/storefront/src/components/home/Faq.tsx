@@ -19,7 +19,7 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: "Có hỗ trợ COD (nhận hàng trả tiền) không?",
-    a: "Có. Bạn được kiểm tra hàng trước khi thanh toán cho shipper.",
+    a: "Có. Bạn được kiểm tra hàng trước khi thanh toán cho shipper. Ngoài COD, shop còn nhận chuyển khoản qua mã VietQR — đơn chuyển khoản được giao sau khi shop xác nhận đã nhận tiền.",
   },
   {
     q: "Làm sao kiểm tra tình trạng đơn hàng?",

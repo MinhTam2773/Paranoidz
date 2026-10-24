@@ -18,6 +18,8 @@ export type LookedUpOrder = {
   shippingFee: number;
   total: number;
   spxTrackingNo: string | null;
+  paymentMethod: string;
+  paymentConfirmed: boolean;
   items: { name: string; color: string | null; size: string | null; qty: number; price: number; imageUrl: string | null }[];
 };
 
@@ -52,7 +54,7 @@ export async function lookupOrder(input: { orderNumber: string; phone: string })
   const admin = createAdminClient();
   const { data, error } = await admin
     .from("orders")
-    .select("order_number, status, created_at, ward, city, subtotal, discount, shipping_fee, total, spx_tracking_no, order_items(name_snapshot, color_snapshot, size_snapshot, qty, price_snapshot, image_snapshot)")
+    .select("order_number, status, created_at, ward, city, subtotal, discount, shipping_fee, total, spx_tracking_no, payment_method, payment_confirmed_at, order_items(name_snapshot, color_snapshot, size_snapshot, qty, price_snapshot, image_snapshot)")
     .eq("order_number", orderNumber)
     .eq("phone", phone)
     .maybeSingle();
@@ -75,6 +77,8 @@ export async function lookupOrder(input: { orderNumber: string; phone: string })
       shippingFee: data.shipping_fee,
       total: data.total,
       spxTrackingNo: data.spx_tracking_no,
+      paymentMethod: data.payment_method ?? "cod",
+      paymentConfirmed: data.payment_confirmed_at !== null,
       items: data.order_items.map((i) => ({
         name: i.name_snapshot,
         color: i.color_snapshot,

@@ -66,6 +66,25 @@ export async function transitionOrder(orderId: string, to: string): Promise<{ er
   return stale ? { error: "Trạng thái đơn đã được thay đổi ở nơi khác. Trang đã được cập nhật." } : {};
 }
 
+// Confirms a bank-transfer order's payment has arrived. Not a status change: the
+// order stays pending and enters the normal flow (SPX shipment is what confirms
+// it). The update only sticks on a transfer order that is still unconfirmed, so a
+// second click — or a click after the order moved on — changes nothing.
+export async function confirmBankTransferPayment(orderId: string): Promise<{ error?: string }> {
+  await requireAdmin();
+  const { data, error } = await createAdminClient()
+    .from("orders")
+    .update({ payment_confirmed_at: new Date().toISOString() })
+    .eq("id", orderId)
+    .eq("payment_method", "bank_transfer")
+    .is("payment_confirmed_at", null)
+    .select("id");
+  if (error) return { error: "Không thể xác nhận thanh toán. Vui lòng thử lại." };
+  if (!data.length) return { error: "Đơn này không phải đơn chuyển khoản chờ xác nhận. Trang đã được cập nhật." };
+  revalidatePath("/", "layout");
+  return {};
+}
+
 // SPX's own status for the parcel (1.3 Track Order); null when it allows `to`.
 async function spxStatusError(trackingNo: string, to: "delivered" | "delivery_failed") {
   type Parcel = { tracking_no: string; status: string; status_code: string };
@@ -105,13 +124,17 @@ async function createShipment(orderId: string, ward: string, pickup: { pickupTim
   const admin = createAdminClient();
   const { data: order, error } = await admin
     .from("orders")
-    .select("order_number, status, spx_tracking_no, spx_voucher, recipient_name, phone, address, note, city, subtotal, total, order_items(name_snapshot, qty)")
+    .select("order_number, status, spx_tracking_no, spx_voucher, recipient_name, phone, address, note, city, subtotal, total, payment_method, payment_confirmed_at, order_items(name_snapshot, qty)")
     .eq("id", orderId)
     .maybeSingle();
   if (error) throw error;
   // `confirmed` without a shipment: confirmed by hand before 2026-10-16.
+  // A bank-transfer order ships only after its payment is confirmed.
   if (!order || !SHIPPABLE.includes(order.status) || order.spx_tracking_no) {
     return { error: "Đơn đã có vận đơn SPX hoặc đã bị hủy. Trang đã được cập nhật." };
+  }
+  if (order.payment_method === "bank_transfer" && !order.payment_confirmed_at) {
+    return { error: "Đơn chuyển khoản chưa được xác nhận thanh toán. Xác nhận đã nhận tiền trước khi tạo vận đơn SPX." };
   }
 
   const province = spxProvince(order.city);
@@ -193,7 +216,7 @@ export async function createSpxShipments(orderIds: string[], slot: string): Prom
   if (!orderIds.length || orderIds.length > BULK_LIMIT) return { created: 0, failed: [], error: `Chọn từ 1 đến ${BULK_LIMIT} đơn.` };
 
   const admin = createAdminClient();
-  const { data: orders, error } = await admin.from("orders").select("id, order_number, status, spx_tracking_no, city, ward").in("id", orderIds);
+  const { data: orders, error } = await admin.from("orders").select("id, order_number, status, spx_tracking_no, city, ward, payment_method, payment_confirmed_at").in("id", orderIds);
   if (error) throw error;
   // One query per province: a province has at most a few hundred wards, under PostgREST's row cap.
   const provinces = [...new Set(orders.map((o) => spxProvince(o.city)))];
