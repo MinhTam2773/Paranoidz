@@ -227,6 +227,12 @@ function ProductForm({ initial, categories, setNotice, onSaved }: {
           <Field id="giftLabel" label="Quà tặng kèm" hint='Hiện badge "🎁 ..." trên card, ví dụ "Quà tặng kèm". Để trống nếu không có. Quà do shop tự bỏ vào đơn khi đóng gói.'>
             <input id="giftLabel" value={form.giftLabel} onChange={(e) => set("giftLabel", e.target.value)} maxLength={40} placeholder="Quà tặng kèm" className={input} />
           </Field>
+          <Field id="videoUrl" label="Video sản phẩm" hint="Dán đường dẫn công khai của video đã tải lên bucket product-images. Để trống nếu không có video. Video hiện ở ô đầu gallery trang chi tiết, tự phát không tiếng, khách bấm mới bật tiếng.">
+            <input id="videoUrl" value={form.videoUrl} onChange={(e) => set("videoUrl", e.target.value)} maxLength={500} placeholder="https://..." className={input} />
+          </Field>
+          <Field id="videoPosterUrl" label="Ảnh bìa video" hint="Ảnh hiện trước khi video phát và làm thumbnail video. Để trống thì lấy ảnh sản phẩm đầu tiên.">
+            <input id="videoPosterUrl" value={form.videoPosterUrl} onChange={(e) => set("videoPosterUrl", e.target.value)} maxLength={500} placeholder="https://..." className={input} />
+          </Field>
         </div>
       </section>
 

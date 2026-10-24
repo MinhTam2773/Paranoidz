@@ -29,7 +29,7 @@ const getProduct = cache(async (slug: string) => {
   const { data, error } = await supabase
     .from("products")
     .select(
-      "id, name, description, care_instructions, size_guide, product_variants(id, color, color_hex, size, price, original_price, stock), product_images(color, storage_path)",
+      "id, name, description, care_instructions, size_guide, video_url, video_poster_url, product_variants(id, color, color_hex, size, price, original_price, stock), product_images(color, storage_path)",
     )
     .eq("slug", slug)
     .order("color", { referencedTable: "product_variants" })
@@ -38,12 +38,16 @@ const getProduct = cache(async (slug: string) => {
   if (error) throw error;
   if (!data) return null;
   const { product_images, ...product } = data;
+  const images = product_images.map((i) => ({
+    color: i.color,
+    url: supabase.storage.from("product-images").getPublicUrl(i.storage_path).data.publicUrl,
+  }));
   return {
     ...product,
-    images: product_images.map((i) => ({
-      color: i.color,
-      url: supabase.storage.from("product-images").getPublicUrl(i.storage_path).data.publicUrl,
-    })),
+    images,
+    video: product.video_url
+      ? { url: product.video_url, poster: product.video_poster_url ?? images[0]?.url ?? null }
+      : null,
   };
 });
 
@@ -205,6 +209,7 @@ export default async function ProductPage({ params }: PageProps<"/products/[slug
         name={product.name}
         variants={product.product_variants}
         images={product.images}
+        video={product.video}
         details={
           (product.description || product.care_instructions) && (
             <div className="flex flex-col gap-8">

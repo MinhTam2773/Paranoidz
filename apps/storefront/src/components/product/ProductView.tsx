@@ -62,6 +62,7 @@ export function ProductView({
   reviews,
   reviewCount,
   shopeeReviewCount = 0,
+  video = null,
 }: {
   productId: string;
   name: string;
@@ -73,6 +74,7 @@ export function ProductView({
   reviews: ReactNode;
   reviewCount: number;
   shopeeReviewCount?: number;
+  video?: { url: string; poster: string | null } | null;
 }) {
   // First non-null hex per colour (a size added later has none yet).
   const colors = [...new Set(variants.map((v) => v.color))].map((name) => ({
@@ -116,7 +118,20 @@ export function ProductView({
 
   // Colourway images first (primary leads), then general ones.
   const gallery = [...images.filter((i) => i.color === color), ...images.filter((i) => i.color === null)];
-  const mainImage = gallery[activeImage] ?? gallery[0];
+  // Video-first gallery: the video (when provided) is slide 0, then the images.
+  // The poster falls back to the first gallery image so the video slide and the
+  // buy-box thumbnail always have something to show.
+  const videoPoster = video?.poster ?? gallery[0]?.url ?? null;
+  type GalleryItem = { kind: "video"; url: string; poster: string | null } | { kind: "image"; url: string };
+  const galleryItems: GalleryItem[] = [
+    ...(video ? [{ kind: "video" as const, url: video.url, poster: videoPoster }] : []),
+    ...gallery.map((img) => ({ kind: "image" as const, url: img.url })),
+  ];
+  const activeItem = galleryItems[activeImage] ?? galleryItems[0];
+  const mainImage = activeItem?.kind === "image" ? { url: activeItem.url } : null;
+  const purchaseThumbnail =
+    activeItem?.kind === "video" ? videoPoster : (mainImage?.url ?? null);
+  const [muted, setMuted] = useState(true);
 
   function pickColor(next: string) {
     setColor(next);
@@ -130,32 +145,67 @@ export function ProductView({
       <div className="grid gap-8 lg:grid-cols-12 lg:gap-12">
         <div className="flex flex-col gap-2 lg:col-span-7">
           <div className="relative aspect-square overflow-hidden rounded-sm bg-bg-secondary">
-            {mainImage && (
-              <Image
-                ref={mainImageRef}
-                src={mainImage.url}
-                alt={name}
-                fill
-                preload
-                sizes="(min-width: 1280px) 700px, (min-width: 1024px) 58vw, 100vw"
-                className="object-cover"
-              />
+            {activeItem?.kind === "video" ? (
+              <>
+                <video
+                  key={activeItem.url}
+                  src={activeItem.url}
+                  poster={activeItem.poster ?? undefined}
+                  className="size-full object-cover"
+                  preload="metadata"
+                  muted={muted}
+                  playsInline
+                  loop
+                  autoPlay
+                />
+                <button
+                  type="button"
+                  onClick={() => setMuted((m) => !m)}
+                  aria-label={muted ? "Bật tiếng video" : "Tắt tiếng video"}
+                  className="absolute bottom-3 right-3 rounded-sm bg-black/60 px-2.5 py-1.5 text-caption font-medium text-white"
+                >
+                  {muted ? "Bật tiếng" : "Tắt tiếng"}
+                </button>
+              </>
+            ) : (
+              mainImage && (
+                <Image
+                  ref={mainImageRef}
+                  src={mainImage.url}
+                  alt={name}
+                  fill
+                  preload
+                  sizes="(min-width: 1280px) 700px, (min-width: 1024px) 58vw, 100vw"
+                  className="object-cover"
+                />
+              )
             )}
           </div>
-          {gallery.length > 1 && (
+          {galleryItems.length > 1 && (
             <div className="grid grid-cols-5 gap-2">
-              {gallery.map((img, i) => (
+              {galleryItems.map((item, i) => (
                 <button
-                  key={img.url}
+                  key={item.url}
                   type="button"
                   onClick={() => setActiveImage(i)}
-                  aria-label={`Xem ảnh ${i + 1} / ${gallery.length}`}
+                  aria-label={item.kind === "video" ? "Xem video" : `Xem ảnh ${i} / ${galleryItems.length}`}
                   aria-current={i === activeImage}
                   className={`relative aspect-square overflow-hidden rounded-sm border bg-bg-secondary transition-colors duration-200 ${
                     i === activeImage ? "border-text-primary" : "border-transparent hover:border-border-hover"
                   }`}
                 >
-                  <Image src={img.url} alt="" fill sizes="120px" className="object-cover" />
+                  <Image
+                    src={item.kind === "video" ? (item.poster ?? gallery[0]?.url ?? "") : item.url}
+                    alt=""
+                    fill
+                    sizes="120px"
+                    className="object-cover"
+                  />
+                  {item.kind === "video" && (
+                    <span aria-hidden="true" className="absolute inset-0 flex items-center justify-center text-white drop-shadow">
+                      ▶
+                    </span>
+                  )}
                 </button>
               ))}
             </div>
@@ -265,7 +315,7 @@ export function ProductView({
               soldOut={soldOut}
               price={shown ? formatVnd(shown.price) : ""}
               name={name}
-              thumbnailUrl={mainImage?.url ?? null}
+              thumbnailUrl={purchaseThumbnail}
               imageRef={mainImageRef}
               onNeedSize={() => {
                 sizeGroupRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });

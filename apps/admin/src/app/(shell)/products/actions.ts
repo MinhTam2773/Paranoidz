@@ -73,9 +73,9 @@ export async function saveProduct(input: ProductInput): Promise<SaveResult> {
   }
 
   // Everything but the slug, which is fixed after creation (URLs, image paths).
-  const { name, category_id, description, care_instructions, size_guide, is_active, shopee_sold_count, gift_label } = product;
+  const { name, category_id, description, care_instructions, size_guide, is_active, shopee_sold_count, gift_label, video_url, video_poster_url } = product;
   const { error: pErr } = await admin
-    .from("products").update({ name, category_id, description, care_instructions, size_guide, is_active, shopee_sold_count, gift_label }).eq("id", input.id);
+    .from("products").update({ name, category_id, description, care_instructions, size_guide, is_active, shopee_sold_count, gift_label, video_url, video_poster_url }).eq("id", input.id);
   if (pErr) return { errors: { form: "Không thể lưu. Vui lòng thử lại." } };
 
   if (removed.length) await admin.from("product_variants").delete().in("id", removed.map((v) => v.id));
