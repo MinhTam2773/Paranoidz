@@ -25,6 +25,8 @@ export type ProductInput = {
   sizeGuide: string;
   shopeeSoldCount: number;
   giftLabel: string;
+  videoUrl: string;
+  videoPosterUrl: string;
   isActive: boolean;
   variants: VariantInput[];
 };
@@ -155,6 +157,8 @@ export function validateProduct(input: ProductInput) {
       category_id: input.categoryId || null,
       shopee_sold_count: Math.max(0, Math.floor(input.shopeeSoldCount || 0)),
       gift_label: input.giftLabel.trim() || null,
+      video_url: input.videoUrl.trim() || null,
+      video_poster_url: input.videoPosterUrl.trim() || null,
     },
     variants,
   };

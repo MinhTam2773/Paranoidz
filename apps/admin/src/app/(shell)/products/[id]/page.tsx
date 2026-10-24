@@ -20,7 +20,7 @@ export default async function EditProductPage({ params }: PageProps<"/products/[
   const [{ data: product, error }, { data: categories }] = await Promise.all([
     admin
       .from("products")
-      .select("id, name, slug, category_id, description, care_instructions, size_guide, is_active, updated_at, shopee_sold_count, gift_label, product_variants(id, color, color_hex, size, price, original_price, stock, sku, updated_at), product_images(id, storage_path, color, sort_order, is_primary)")
+      .select("id, name, slug, category_id, description, care_instructions, size_guide, is_active, updated_at, shopee_sold_count, gift_label, video_url, video_poster_url, product_variants(id, color, color_hex, size, price, original_price, stock, sku, updated_at), product_images(id, storage_path, color, sort_order, is_primary)")
       .eq("id", id)
       .maybeSingle(),
     admin.from("categories").select("id, name").order("sort_order"),
@@ -62,6 +62,8 @@ export default async function EditProductPage({ params }: PageProps<"/products/[
           sizeGuide: sizeGuideToText(product.size_guide),
           shopeeSoldCount: product.shopee_sold_count ?? 0,
           giftLabel: product.gift_label ?? "",
+          videoUrl: product.video_url ?? "",
+          videoPosterUrl: product.video_poster_url ?? "",
           isActive: product.is_active,
           variants: variants.map((v) => ({
             id: v.id,

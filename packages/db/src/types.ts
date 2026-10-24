@@ -670,6 +670,8 @@ export type Database = {
           size_guide: Json | null
           slug: string
           updated_at: string
+          video_poster_url: string | null
+          video_url: string | null
         }
         Insert: {
           care_instructions?: string | null
@@ -684,6 +686,8 @@ export type Database = {
           size_guide?: Json | null
           slug: string
           updated_at?: string
+          video_poster_url?: string | null
+          video_url?: string | null
         }
         Update: {
           care_instructions?: string | null
@@ -698,6 +702,8 @@ export type Database = {
           size_guide?: Json | null
           slug?: string
           updated_at?: string
+          video_poster_url?: string | null
+          video_url?: string | null
         }
         Relationships: [
           {
