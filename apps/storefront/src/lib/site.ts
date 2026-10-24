@@ -22,9 +22,12 @@ export const NAV_LINKS = [
 ] as const;
 
 export const POLICY_LINKS = [
+  { label: "Điều kiện giao dịch", href: "/policy#terms" },
   { label: "Chính sách giao hàng", href: "/policy#shipping" },
   { label: "Đổi trả", href: "/policy#returns" },
+  { label: "Thanh toán", href: "/policy#payment" },
   { label: "Chính sách bảo mật", href: "/policy#privacy" },
+  { label: "Khiếu nại", href: "/policy#complaints" },
   { label: "Tra cứu đơn hàng", href: "/order-lookup" },
 ] as const;
 

@@ -11,7 +11,7 @@ const MAX_TEXT = 2000; // sendMessage limit
 type Order = {
   order_number: string; recipient_name: string; phone: string; secondary_phone: string | null;
   address: string; ward: string | null; city: string; note: string | null;
-  subtotal: number; discount: number; shipping_fee: number; total: number;
+  subtotal: number; discount: number; shipping_fee: number; total: number; payment_method: string;
   order_items: { name_snapshot: string; color_snapshot: string | null; size_snapshot: string | null; qty: number }[];
 };
 
@@ -31,7 +31,7 @@ export function zaloAlertText(o: Order) {
     [o.address, o.ward, o.city].filter(Boolean).join(", "),
     "─────", ...items, "─────",
     totals,
-    `THU COD: ${formatVnd(o.total)}`,
+    o.payment_method === "bank_transfer" ? `CHỜ CHUYỂN KHOẢN: ${formatVnd(o.total)} (xác nhận rồi mới giao)` : `THU COD: ${formatVnd(o.total)}`,
     o.note ? `Ghi chú: ${o.note}` : "",
     `${ADMIN_URL}/orders/${encodeURIComponent(o.order_number)}`,
   ].filter(Boolean).join("\n").slice(0, MAX_TEXT);
@@ -43,7 +43,7 @@ export async function sendZaloAlert(orderId: string) {
   if (!token || !chatId) return console.warn("ZALO_BOT_TOKEN / ZALO_OWNER_CHAT_ID unset: Zalo alert skipped");
 
   const { data, error } = await createAdminClient().from("orders")
-    .select("order_number, recipient_name, phone, secondary_phone, address, ward, city, note, subtotal, discount, shipping_fee, total, order_items(name_snapshot, color_snapshot, size_snapshot, qty)")
+    .select("order_number, recipient_name, phone, secondary_phone, address, ward, city, note, subtotal, discount, shipping_fee, total, payment_method, order_items(name_snapshot, color_snapshot, size_snapshot, qty)")
     .eq("id", orderId).single();
   if (error) return console.error("zalo alert: order not readable", orderId, error);
 

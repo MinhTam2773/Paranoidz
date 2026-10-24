@@ -17,10 +17,11 @@ import { GACHA_COOKIE } from "@/lib/gacha";
 
 // addressId: the saved address the form was filled from, if untouched (links orders.address_id).
 // deliveryMethod: "standard" | "express", chosen on the product page / checkout (validated below).
-export type CheckoutInput = { items: { variantId: string; qty: number }[]; addressId?: string; deliveryMethod?: string } & CheckoutValues;
+// paymentMethod: "bank_transfer" is special; anything else falls back to COD.
+export type CheckoutInput = { items: { variantId: string; qty: number }[]; addressId?: string; deliveryMethod?: string; paymentMethod?: string } & CheckoutValues;
 
 export type CheckoutResult =
-  | { ok: true; order: { orderNumber: string; subtotal: number; discount: number; gachaDiscount: number; gachaGift: string | null; shippingFee: number; total: number; phone: string; deliveryMethod: string } }
+  | { ok: true; order: { orderNumber: string; subtotal: number; discount: number; gachaDiscount: number; gachaGift: string | null; shippingFee: number; total: number; phone: string; deliveryMethod: string; paymentMethod: "cod" | "bank_transfer" } }
   | { ok: false; message?: string; fieldErrors?: FieldErrors };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -79,7 +80,7 @@ function explain(code: string): CheckoutResult {
   return { ok: false, message: `Đã có lỗi khi đặt hàng. Vui lòng thử lại hoặc gọi ${HOTLINE}.` };
 }
 
-// COD order submission (ARCHITECTURE.md §2.2, §4). Guests welcome (§8.2); the session user, if any,
+// Order submission (ARCHITECTURE.md §2.2, §4). Guests welcome (§8.2); the session user, if any,
 // is attached for order history only — every per-customer rule keys on the phone inside
 // place_order(), which also recomputes all prices, stock and vouchers. Nothing the browser sends
 // about money is trusted: only variant ids, quantities and delivery details go in. The shipping
@@ -157,6 +158,24 @@ export async function placeOrder(input: CheckoutInput): Promise<CheckoutResult> 
 
   const order = data as { order_id: string; order_number: string; subtotal: number; discount: number; gacha_discount: number; gacha_gift: string | null; shipping_fee: number; total: number };
 
+  // Payment method: only "bank_transfer" is special; anything else falls back to COD.
+  // place_order() is frozen, so the method is attached the same way delivery_method used
+  // to be — a direct update after the rpc. Fail closed: if the update fails (e.g. the
+  // payment_method column migration hasn't been applied yet), the order is cancelled
+  // so a transfer order can never sit looking like COD and ship unpaid.
+  const paymentMethod = input?.paymentMethod === "bank_transfer" ? "bank_transfer" : "cod";
+  if (paymentMethod === "bank_transfer") {
+    const { error: pmError } = await admin
+      .from("orders")
+      .update({ payment_method: "bank_transfer" })
+      .eq("id", order.order_id);
+    if (pmError) {
+      console.error("payment_method update failed", pmError);
+      await admin.rpc("transition_order_status", { p_order_id: order.order_id, p_new_status: "cancelled" });
+      return { ok: false, message: `Không ghi nhận được phương thức chuyển khoản. Đơn chưa được tạo — vui lòng thử lại hoặc gọi ${HOTLINE}.` };
+    }
+  }
+
   // Stock changed: refresh the ISR catalog + the ordered products now rather than within 60s.
   const { data: variants } = await admin
     .from("product_variants").select("products(slug)").in("id", items.map((i) => i.variantId));
@@ -178,6 +197,7 @@ export async function placeOrder(input: CheckoutInput): Promise<CheckoutResult> 
       total: order.total,
       phone: normalizePhone(f.phone)!,
       deliveryMethod,
+      paymentMethod,
     },
   };
 }

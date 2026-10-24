@@ -4,7 +4,7 @@ import { matchWard } from "@paranoidz/db/spx/order-body";
 
 export const BULK_LIMIT = 20;
 
-export type BulkOrder = { id: string; order_number: string; status: string; spx_tracking_no: string | null; city: string; ward: string | null };
+export type BulkOrder = { id: string; order_number: string; status: string; spx_tracking_no: string | null; city: string; ward: string | null; payment_method: string | null; payment_confirmed_at: string | null };
 export type BulkFailure = { orderNumber: string; reason: string };
 
 export function spxProvince(city: string) {
@@ -19,6 +19,11 @@ export function planShipments(orders: BulkOrder[], wards: Map<string, string[]>)
   for (const o of orders) {
     if (o.spx_tracking_no || o.status !== "pending") {
       skipped.push({ orderNumber: o.order_number, reason: "Đơn đã có vận đơn hoặc không còn ở trạng thái Đã tiếp nhận." });
+      continue;
+    }
+    // A bank-transfer order ships only after its payment is confirmed.
+    if (o.payment_method === "bank_transfer" && !o.payment_confirmed_at) {
+      skipped.push({ orderNumber: o.order_number, reason: "Đơn chuyển khoản chưa được xác nhận thanh toán — xác nhận rồi mới tạo vận đơn." });
       continue;
     }
     const ward = matchWard(o.ward, wards.get(spxProvince(o.city)) ?? []);

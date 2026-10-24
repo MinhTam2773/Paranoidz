@@ -26,7 +26,7 @@ export default async function AccountPage() {
   // RLS (orders_select_own) already limits this to the user's rows; the filter states the intent.
   const { data: orders, error } = await supabase
     .from("orders")
-    .select("order_number, status, created_at, recipient_name, phone, secondary_phone, address, ward, city, note, subtotal, discount, shipping_fee, total, order_items(name_snapshot, color_snapshot, size_snapshot, qty, price_snapshot, image_snapshot)")
+    .select("order_number, status, created_at, recipient_name, phone, secondary_phone, address, ward, city, note, subtotal, discount, shipping_fee, total, payment_method, payment_confirmed_at, order_items(name_snapshot, color_snapshot, size_snapshot, qty, price_snapshot, image_snapshot)")
     .eq("user_id", claims.claims.sub)
     .order("created_at", { ascending: false });
   if (error) throw error;
@@ -79,6 +79,8 @@ export default async function AccountPage() {
             discount: o.discount,
             shippingFee: o.shipping_fee,
             total: o.total,
+            paymentMethod: o.payment_method ?? "cod",
+            paymentConfirmed: o.payment_confirmed_at !== null,
             items: o.order_items.map((i) => ({
               name: i.name_snapshot,
               color: i.color_snapshot,
