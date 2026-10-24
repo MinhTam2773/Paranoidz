@@ -76,10 +76,12 @@ export function ProductView({
   shopeeReviewCount?: number;
   video?: { url: string; poster: string | null } | null;
 }) {
-  // First non-null hex per colour (a size added later has none yet).
+  // First non-null hex per colour (a size added later has none yet), plus the
+  // colour's first photo for the Shopee-style thumbnail button.
   const colors = [...new Set(variants.map((v) => v.color))].map((name) => ({
     name,
     hex: variants.find((v) => v.color === name && v.color_hex)?.color_hex ?? null,
+    imageUrl: images.find((i) => i.color === name)?.url ?? null,
   }));
   const soldOut = variants.every((v) => v.stock === 0);
 
@@ -90,7 +92,9 @@ export function ProductView({
 
   const [color, setColor] = useState(() => (variants.find((v) => v.stock > 0) ?? variants[0])?.color ?? null);
   const [size, setSize] = useState(() => (color ? defaultSize(variants, color) : null));
-  const [activeImage, setActiveImage] = useState(0);
+  // Main frame defaults to the first photo (never the video): the video lives
+  // in the thumbnail strip below and only plays when its thumbnail is tapped.
+  const [activeImage, setActiveImage] = useState(() => (video ? 1 : 0));
   // Delivery method picked here carries into checkout (localStorage).
   const [deliveryMethod, setDeliveryMethodState] = useState<DeliveryMethod>(() => getDeliveryMethod());
   const pickDelivery = (m: DeliveryMethod) => {
@@ -118,9 +122,10 @@ export function ProductView({
 
   // Colourway images first (primary leads), then general ones.
   const gallery = [...images.filter((i) => i.color === color), ...images.filter((i) => i.color === null)];
-  // Video-first gallery: the video (when provided) is slide 0, then the images.
-  // The poster falls back to the first gallery image so the video slide and the
-  // buy-box thumbnail always have something to show.
+  // The video is NOT a main slide: it lives in the thumbnail strip below and
+  // only plays when its thumbnail is tapped. The poster falls back to the
+  // first gallery image so the video thumbnail and the buy-box thumbnail
+  // always have something to show.
   const videoPoster = video?.poster ?? gallery[0]?.url ?? null;
   type GalleryItem = { kind: "video"; url: string; poster: string | null } | { kind: "image"; url: string };
   const galleryItems: GalleryItem[] = [
@@ -133,9 +138,11 @@ export function ProductView({
     activeItem?.kind === "video" ? videoPoster : (mainImage?.url ?? null);
   const [muted, setMuted] = useState(true);
 
+  // Picking a colour shows only that colour's first photo in the main frame
+  // (Shopee-style); the strip below keeps every photo + the video.
   function pickColor(next: string) {
     setColor(next);
-    setActiveImage(0);
+    setActiveImage(video ? 1 : 0);
     const keep = variants.some((v) => v.color === next && v.size === size && v.stock > 0);
     setSize(keep ? size : defaultSize(variants, next));
   }
@@ -143,7 +150,9 @@ export function ProductView({
   return (
     <>
       <div className="grid gap-8 lg:grid-cols-12 lg:gap-12">
-        <div className="flex flex-col gap-2 lg:col-span-7">
+        {/* Narrower gallery column (6/12): the square main frame shrinks enough
+            for the thumbnail strip below to sit on screen without scrolling. */}
+        <div className="flex flex-col gap-2 lg:col-span-6">
           <div className="relative aspect-square overflow-hidden rounded-sm bg-bg-secondary">
             {activeItem?.kind === "video" ? (
               <>
@@ -175,7 +184,7 @@ export function ProductView({
                   alt={name}
                   fill
                   preload
-                  sizes="(min-width: 1280px) 700px, (min-width: 1024px) 58vw, 100vw"
+                  sizes="(min-width: 1280px) 620px, (min-width: 1024px) 50vw, 100vw"
                   className="object-cover"
                 />
               )
@@ -212,7 +221,7 @@ export function ProductView({
           )}
         </div>
 
-        <div className="lg:col-span-5">
+        <div className="lg:col-span-6">
           {/* lg:z-30: the sticky column is a stacking context, so without its own
               z-index the fixed buy bar (z-30) inside it loses to the
               recently-viewed cards below, which come later in the DOM and paint

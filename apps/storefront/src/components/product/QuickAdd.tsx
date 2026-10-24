@@ -144,7 +144,7 @@ export function QuickAdd({
               <p id={`${titleId}-colour`} className="text-nav uppercase">
                 Màu: <span className="text-text-secondary">{color}</span>
               </p>
-              <ColorOptions colors={colors} selected={color} onPick={pickColor} />
+              <ColorOptions colors={colors} selected={color} onPick={pickColor} thumbnails={false} />
             </div>
 
             <div role="group" aria-labelledby={`${titleId}-size`} className="flex flex-col gap-3">
@@ -233,7 +233,7 @@ export function QuickAdd({
             <p id={`${titleId}-colour`} className="text-nav uppercase">
               Màu: <span className="text-text-secondary">{color}</span>
             </p>
-            <ColorOptions colors={colors} selected={color} onPick={pickColor} />
+            <ColorOptions colors={colors} selected={color} onPick={pickColor} thumbnails={false} />
           </div>
 
           <div role="group" aria-labelledby={`${titleId}-size`} className="flex flex-col gap-3">
