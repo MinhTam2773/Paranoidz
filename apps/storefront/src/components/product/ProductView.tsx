@@ -62,6 +62,7 @@ export function ProductView({
   reviews,
   reviewCount,
   shopeeReviewCount = 0,
+  customerReviewCount = 0,
   video = null,
 }: {
   productId: string;
@@ -74,6 +75,7 @@ export function ProductView({
   reviews: ReactNode;
   reviewCount: number;
   shopeeReviewCount?: number;
+  customerReviewCount?: number;
   video?: { url: string; poster: string | null } | null;
 }) {
   // First non-null hex per colour (a size added later has none yet), plus the
@@ -104,8 +106,8 @@ export function ProductView({
   const tabs = [
     ...(details ? [{ id: "details", label: "Chi tiết sản phẩm", content: details }] : []),
     ...(sizeGuide ? [{ id: "size-guide", label: "Bảng size", content: sizeGuide }] : []),
-    // The tab count covers both sources shown in the tab: web reviews + featured Shopee reviews.
-    { id: "reviews", label: `Đánh giá (${reviewCount + shopeeReviewCount})`, content: reviews },
+    // The tab count covers all sources shown in the tab: web reviews + curated review blocks.
+    { id: "reviews", label: `Đánh giá (${reviewCount + shopeeReviewCount + customerReviewCount})`, content: reviews },
   ];
   const [activeTab, setActiveTab] = useState(tabs[0]?.id ?? "");
   const tabsRef = useRef<HTMLElement>(null);

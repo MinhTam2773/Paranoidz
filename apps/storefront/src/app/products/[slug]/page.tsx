@@ -4,6 +4,8 @@ import { cache } from "react";
 import { createPublicClient } from "@paranoidz/db/public";
 import { Breadcrumb } from "@/components/layout/Breadcrumb";
 import { BundleOffers, getBundleOffers } from "@/components/product/BundleOffers";
+import { CUSTOMER_REVIEWS_DATA } from "@/components/product/customer-photos-data";
+import { CustomerPhotos } from "@/components/product/CustomerPhotos";
 import { ProductView } from "@/components/product/ProductView";
 import { RecentlyViewed } from "@/components/product/RecentlyViewed";
 import { ReviewSection, type ReviewData } from "@/components/product/ReviewSection";
@@ -147,6 +149,9 @@ export default async function ProductPage({ params }: PageProps<"/products/[slug
   // Product code is the slug's last segment; only products with curated data get the Shopee
   // block, the rest render exactly as before.
   const shopee = SHOPEE_REVIEWS_DATA[slug.split("-").pop() ?? ""];
+  // Same key scheme for the customer review block (no marketplace
+  // attribution); only products with curated reviews get it.
+  const customerReviews = CUSTOMER_REVIEWS_DATA[slug.split("-").pop() ?? ""];
 
   // SEO (audit 2026-10-21 #5): Product + BreadcrumbList structured data so Google can
   // show price and stock in rich results. Deliberately NO AggregateRating: the reviews tab
@@ -237,6 +242,7 @@ export default async function ProductPage({ params }: PageProps<"/products/[slug
         bundles={<BundleOffers offers={offers} />}
         reviews={
           <div className="flex flex-col gap-8">
+            {customerReviews && <CustomerPhotos reviews={customerReviews} />}
             {shopee && <ShopeeReviews totalRatings={shopee.totalRatings} reviews={shopee.featured} />}
             {shopee && <h2 className="text-nav font-bold uppercase">Đánh giá trên web</h2>}
             <ReviewSection productId={product.id} slug={slug} reviews={reviews} />
@@ -244,6 +250,7 @@ export default async function ProductPage({ params }: PageProps<"/products/[slug
         }
         reviewCount={reviews.length}
         shopeeReviewCount={shopee?.featured.length ?? 0}
+        customerReviewCount={customerReviews?.length ?? 0}
       />
       <div className="mt-16">
         <RecentlyViewed excludeId={product.id} />
