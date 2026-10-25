@@ -103,10 +103,14 @@ export function ProductCard({ product, eager = false }: { product: ProductCardDa
         </div>
       </div>
       {colors.length > 0 && (
-        // One row always (owner 2026-10-20): colour chips never wrap; a long name truncates.
+        // One row always (owner 2026-10-20): colour chips never wrap — the row scrolls
+        // horizontally instead (2026-10-25: 6+ colourways overflowed narrow cards).
+        // The wrapper carries the scroll + top padding: the hover tooltip sits ~30px above
+        // its thumb, and a scroll container would clip it without that clearance.
         // The tooltip uses peer/peer-hover, NOT group: the card root is already `group`
         // (hover zoom), so group-hover would show every tooltip at once.
-        <ul aria-label="Màu sắc" className="-mx-1 mt-1 flex flex-nowrap">
+        <div className="-mx-1 overflow-x-auto pt-8">
+          <ul aria-label="Màu sắc" className="flex flex-nowrap">
           {colors.map((c) => (
             <li key={c.name} className="relative min-w-0">
               {c.imageUrl ? (
@@ -154,7 +158,8 @@ export function ProductCard({ product, eager = false }: { product: ProductCardDa
               )}
             </li>
           ))}
-        </ul>
+          </ul>
+        </div>
       )}
       <Link href={href} className={`relative flex flex-1 flex-col gap-1.5 ${colors.length ? "pt-2" : "pt-3"}`}>
         <PendingVeil />
