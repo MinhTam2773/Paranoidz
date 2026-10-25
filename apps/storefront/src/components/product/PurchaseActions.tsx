@@ -19,6 +19,7 @@ export const primaryClass =
 export function PurchaseActions({
   variant,
   soldOut,
+  colorOutOfStock,
   price,
   name,
   thumbnailUrl,
@@ -27,6 +28,7 @@ export function PurchaseActions({
 }: {
   variant: ProductVariant | null;
   soldOut: boolean;
+  colorOutOfStock: boolean;
   price: string;
   name: string;
   thumbnailUrl: string | null;
@@ -106,8 +108,8 @@ export function PurchaseActions({
             max={variant?.stock ?? 1}
             onChange={(n) => variant && setQtyState({ id: variant.id, qty: n })}
           />
-          <button type="button" disabled={!variant} onClick={add} className={`flex-1 ${primaryClass}`}>
-            {variant ? "Thêm vào giỏ" : "Chọn size"}
+          <button type="button" disabled={!variant || colorOutOfStock} onClick={add} className={`flex-1 ${primaryClass}`}>
+            {colorOutOfStock ? "Hết hàng" : variant ? "Thêm vào giỏ" : "Chọn size"}
           </button>
         </div>
         <button
@@ -139,14 +141,22 @@ export function PurchaseActions({
                 <span className="truncate text-caption text-text-secondary">
                   {variant.color} / {variant.size}
                 </span>
+              ) : colorOutOfStock ? (
+                <span className="text-caption text-text-secondary">Màu này đã hết hàng</span>
               ) : (
                 <span className="text-caption text-text-secondary">Chọn màu và size</span>
               )}
             </p>
           </div>
-          {/* No size yet: jump to the size picker instead of a dead disabled button. */}
-          <button type="button" onClick={variant ? add : onNeedSize} className={`shrink-0 ${primaryClass}`}>
-            {variant ? "Thêm vào giỏ" : "Chọn size"}
+          {/* No size yet: jump to the size picker instead of a dead disabled button.
+              Except when this colour is out of stock: then there is no size to pick. */}
+          <button
+            type="button"
+            disabled={colorOutOfStock}
+            onClick={colorOutOfStock ? undefined : variant ? add : onNeedSize}
+            className={`shrink-0 ${primaryClass}`}
+          >
+            {colorOutOfStock ? "Hết hàng" : variant ? "Thêm vào giỏ" : "Chọn size"}
           </button>
         </div>
         {status && <div className="mx-auto w-full max-w-7xl px-4 pb-2 lg:px-6">{status}</div>}
