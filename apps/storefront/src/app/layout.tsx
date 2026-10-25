@@ -52,6 +52,8 @@ export default function RootLayout({
         <main className="flex flex-1 flex-col">{children}</main>
         <Footer />
         <LoginModal />
+        {/* Anywear virtual try-on — one async script; remove this line to disable it. */}
+        <script src="https://anywear.decart.ai/widget/latest/anywear.js?domain=paranoidz.vn" async />
       </body>
     </html>
   );
