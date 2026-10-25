@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { cache } from "react";
 import { createPublicClient } from "@paranoidz/db/public";
+import { AsciiPageReveal } from "@/components/loading/AsciiPageReveal";
 import { Breadcrumb } from "@/components/layout/Breadcrumb";
 import { BundleOffers, getBundleOffers } from "@/components/product/BundleOffers";
 import { CUSTOMER_REVIEWS_DATA } from "@/components/product/customer-photos-data";
@@ -205,7 +206,8 @@ export default async function ProductPage({ params }: PageProps<"/products/[slug
   return (
     // pb-28 clears the fixed sticky buy bar (up to ~84px tall): without it the
     // bar covers the last row of the recently-viewed rail at the page bottom.
-    <div className="mx-auto w-full max-w-7xl px-4 pb-28 lg:px-6">
+    <AsciiPageReveal>
+      <div className="mx-auto w-full max-w-7xl px-4 pb-28 lg:px-6">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }}
@@ -255,6 +257,7 @@ export default async function ProductPage({ params }: PageProps<"/products/[slug
       <div className="mt-16">
         <RecentlyViewed excludeId={product.id} />
       </div>
-    </div>
+      </div>
+    </AsciiPageReveal>
   );
 }
