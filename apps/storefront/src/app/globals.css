@@ -190,3 +190,30 @@
     @apply mt-4 text-caption text-text-muted;
   }
 }
+
+/* Anywear try-on overrides — the vendor script has no language, position or
+   per-section setting (label "Try-On" and top-left placement are hardcoded),
+   so the shop overrides them here. Remove this block to restore vendor
+   defaults: hide the button everywhere except product areas (product cards
+   and the PDP main frame, marked with data-vton-area="product"), show the
+   Vietnamese label, and park the button bottom-left so it never covers the
+   top-left sale badge. */
+.vton-btn {
+  display: none !important;
+}
+
+[data-vton-area="product"] .vton-btn {
+  display: flex !important;
+  top: auto !important;
+  bottom: 12px !important;
+  left: 12px !important;
+}
+
+[data-vton-area="product"] .vton-btn .vton-label {
+  font-size: 0 !important;
+}
+
+[data-vton-area="product"] .vton-btn .vton-label::after {
+  content: "Mặc Thử";
+  font-size: 13px;
+}
