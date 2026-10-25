@@ -252,48 +252,43 @@ export function ProductView({
               <ColorOptions colors={colors} selected={color} onPick={pickColor} />
             </div>
 
-            {/* Size is optional: a colourway with a single size needs no picker — the size
-                is already preselected (defaultSize) — so the group only renders when the
-                colour actually has a choice. The low-stock note stays visible either way. */}
-            {sizes.length > 1 && (
-              <div ref={sizeGroupRef} role="group" aria-labelledby="size-label" className="flex flex-col gap-3">
-                <div className="flex items-center justify-between">
-                  <p id="size-label" className="text-nav uppercase">Size</p>
-                  {sizeGuide && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setActiveTab("size-guide");
-                        tabsRef.current?.scrollIntoView({ behavior: "smooth" });
-                      }}
-                      className="text-caption text-text-secondary underline hover:text-text-primary"
-                    >
-                      Bảng size
-                    </button>
-                  )}
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {sizes.map((v) => (
-                    <button
-                      key={v.id}
-                      type="button"
-                      aria-pressed={v.size === size}
-                      disabled={v.stock === 0}
-                      onClick={() => setSize(v.size)}
-                      className={optionClass(v.size === size)}
-                    >
-                      {v.size}
-                    </button>
-                  ))}
-                </div>
+            <div ref={sizeGroupRef} role="group" aria-labelledby="size-label" className="flex flex-col gap-3">
+              <div className="flex items-center justify-between">
+                <p id="size-label" className="text-nav uppercase">Size</p>
+                {sizeGuide && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveTab("size-guide");
+                      tabsRef.current?.scrollIntoView({ behavior: "smooth" });
+                    }}
+                    className="text-caption text-text-secondary underline hover:text-text-primary"
+                  >
+                    Bảng size
+                  </button>
+                )}
               </div>
-            )}
-            {selected && selected.stock <= LOW_STOCK && (
-              <p className="flex items-center gap-2 text-caption text-text-secondary">
-                <span aria-hidden="true" className="size-2 rounded-full bg-warning" />
-                Chỉ còn {selected.stock} sản phẩm
-              </p>
-            )}
+              <div className="flex flex-wrap gap-2">
+                {sizes.map((v) => (
+                  <button
+                    key={v.id}
+                    type="button"
+                    aria-pressed={v.size === size}
+                    disabled={v.stock === 0}
+                    onClick={() => setSize(v.size)}
+                    className={optionClass(v.size === size)}
+                  >
+                    {v.size}
+                  </button>
+                ))}
+              </div>
+              {selected && selected.stock <= LOW_STOCK && (
+                <p className="flex items-center gap-2 text-caption text-text-secondary">
+                  <span aria-hidden="true" className="size-2 rounded-full bg-warning" />
+                  Chỉ còn {selected.stock} sản phẩm
+                </p>
+              )}
+            </div>
 
             {/* Delivery method: customer picks standard or HCMC express here; the choice
                 carries into checkout via localStorage. */}
