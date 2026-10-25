@@ -60,7 +60,7 @@ export function ProductCard({ product, eager = false }: { product: ProductCardDa
   const images = warm ? [...new Set([shownImage, imageUrl, ...colors.map((c) => c.imageUrl)])] : [shownImage];
 
   return (
-    <div className="group flex flex-col" data-vton-area="product" onPointerEnter={() => setWarm(true)} onFocus={() => setWarm(true)}>
+    <div className="group flex flex-col" onPointerEnter={() => setWarm(true)} onFocus={() => setWarm(true)}>
       <div className="relative aspect-square overflow-hidden rounded-sm bg-bg-secondary">
         <Link href={href} tabIndex={-1} aria-hidden className="absolute inset-0">
           <PendingVeil />
