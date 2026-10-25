@@ -158,7 +158,7 @@ export function ProductView({
         {/* Narrower gallery column (6/12): the square main frame shrinks enough
             for the thumbnail strip below to sit on screen without scrolling. */}
         <div className="flex flex-col gap-2 lg:col-span-6">
-          <div className="relative aspect-square overflow-hidden rounded-sm bg-bg-secondary">
+          <div className="relative aspect-square overflow-hidden rounded-sm bg-bg-secondary" data-vton-area="product">
             {activeItem?.kind === "video" ? (
               <>
                 <video
