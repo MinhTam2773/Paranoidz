@@ -121,6 +121,23 @@ export default async function HomePage() {
       <GachaSection />
 
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-14 px-4 py-14 lg:gap-20 lg:px-6 lg:py-20">
+        <HomeTabs
+          tabs={[
+            { id: "new", label: "Hàng mới", content: <CardGrid cards={newGoods} empty="Chưa có sản phẩm nào." /> },
+            { id: "best", label: "Bán chạy", content: <CardGrid cards={best} empty="Chưa có sản phẩm bán chạy." /> },
+          ]}
+        />
+
+        {flashState && <FlashSale state={flashState} cards={flashCards} />}
+
+        {categoryRows.map((row, i) => (
+          <RowSection key={row.name} index={String(i + 2).padStart(2, "0")} title={row.name} href="/products">
+            <ProductRow label={row.name}>
+              {row.cards.map((card) => <ProductCard key={card.slug} product={card} />)}
+            </ProductRow>
+          </RowSection>
+        ))}
+
         {collectionCards.length > 0 && (
           <section aria-label="Bộ sưu tập" className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {collectionCards.slice(0, 2).map((c) => (
@@ -150,23 +167,6 @@ export default async function HomePage() {
             ))}
           </section>
         )}
-
-        <HomeTabs
-          tabs={[
-            { id: "new", label: "Hàng mới", content: <CardGrid cards={newGoods} empty="Chưa có sản phẩm nào." /> },
-            { id: "best", label: "Bán chạy", content: <CardGrid cards={best} empty="Chưa có sản phẩm bán chạy." /> },
-          ]}
-        />
-
-        {flashState && <FlashSale state={flashState} cards={flashCards} />}
-
-        {categoryRows.map((row, i) => (
-          <RowSection key={row.name} index={String(i + 2).padStart(2, "0")} title={row.name} href="/products">
-            <ProductRow label={row.name}>
-              {row.cards.map((card) => <ProductCard key={card.slug} product={card} />)}
-            </ProductRow>
-          </RowSection>
-        ))}
 
         <Lookbook />
 
