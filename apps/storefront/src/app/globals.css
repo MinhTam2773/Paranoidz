@@ -217,3 +217,14 @@
   content: "Mặc Thử";
   font-size: 13px;
 }
+
+/* Same trick for the floating "AI fitting room" pill: it is also vendor
+   markup (button #__decart-pill-btn), so only its visible label is swapped. */
+#__decart-pill-btn > span:first-of-type {
+  font-size: 0 !important;
+}
+
+#__decart-pill-btn > span:first-of-type::after {
+  content: "Mặc Thử Bằng AI";
+  font-size: 13px;
+}
