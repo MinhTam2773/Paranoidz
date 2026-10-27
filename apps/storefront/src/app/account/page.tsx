@@ -26,7 +26,7 @@ export default async function AccountPage() {
   // RLS (orders_select_own) already limits this to the user's rows; the filter states the intent.
   const { data: orders, error } = await supabase
     .from("orders")
-    .select("order_number, status, created_at, recipient_name, phone, secondary_phone, address, ward, city, note, subtotal, discount, shipping_fee, total, payment_method, payment_confirmed_at, order_items(name_snapshot, color_snapshot, size_snapshot, qty, price_snapshot, image_snapshot)")
+    .select("order_number, status, created_at, recipient_name, phone, secondary_phone, address, ward, city, note, subtotal, discount, shipping_fee, total, payment_method, payment_confirmed_at, order_items(product_id, name_snapshot, color_snapshot, size_snapshot, qty, price_snapshot, image_snapshot)")
     .eq("user_id", claims.claims.sub)
     .order("created_at", { ascending: false });
   if (error) throw error;
@@ -52,6 +52,13 @@ export default async function AccountPage() {
   const order = new Map(saved.map((w, i) => [w.product_id, i]));
   const wishlist = savedRows.toSorted((a, b) => order.get(a.id)! - order.get(b.id)!).map((p) => toProductCard(catalog, p));
   const images = supabase.storage.from("product-images");
+  // Slugs for the review deep-links: only delivered orders get a button, and only for
+  // products that are still active (inactive ones drop out of the public query, so no dead link).
+  const orderedProductIds = [...new Set(orders.flatMap((o) => o.order_items.map((i) => i.product_id).filter((id): id is string => id !== null)))];
+  const { data: slugRows } = orderedProductIds.length
+    ? await catalog.from("products").select("id, slug").in("id", orderedProductIds)
+    : { data: [] as { id: string; slug: string }[] };
+  const slugByProductId = new Map((slugRows ?? []).map((p) => [p.id, p.slug]));
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 pb-16 lg:px-6">
@@ -81,14 +88,18 @@ export default async function AccountPage() {
             total: o.total,
             paymentMethod: o.payment_method ?? "cod",
             paymentConfirmed: o.payment_confirmed_at !== null,
-            items: o.order_items.map((i) => ({
-              name: i.name_snapshot,
-              color: i.color_snapshot,
-              size: i.size_snapshot,
-              qty: i.qty,
-              price: i.price_snapshot,
-              imageUrl: i.image_snapshot ? images.getPublicUrl(i.image_snapshot).data.publicUrl : null,
-            })),
+            items: o.order_items.map((i) => {
+              const slug = i.product_id ? slugByProductId.get(i.product_id) : undefined;
+              return {
+                name: i.name_snapshot,
+                color: i.color_snapshot,
+                size: i.size_snapshot,
+                qty: i.qty,
+                price: i.price_snapshot,
+                imageUrl: i.image_snapshot ? images.getPublicUrl(i.image_snapshot).data.publicUrl : null,
+                reviewHref: o.status === "delivered" && slug ? `/products/${slug}?tab=reviews` : null,
+              };
+            }),
           }))}
         />
       </div>

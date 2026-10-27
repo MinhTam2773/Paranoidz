@@ -51,6 +51,7 @@ export const optionClass = (selected: boolean) =>
 // Stock 0 variants are unselectable; all-zero = SOLD OUT, can't be carted (ARCHITECTURE.md §3).
 // `details` / `sizeGuide` are server-rendered tab panels; the size-guide link opens its tab.
 // `bundles` (server-rendered) sits between the purchase grid and the tabs. `reviews` is always a tab.
+// `?tab=reviews` (used by the "Viết đánh giá" link in order history) opens the review tab on load.
 export function ProductView({
   productId,
   name,
@@ -111,6 +112,20 @@ export function ProductView({
   ];
   const [activeTab, setActiveTab] = useState(tabs[0]?.id ?? "");
   const tabsRef = useRef<HTMLElement>(null);
+
+  // Deep-link into a tab (order history links with ?tab=reviews). Read from window on mount
+  // rather than useSearchParams so this component needs no Suspense boundary. The switch runs
+  // in a timeout so it is not a synchronous setState inside the effect body.
+  useEffect(() => {
+    const id = setTimeout(() => {
+      if (new URLSearchParams(window.location.search).get("tab") !== "reviews") return;
+      if (!tabs.some((t) => t.id === "reviews")) return;
+      setActiveTab("reviews");
+      tabsRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, 0);
+    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const sizeGroupRef = useRef<HTMLDivElement>(null);
   const mainImageRef = useRef<HTMLImageElement>(null);
 
