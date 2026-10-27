@@ -4,7 +4,11 @@ export type ProductTab = { id: string; label: string; content: ReactNode };
 
 // Detailed-info tabs under the product (Stitch PDP). Controlled, so the size-guide link
 // beside the size picker can open its tab. ARIA tabs pattern: ←/→ move between tabs.
-// Inactive panels stay in the HTML (hidden) so their content is still server-rendered.
+// Only the active panel is rendered: previously every panel stayed in the HTML (hidden),
+// so the browser still downloaded every tab's images — description photos, customer
+// photos, Shopee photos — even when the visitor only opened the review tab. That was
+// the main reason "Viết đánh giá" felt slow to load. The first tab (details) is still
+// the default, so the canonical page without a query keeps its description in HTML.
 export function ProductTabs({
   tabs,
   active,
@@ -47,18 +51,21 @@ export function ProductTabs({
           </button>
         ))}
       </div>
-      {tabs.map((t) => (
-        <div
-          key={t.id}
-          id={`panel-${t.id}`}
-          role="tabpanel"
-          aria-labelledby={`tab-${t.id}`}
-          hidden={t.id !== active}
-          className="max-w-3xl py-8 lg:py-12"
-        >
-          {t.content}
-        </div>
-      ))}
+      {(() => {
+        const t = tabs.find((x) => x.id === active) ?? tabs[0];
+        if (!t) return null;
+        return (
+          <div
+            key={t.id}
+            id={`panel-${t.id}`}
+            role="tabpanel"
+            aria-labelledby={`tab-${t.id}`}
+            className="max-w-3xl py-8 lg:py-12"
+          >
+            {t.content}
+          </div>
+        );
+      })()}
     </section>
   );
 }

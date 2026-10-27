@@ -81,6 +81,8 @@ export function sanitizeDescriptionHtml(input: string): string {
       }
     }
     if (name === "img" && !attrs.includes("src=")) continue; // img without a valid src is useless
+    // Description photos are below the fold: never let them block the first paint.
+    if (name === "img") attrs += ' loading="lazy" decoding="async"';
     if (name === "a") attrs += ' rel="nofollow noopener"';
     out += `<${name}${attrs}>`;
   }
