@@ -63,6 +63,14 @@ export default async function HomePage() {
   const cards = products.data!.map((p) => ({ card: toProductCard(supabase, p), categoryId: p.category_id }));
   const byId = new Map(cards.map(({ card }) => [card.id, card]));
   const newGoods = cards.slice(0, GRID_SIZE).map(({ card }) => card);
+  // Áo là sản phẩm chính của shop, nhưng "Hàng mới" và "Bán chạy" hiện toàn balo/túi
+  // (6 mã mới nhất và 6 lượt bán cao nhất đều là balo/túi), nên áo cần một section
+  // riêng ngay đầu trang. Lọc theo tên "Áo…" thay vì hardcode mã, để áo mới sau này
+  // tự vào section này; balo, túi và tất vẫn giữ nguyên trong các section bên dưới.
+  const aoCards = cards
+    .filter(({ card }) => card.name.toLowerCase().startsWith("áo"))
+    .slice(0, 12)
+    .map(({ card }) => card);
   const best = bestSellers.data!.flatMap(({ product_id }) => byId.get(product_id) ?? []);
   // Flash sale: extra discount on the selling price during an active window.
   const flashState = getFlashSaleState((flashWindows.data ?? []) as FlashSaleWindow[]);
@@ -121,6 +129,12 @@ export default async function HomePage() {
       <GachaSection />
 
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-14 px-4 py-14 lg:gap-20 lg:px-6 lg:py-20">
+        {aoCards.length > 0 && (
+          <RowSection title="Back to Basicz" href="/products" titleClassName="font-basicz tracking-[0.08em]">
+            <CardGrid cards={aoCards} empty="Chưa có sản phẩm nào." />
+          </RowSection>
+        )}
+
         <HomeTabs
           tabs={[
             { id: "new", label: "Hàng mới", content: <CardGrid cards={newGoods} empty="Chưa có sản phẩm nào." /> },
@@ -213,12 +227,12 @@ function CardGrid({ cards, empty }: { cards: ProductCardData[]; empty: string })
 
 // Numbered editorial section header (redesign 2026-10-16): replaces the old
 // vertical-accent-bar style.
-function RowSection({ index, title, href, children }: { index: string; title: string; href: string; children: ReactNode }) {
+function RowSection({ index, title, href, titleClassName, children }: { index?: string; title: string; href: string; titleClassName?: string; children: ReactNode }) {
   return (
     <section>
       <div className="mb-8 flex items-end justify-between border-b border-border pb-4">
-        <h2 className="text-h2 uppercase">
-          <span className="mr-3 text-accent">{index}</span>
+        <h2 className={`text-h2 uppercase ${titleClassName ?? ""}`}>
+          {index && <span className="mr-3 text-accent">{index}</span>}
           {title}
         </h2>
         <Link href={href} className="shrink-0 text-nav uppercase text-text-secondary hover:text-text-primary">
