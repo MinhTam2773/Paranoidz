@@ -1,8 +1,11 @@
 import Image from "next/image";
+import Link from "next/link";
 import type { ReactNode } from "react";
 import { formatVnd } from "@/lib/format";
 
-export type OrderSummaryItem = { name: string; color: string | null; size: string | null; qty: number; price: number; imageUrl: string | null };
+// reviewHref is set only by "My orders" for a delivered order's item: it deep-links to that
+// product's review tab. Guest lookup never sets it, so no review button appears there.
+export type OrderSummaryItem = { name: string; color: string | null; size: string | null; qty: number; price: number; imageUrl: string | null; reviewHref?: string | null };
 
 // Items + totals of a placed order (snapshotted prices). Used by guest lookup and "My orders";
 // `children` is the delivery line under the total.
@@ -27,6 +30,11 @@ export function OrderSummary({ items, subtotal, discount, shippingFee, total, ch
               <span className="text-caption uppercase text-text-secondary">
                 {[item.color, item.size].filter(Boolean).join(" / ")} · SL {item.qty}
               </span>
+              {item.reviewHref && (
+                <Link href={item.reviewHref} className="self-start text-caption font-semibold text-text-primary underline underline-offset-4 hover:text-accent">
+                  Viết đánh giá
+                </Link>
+              )}
             </div>
             <span className="text-product-name">{formatVnd(item.price * item.qty)}</span>
           </li>
