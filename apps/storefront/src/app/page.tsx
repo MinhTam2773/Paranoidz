@@ -130,7 +130,7 @@ export default async function HomePage() {
 
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-14 px-4 py-14 lg:gap-20 lg:px-6 lg:py-20">
         {aoCards.length > 0 && (
-          <RowSection index="01" title="Back to Basicz" href="/products" titleClassName="font-logo tracking-[0.08em]">
+          <RowSection title="Back to Basicz" href="/products" titleClassName="font-basicz tracking-[0.08em]">
             <CardGrid cards={aoCards} empty="Chưa có sản phẩm nào." />
           </RowSection>
         )}
@@ -227,12 +227,12 @@ function CardGrid({ cards, empty }: { cards: ProductCardData[]; empty: string })
 
 // Numbered editorial section header (redesign 2026-10-16): replaces the old
 // vertical-accent-bar style.
-function RowSection({ index, title, href, titleClassName, children }: { index: string; title: string; href: string; titleClassName?: string; children: ReactNode }) {
+function RowSection({ index, title, href, titleClassName, children }: { index?: string; title: string; href: string; titleClassName?: string; children: ReactNode }) {
   return (
     <section>
       <div className="mb-8 flex items-end justify-between border-b border-border pb-4">
         <h2 className={`text-h2 uppercase ${titleClassName ?? ""}`}>
-          <span className="mr-3 text-accent">{index}</span>
+          {index && <span className="mr-3 text-accent">{index}</span>}
           {title}
         </h2>
         <Link href={href} className="shrink-0 text-nav uppercase text-text-secondary hover:text-text-primary">

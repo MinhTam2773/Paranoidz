@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Rajdhani } from "next/font/google";
+import localFont from "next/font/local";
 import { LoginModal } from "@/components/auth/LoginModal";
 import { AnnouncementBar } from "@/components/layout/AnnouncementBar";
 import { Footer } from "@/components/layout/Footer";
@@ -19,6 +20,15 @@ const rajdhani = Rajdhani({
   variable: "--font-rajdhani",
   subsets: ["latin"],
   weight: "700",
+});
+
+// Brand slogan font (DFVN MBF Space Habitat, Regular) — used for the
+// "Back to Basicz" section heading. File supplied by the shop owner;
+// self-hosted so the heading renders identically for every visitor.
+const basicz = localFont({
+  src: "./fonts/DFVNMBFSpaceHabitat.ttf",
+  variable: "--font-basicz",
+  weight: "400",
 });
 
 export const metadata: Metadata = {
@@ -43,7 +53,7 @@ export default function RootLayout({
   return (
     <html
       lang="vi"
-      className={`${inter.variable} ${rajdhani.variable} h-full antialiased`}
+      className={`${inter.variable} ${rajdhani.variable} ${basicz.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <MetaPixel />
