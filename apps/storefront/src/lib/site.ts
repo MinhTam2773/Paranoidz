@@ -14,7 +14,10 @@ export const NAV_LINKS = [
   // Collections managed in the admin; these slugs must exist there (admin → Bộ sưu tập).
   // Their labels stay English: collection names (owner's decision, 2026-10-08).
   { label: "Outlet 2026", href: "/collections/outlet-2026" },
-  { label: "New collection", href: "/collections/new-collection" },
+  // "New collection" removed 2026-10-27: no collection with slug
+  // "new-collection" exists in the admin, so the header linked every visitor
+  // (and Googlebot) to a not-found page. Re-add only when that collection
+  // is created in the admin.
   { label: "Sản phẩm", href: "/products" },
   { label: "Đánh giá khách hàng", href: "/feedback" },
   { label: "Thương hiệu", href: "/branding" },
