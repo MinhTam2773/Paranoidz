@@ -19,8 +19,10 @@ export const NAV_LINKS = [
   // with slug "new-collection" exists in the admin, so the header linked
   // every visitor (and Googlebot) to a not-found page. Re-add a link only
   // when its collection is created in the admin.
+  // Bagz added 2026-10-28, after its collection was created in the admin.
   { label: "T-Shirtz", href: "/collections/t-shirtz" },
   { label: "Backpackz", href: "/collections/backpackz" },
+  { label: "Bagz", href: "/collections/bagz" },
   { label: "Sản phẩm", href: "/products" },
   { label: "Đánh giá khách hàng", href: "/feedback" },
   { label: "Thương hiệu", href: "/branding" },
