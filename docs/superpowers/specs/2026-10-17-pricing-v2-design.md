@@ -38,18 +38,18 @@ The customer sees the flash price, the window closes, then they press Đặt hà
 - Copy is Tủn's (storefront). Suggested: `flash_ended` → "Flash sale vừa kết thúc, tổng tiền đã thay đổi."; `flash_started` → "Flash sale vừa bắt đầu, bạn được giá tốt hơn!"; `other` → "Tổng tiền vừa thay đổi." Each followed by the new total and the Đặt hàng button again.
 
 **D4. Vouchers.**
-- **New voucher type `standing`** (enum value): usable on every order, never once-per-phone (the once-per-phone index only covers `promo`). "Khách mua lần đầu" is one `standing` voucher: 10 %, a code aT picks (`LANDAU` is a placeholder until he answers; only PR C needs it).
+- **New voucher type `standing`** (enum value): usable on every order, never once-per-phone (the once-per-phone index only covers `promo`). "Khách mua lần đầu" is one `standing` voucher: 10 %, code **`PDZWELCOME`** (aT, 2026-10-27).
 - **New column `vouchers.is_listed boolean not null default false`**: listed codes appear in the checkout picker; unlisted ones must be typed in (campaign codes, later the `pdz…` reward codes).
 - **`voucher_uses`**: drop `unique (order_id)` and add `unique (order_id, voucher_id)`. One row per applied code.
 - **AUTO-FIRST5 retires** in the same migration that creates "lần đầu": `is_active = false`, row kept because old orders reference it. The first-5 counting code leaves `order_discount()`. The `auto_first5` enum value stays (Postgres can't drop enum values easily).
-- **Codes per order:** at most one `standing` plus one `promo` (`TOO_MANY_VOUCHERS` otherwise) until aT answers how many campaign codes may stack.
+- **Codes per order: no limit** (aT, 2026-10-27). Each code at most once per order (`voucher_uses` unique per order + voucher); a `promo` stays once per phone. Applied one after another, `standing` first.
 
 **D5. Order of steps and rounding** (each step works on what the previous left):
 1. **Lines at the charged price** → `subtotal`.
 2. **Combo:** `best_bundles()` on the unit counts, flash items included, capped at `subtotal`.
 3. **Vouchers, one after another:** the `standing` one first, then the `promo`. Each takes `floor(remaining × pct / 100)`, then its own `cap_amount`.
 4. **`discount` = combo + vouchers.**
-5. **Shipping:** `shipping_fee` = the SPX / table fee as today. New column `orders.shipping_discount` = that fee when delivery is standard and `earns_perks` units ≥ 2, else 0. This is the full fee until aT answers whether free shipping is capped. Express never gets free shipping.
+5. **Shipping:** `shipping_fee` = the SPX / table fee as today. New column `orders.shipping_discount` = that fee when delivery is standard and `earns_perks` units ≥ 2, else 0. The whole fee, no cap (aT, 2026-10-27). Express never gets free shipping.
 6. **Constraint:** `total = subtotal − discount + shipping_fee − shipping_discount`. Old rows are valid with `shipping_discount` defaulting to 0.
 7. **Gift line** (D2).
 
@@ -117,4 +117,4 @@ Today a cancelled or refused order keeps its `GACHA-` code `redeemed`. Fix: `tra
 1. D1: per product, named `earns_perks` (not "clothing").
 2. D2: skip the gift and flag the order.
 3. D3b: `PRICE_CHANGED`, with a reason the page can explain (flash ended / started / other).
-4. The "Khách mua lần đầu" code: the owner asks aT. Blocks PR C's migration only.
+4. The "Khách mua lần đầu" code: `PDZWELCOME` (aT, 2026-10-27).
