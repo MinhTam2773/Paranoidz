@@ -13,7 +13,7 @@ const order = (over: Partial<OrderRow> = {}): OrderRow => ({
   order_number: "PZ-2026-0001", created_at: "2026-10-01T03:00:00Z", status: "pending",
   recipient_name: "Nguyễn Văn Á", phone: "0901234567", secondary_phone: null, email: null,
   address: "1 Lê Lợi", ward: "Phường Bến Thành", city: "TP. Hồ Chí Minh", note: null,
-  subtotal: 400_000, discount: 40_000, shipping_fee: 30_000, total: 390_000,
+  subtotal: 400_000, discount: 40_000, shipping_fee: 30_000, shipping_discount: 0, total: 390_000,
   spx_tracking_no: null, user_id: null,
   order_items: [item("PDZ01-DEN-M", 1, 200_000), item("PDZ02-DEN-M", 1, 200_000)],
   order_status_history: [{ status: "pending", created_at: "2026-10-01T03:00:00Z" }],

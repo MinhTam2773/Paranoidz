@@ -54,7 +54,7 @@ export async function lookupOrder(input: { orderNumber: string; phone: string })
   const admin = createAdminClient();
   const { data, error } = await admin
     .from("orders")
-    .select("order_number, status, created_at, ward, city, subtotal, discount, shipping_fee, total, spx_tracking_no, payment_method, payment_confirmed_at, order_items(name_snapshot, color_snapshot, size_snapshot, qty, price_snapshot, image_snapshot)")
+    .select("order_number, status, created_at, ward, city, subtotal, discount, shipping_fee, shipping_discount, total, spx_tracking_no, payment_method, payment_confirmed_at, order_items(name_snapshot, color_snapshot, size_snapshot, qty, price_snapshot, image_snapshot)")
     .eq("order_number", orderNumber)
     .eq("phone", phone)
     .maybeSingle();
@@ -74,7 +74,7 @@ export async function lookupOrder(input: { orderNumber: string; phone: string })
       city: data.city,
       subtotal: data.subtotal,
       discount: data.discount,
-      shippingFee: data.shipping_fee,
+      shippingFee: data.shipping_fee - data.shipping_discount, // after free shipping (pricing v2)
       total: data.total,
       spxTrackingNo: data.spx_tracking_no,
       paymentMethod: data.payment_method ?? "cod",
