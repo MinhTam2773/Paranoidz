@@ -98,7 +98,37 @@ Every PR: smoke cases, migration test → smoke → prod, then merge (`master` i
    - Rewrites the first-5 smoke cases (1, 2, 17, the bundle-vs-promo case), plus e2e S3 / S4 / A3.
 
    Quote and order must change together, so this is one PR. The migration goes on prod right before the merge.
-4. **Hand-off:** the `quote_order` response shape and the action's input go to Tủn for the picker.
+   *Built 2026-10-27 on `feat/pricing-v2-pricing`* (migration `20261027000001_pricing_v2_functions.sql`). Beyond the plan:
+   - The flash price is rounded like the storefront's `flashPrice()` (nearest ₫1.000, `flash_unit_price()`). Before v2 the server took `floor(list × pct)` off the total, so a ₫269.000 tee at −10 % showed ₫242.000 and was charged ₫242.100.
+   - `place_order()` reads the active window from a new `flash_window()` (start + %), not `active_flash_sale_discount()`.
+   - Voucher errors carry the code (`INVALID_VOUCHER:SALE10`), since one order can hold several.
+   - The admin order page / SPX card / Excel export, the order email, the Zalo alert, order lookup and the account page show free shipping (net fee) and gift lines, so their sums still add up.
+   - **Payment method is still written after the rpc** (Tủn's bank-transfer code). Moving it into `place_order()` is a follow-up, not in PR C.
+4. **Hand-off to Tủn** (below): the action shapes for the voucher picker.
+
+## Hand-off: checkout API for the storefront (PR C)
+
+Server actions in `apps/storefront/src/app/checkout/actions.ts`. Today's `CheckoutView` keeps working unchanged (old fields are filled for it), but it can't show free shipping, the gift or several codes. Ship the UI changes **with** PR C, or 2+ shirt orders will show a shipping fee the server doesn't charge.
+
+**`quoteOrder({ items, phone, voucher, vouchers?, deliveryMethod? })`**
+- `vouchers`: the codes ticked in the picker. Leave it out and the server uses every listed "Dùng mọi đơn" code (PDZWELCOME). `voucher` (typed) is added on top; a `GACHA-…` code is ignored here.
+- Returns the old fields (`subtotal` at list price, `discount` = flash saving + combo + codes, `flashDiscount`, `source`, `code`, `pct`, …) plus:
+  - `lines[]`: `{ variantId, qty, listPrice, price, flash }` → show `price`, strike `listPrice` when `flash`.
+  - `chargedSubtotal`, `combo`, `vouchers[]` `{ code, type, pct, amount }` in the order they apply (lần đầu first).
+  - `voucherErrors[]` `{ code, message }` (Vietnamese, ready to show).
+  - `availableVouchers[]` `{ code, type, pct, capAmount, expiresAt }` → the picker list ("standing" = "Dùng mọi đơn", tick it by default).
+  - `freeShipping` → show shipping as ₫0 ("Miễn phí vận chuyển").
+  - `gift` `{ eligible, inStock }` → "🎁 Tặng 1 đôi tất" line when eligible.
+  - `flashWindowStart` → send back to `placeOrder`.
+- Total to show = `chargedSubtotal − combo − Σ vouchers.amount − gacha discount + (freeShipping ? 0 : shipping fee)`.
+
+**`placeOrder({ …today's fields, vouchers?, expectedTotal?, flashWindowStart? })`**
+- Send `expectedTotal` (the total shown) and `flashWindowStart` (from the quote). If the server's total differs: `{ ok: false, message, priceChanged: { reason: "flash_ended" | "flash_started" | "other", oldTotal, newTotal } }`, nothing is charged; show the message and the new total, re-quote, let the customer press Đặt hàng again.
+- Success adds `shippingFeeBeforeDiscount`, `shippingDiscount`, `giftQty`; `shippingFee` is now what the customer pays.
+
+**`quoteGachaCode({ items, code, deliveryMethod? })`**: a freeship prize on an order that already ships free comes back `ok: false` with "Đơn này đã được miễn phí vận chuyển. Mã freeship được giữ lại cho đơn sau."
+
+**Copy to rename:** "Ưu đãi 5 đơn đầu" → "Khách mua lần đầu" (CheckoutView still has the old label and the first-5 hint for unknown phones; both are dead now).
 
 ## Overlap with the gacha game (found 2026-10-21, owner's calls 2026-10-22)
 

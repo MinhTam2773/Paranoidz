@@ -201,7 +201,7 @@ The client wants SPX's **live** price at checkout (SPX runs promotions, so a fix
   - **Manual final steps (2026-10-16).** `delivered` and `delivery_failed` are terminal, so a later callback can't fix a wrong click. On an order with an SPX tracking number, the admin's **Đánh dấu đã giao** / **Giao thất bại** first ask SPX (1.3 Track Order, `v1/order/batch_search_order`) and go ahead only if SPX already says 4001 (delivered) / 6001–6003 (returning / returned); otherwise, or if SPX can't be reached, the order stays as it is and the toast shows SPX's current status. Orders without an SPX shipment keep the plain buttons.
 - **One shipper per order.** Website orders get SPX shipments only from our admin; BigSeller keeps handling Shopee / TikTok orders. Never both for the same order.
 
-### Pricing v2 ("like Shopee") — decided 2026-10-17 (client), NOT BUILT YET
+### Pricing v2 ("like Shopee") — decided 2026-10-17 (client); built on `feat/pricing-v2-pricing` (PR A + B + C), NOT MERGED
 Replaces "best one wins, no stacking" (First-5 and Bundles above, and `order_discount()` today) once built. Until then the code still runs the old rules. The client's choice was option B of the mock-up (https://claude.ai/artifact/E66SgJPvf8NSQnHpWAarcy).
 
 Applied in this order, each step on what the previous one left:
