@@ -10,7 +10,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../src/types.ts";
 
 type Db = SupabaseClient<Database>;
-type Placed = { order_id: string; order_number: string; subtotal: number; discount: number; shipping_fee: number; total: number };
+type Placed = { order_id: string; order_number: string; subtotal: number; discount: number; shipping_fee: number; shipping_discount: number; total: number; gift_qty: number; gift_missing: boolean; gacha_redeemed: boolean };
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const publishable = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!;
@@ -30,6 +30,7 @@ const QUOTE_PHONE = "0900000010"; // case 17's promo order: no history from earl
 const FEE_PHONE = "0900000011"; // case 19: up to 3 pending orders of its own
 const LOST_PHONE = "0900000012"; // case 20: refusal count from this case only
 const DELIVERY_PHONE = "0900000013"; // case 21: up to 2 pending orders of its own
+const V2_PHONE = "0900000014"; // case 23: pricing v2 rules, every order confirmed at once
 const AUTH_EMAILS = [1, 2, 3].map((i) => `smoke-auth-${i}@paranoidz.test`);
 
 let failures = 0;
@@ -61,6 +62,9 @@ const createdOrders: string[] = [];
 const createdUsers: string[] = [];
 const deliveredItems: { variant_id: string; qty: number }[] = [];
 let autoUsedBefore: number | null = null;
+let welcomeUsedBefore: number | null = null; // PDZWELCOME (pricing v2), restored by cleanup
+let giftVariant: string | null = null; // case 23 flags one variant as the order gift
+let flashTestWindow: { id: string; prev: { duration_minutes: number; discount_percent: number } | null } | null = null;
 // Flash sale windows switched off for the run (their extra discount depends on the clock).
 let flashWindows: string[] = [];
 const cartUsers: string[] = [];
@@ -68,7 +72,7 @@ const reviewUsers: string[] = [];
 
 async function placeOrder(
   items: { variant_id: string; qty: number }[],
-  opts: { phone?: string; voucher?: string; userId?: string; db?: Db; city?: string; shippingFee?: number; spxVoucher?: string; deliveryMethod?: string } = {},
+  opts: { phone?: string; voucher?: string; vouchers?: string[]; userId?: string; db?: Db; city?: string; shippingFee?: number; spxVoucher?: string; deliveryMethod?: string; expectedTotal?: number; gachaCode?: string } = {},
 ) {
   const res = await (opts.db ?? admin).rpc("place_order", {
     p_items: items,
@@ -76,11 +80,13 @@ async function placeOrder(
     p_phone: opts.phone ?? PHONES[0],
     p_address: "1 Test St",
     p_city: opts.city ?? "TP. Hồ Chí Minh",
-    p_voucher_code: opts.voucher,
+    p_voucher_codes: opts.vouchers ?? (opts.voucher ? [opts.voucher] : undefined),
     p_user_id: opts.userId,
     p_shipping_fee: opts.shippingFee,
     p_spx_voucher: opts.spxVoucher,
     p_delivery_method: opts.deliveryMethod,
+    p_expected_total: opts.expectedTotal,
+    p_gacha_code: opts.gachaCode,
   });
   if (res.data) createdOrders.push((res.data as Placed).order_id);
   return res as { data: Placed | null; error: { message: string } | null };
@@ -109,6 +115,8 @@ async function main() {
 
   const { data: auto } = await admin.from("vouchers").select("used_count").eq("type", "auto_first5").single();
   autoUsedBefore = auto?.used_count ?? null;
+  const { data: welcome } = await admin.from("vouchers").select("used_count").eq("code", "PDZWELCOME").single();
+  welcomeUsedBefore = welcome?.used_count ?? null;
 
   // Pick in-stock variants so the test doesn't depend on the seed's random stock.
   // ~13 single units are held at once below, so spread them over three variants.
@@ -117,7 +125,7 @@ async function main() {
   if (!pool || pool.length < 4) throw new Error("need 4 variants with stock >= 8");
   let n = 0;
   const one = () => [{ variant_id: pool[1 + (n++ % 3)].id, qty: 1 }];
-
+  // One 50% promo, max_uses 1: the atomic used_count guard lets exactly one order through.
   // 1. Voucher max_uses under concurrent redemption ------------------------
   // 50% beats the 10% auto-first5, so place_order must pick the promo.
   await admin.from("vouchers").delete().eq("code", VOUCHER);
@@ -191,24 +199,25 @@ async function main() {
   const bad = await placeOrder(one(), { phone: "12345" });
   check("invalid phone rejected", bad.error?.message === "INVALID_PHONE", bad.error?.message);
 
-  // 7. First-5 voucher counts orders by phone, across guest and account ----
-  // PHONES[5]: 5 orders get 10%, the 6th — placed while signed in — gets nothing.
+  // 7. "Khách mua lần đầu" (PDZWELCOME, 'standing'): 10% on every order, no per-phone limit (pricing v2).
+  // PHONES[5]: 6 orders, the 6th signed in, all get it; without the code there's no automatic discount.
   const discounts: number[] = [];
   for (let i = 0; i < 6; i++) {
-    const r = await placeOrder(one(), { phone: PHONES[5], userId: i === 5 ? c1Id : undefined });
-    if (r.error) throw new Error(`first-5 order ${i + 1}: ${r.error.message}`);
-    discounts.push(r.data!.discount);
+    const r = await placeOrder(one(), { phone: PHONES[5], userId: i === 5 ? c1Id : undefined, voucher: "pdzwelcome" });
+    if (r.error) throw new Error(`lần đầu order ${i + 1}: ${r.error.message}`);
+    discounts.push(r.data!.discount === Math.floor(r.data!.subtotal * 0.1) ? 1 : 0);
     await transition(r.data!.order_id, "confirmed"); // stay under the pending limit
   }
-  check("first-5 by phone: orders 1-5 discounted, 6th (signed in, same phone) not",
-    discounts.slice(0, 5).every((d) => d > 0) && discounts[5] === 0, `discounts=${discounts.join(",")}`);
+  const noCode = await placeOrder(one(), { phone: PHONES[5] });
+  check("lần đầu: PDZWELCOME takes 10% on all 6 orders of one phone; no code → no discount (AUTO-FIRST5 retired)",
+    discounts.every((d) => d === 1) && noCode.data?.discount === 0, `ok=${discounts.join(",")} noCode=${noCode.data?.discount ?? noCode.error?.message}`);
 
   // 8. Promo once per phone, even when switching guest → account ----------
   await admin.from("vouchers").update({ max_uses: null, used_count: 0 }).eq("id", v.id);
   const promo1 = await placeOrder(one(), { phone: PHONES[6], voucher: VOUCHER });
   const promo2 = await placeOrder(one(), { phone: "090 000 0007", voucher: VOUCHER, userId: c1Id });
   check("promo once per phone (2nd try, other format + signed in, refused)",
-    !promo1.error && promo2.error?.message === "VOUCHER_ALREADY_USED", `1st=${promo1.error?.message ?? "ok"} 2nd=${promo2.error?.message}`);
+    !promo1.error && promo2.error?.message === `VOUCHER_ALREADY_USED:${VOUCHER}`, `1st=${promo1.error?.message ?? "ok"} 2nd=${promo2.error?.message}`);
 
   // 9. Blacklist is per phone, whatever the format -------------------------
   await admin.from("customers").upsert({ phone: PHONES[7], is_blacklisted: true });
@@ -366,7 +375,7 @@ async function main() {
     return { discount: o?.discount, sets, voucherUses: count };
   };
 
-  // One of each: greedy would take A (300k) and strand p3/p4; B + C = 400k is better. Beats first-5 10%.
+  // One of each: greedy would take A (300k) and strand p3/p4; B + C = 400k is better.
   const all = await placeOrder([p1, p2, p3, p4].map((v) => ({ variant_id: v.id, qty: 1 })), { phone: PHONES[4] });
   if (all.error) throw all.error;
   const allRes = await applied(all.data!.order_id);
@@ -379,7 +388,8 @@ async function main() {
   const twiceRes = await applied(twice.data!.order_id);
   check("bundles: per complete set (2 × B = 400k)", twiceRes.discount === 400000 && twiceRes.sets === "B×2", JSON.stringify(twiceRes));
 
-  // Better of bundle vs promo: a 100% promo beats B; capped at ₫1.000 it loses and isn't consumed.
+  // Pricing v2: combo first, then the promo on what's left (they stack). 100% → the rest is free;
+  // capped at ₫1.000 → combo + ₫1.000. Both orders consume the code.
   await admin.from("vouchers").delete().eq("code", BUNDLE_VOUCHER);
   const { data: bVoucher, error: bvErr } = await admin.from("vouchers")
     .insert({ code: BUNDLE_VOUCHER, type: "promo", discount_pct: 100 }).select("id").single();
@@ -393,9 +403,9 @@ async function main() {
   if (bundleWins.error) throw bundleWins.error;
   const bundleRes = await applied(bundleWins.data!.order_id);
   const { data: bvAfter } = await admin.from("vouchers").select("used_count").eq("id", bVoucher.id).single();
-  check("bundles vs promo: better wins, no stacking; losing promo not consumed",
-    promoRes.discount === promoWins.data!.subtotal && promoRes.sets === "" && promoRes.voucherUses === 1
-      && bundleRes.discount === 200000 && bundleRes.sets === "B×1" && bundleRes.voucherUses === 0 && bvAfter?.used_count === 1,
+  check("bundles + promo stack: combo first, promo on the rest (100% → free; cap ₫1.000 → combo + 1.000), both uses counted",
+    promoRes.discount === promoWins.data!.subtotal && promoRes.sets === "B×1" && promoRes.voucherUses === 1
+      && bundleRes.discount === 201000 && bundleRes.sets === "B×1" && bundleRes.voucherUses === 1 && bvAfter?.used_count === 2,
     `promo ${JSON.stringify(promoRes)} bundle ${JSON.stringify(bundleRes)} used_count=${bvAfter?.used_count}`);
 
   // 13. Account cart: merge sums + caps at stock, own rows only ------------
@@ -562,38 +572,43 @@ async function main() {
 
   const shipVariant = await variant(pool[3].id);
   const shipped = await placeOrder([{ variant_id: shipVariant.id, qty: 2 }], { phone: PHONES[2], city: "Hà Nội" });
-  const { data: shipRow } = await admin.from("orders").select("subtotal, discount, shipping_fee, total").eq("id", shipped.data?.order_id ?? "").maybeSingle();
+  const { data: shipRow } = await admin.from("orders").select("subtotal, discount, shipping_fee, shipping_discount, total").eq("id", shipped.data?.order_id ?? "").maybeSingle();
   const badCity = await placeOrder([{ variant_id: shipVariant.id, qty: 1 }], { phone: PHONES[2], city: "Atlantis" });
-  check("shipping: order stores the fee, total = subtotal − discount + shipping; unknown city refused before stock",
-    !shipped.error && shipRow?.shipping_fee === 22000 && shipped.data?.shipping_fee === 22000
-      && shipRow.total === shipRow.subtotal - shipRow.discount + 22000 && shipped.data?.total === shipRow.total
+  // 2 units on standard delivery also ship free (pricing v2): the fee is stored and waived in shipping_discount.
+  check("shipping: order stores the fee, total = subtotal − discount + shipping − shipping_discount; unknown city refused before stock",
+    !shipped.error && shipRow?.shipping_fee === 22000 && shipped.data?.shipping_fee === 22000 && shipRow.shipping_discount === 22000
+      && shipRow.total === shipRow.subtotal - shipRow.discount + 22000 - 22000 && shipped.data?.total === shipRow.total
       && badCity.error?.message === "SHIPPING_UNAVAILABLE" && (await variant(pool[3].id)).stock === shipVariant.stock - 2,
     `err=${shipped.error?.message} row=${JSON.stringify(shipRow)} badCity=${badCity.error?.message}`);
 
   // 17. Checkout quote: quote_order() prices like place_order() (shared order_discount) --------
-  type Quote = { subtotal: number; discount: number; source: string | null; voucher_error: string | null; phone_known: boolean };
+  type Quote = {
+    subtotal: number; discount: number; phone_known: boolean; free_shipping: boolean;
+    vouchers: { code: string; pct: number; amount: number }[]; voucher_errors: { code: string; error: string }[];
+  };
   const qVariant = await variant(pool[3].id);
   const qItems = [{ variant_id: qVariant.id, qty: 2 }];
   const quote = async (phone?: string, voucher?: string, db: Db = admin, items = qItems) =>
-    (await db.rpc("quote_order", { p_items: items, p_phone: phone, p_voucher_code: voucher })) as { data: Quote | null; error: { message: string } | null };
+    (await db.rpc("quote_order", { p_items: items, p_phone: phone, p_voucher_codes: voucher ? ["PDZWELCOME", voucher] : ["PDZWELCOME"] })) as
+      { data: Quote | null; error: { message: string } | null };
 
   // Two phones with different histories from the cases above: the quote must equal the order.
   const pairs = [];
   for (const phone of [PHONES[6], PHONES[2]]) {
     const q = await quote(phone);
-    const placed = await placeOrder(qItems, { phone });
+    const placed = await placeOrder(qItems, { phone, voucher: "PDZWELCOME" });
     pairs.push({ phone, q: q.data, placed: placed.data, err: q.error?.message ?? placed.error?.message });
   }
   check("quote: subtotal + discount equal what place_order() then charges, for two phones",
     pairs.every((p) => !p.err && p.q?.subtotal === p.placed?.subtotal && p.q?.discount === p.placed?.discount && p.q?.phone_known),
-    JSON.stringify(pairs.map((p) => ({ phone: p.phone, quote: p.q && [p.q.subtotal, p.q.discount, p.q.source], order: p.placed && [p.placed.subtotal, p.placed.discount], err: p.err }))));
+    JSON.stringify(pairs.map((p) => ({ phone: p.phone, quote: p.q && [p.q.subtotal, p.q.discount], order: p.placed && [p.placed.subtotal, p.placed.discount], err: p.err }))));
 
   const stockBefore = (await variant(pool[3].id)).stock;
   const [noPhone, badCode, plain] = await Promise.all([quote(), quote(PHONES[7], "NO-SUCH-CODE"), quote(PHONES[7])]);
-  check("quote: no phone → new customer (first-5 applies); bad code → voucher_error, priced without it; stock untouched",
-    noPhone.data?.phone_known === false && noPhone.data.source === "auto_first5" && noPhone.data.discount > 0
-      && badCode.data?.voucher_error === "INVALID_VOUCHER" && badCode.data.discount === plain.data?.discount
-      && (await variant(pool[3].id)).stock === stockBefore,
+  check("quote: no phone still priced (lần đầu applies); bad code → voucher_errors, priced without it; stock untouched",
+    noPhone.data?.phone_known === false && noPhone.data.vouchers[0]?.code === "PDZWELCOME" && noPhone.data.discount > 0
+      && badCode.data?.voucher_errors[0]?.code === "NO-SUCH-CODE" && badCode.data.voucher_errors[0]?.error === "INVALID_VOUCHER"
+      && badCode.data.discount === plain.data?.discount && (await variant(pool[3].id)).stock === stockBefore,
     `noPhone=${JSON.stringify(noPhone.data ?? noPhone.error)} bad=${JSON.stringify(badCode.data ?? badCode.error)} plain=${plain.data?.discount}`);
 
   await admin.from("vouchers").delete().eq("code", QUOTE_VOUCHER);
@@ -601,18 +616,19 @@ async function main() {
   if (qvErr) throw qvErr;
   const promoItems = [{ variant_id: pool[1].id, qty: 1 }]; // pool[3] may be used up by now
   const promoQuote = await quote(QUOTE_PHONE, QUOTE_VOUCHER.toLowerCase(), admin, promoItems);
-  const promoPlaced = await placeOrder(promoItems, { phone: QUOTE_PHONE, voucher: QUOTE_VOUCHER });
+  const promoPlaced = await placeOrder(promoItems, { phone: QUOTE_PHONE, vouchers: ["PDZWELCOME", QUOTE_VOUCHER] });
   const usedQuote = await quote(QUOTE_PHONE, QUOTE_VOUCHER, admin, promoItems);
-  check("quote: a better promo wins with code + pct, equals the order; after use → VOUCHER_ALREADY_USED",
-    promoQuote.data?.source === "promo" && (promoQuote.data as Quote & { code: string; pct: number }).code === QUOTE_VOUCHER
-      && (promoQuote.data as Quote & { pct: number }).pct === 30 && promoQuote.data.discount === promoPlaced.data?.discount
-      && usedQuote.data?.voucher_error === "VOUCHER_ALREADY_USED" && usedQuote.data.source !== "promo",
+  const [lanDau, promo30] = promoQuote.data?.vouchers ?? [];
+  check("quote: lần đầu then a 30% promo on what's left, equals the order; after use → VOUCHER_ALREADY_USED, priced without it",
+    lanDau?.code === "PDZWELCOME" && promo30?.code === QUOTE_VOUCHER && promo30.pct === 30
+      && promoQuote.data!.discount === lanDau.amount + promo30.amount && promoQuote.data!.discount === promoPlaced.data?.discount
+      && usedQuote.data?.voucher_errors[0]?.error === "VOUCHER_ALREADY_USED" && usedQuote.data.vouchers.length === 1,
     `quote=${JSON.stringify(promoQuote.data ?? promoQuote.error)} order=${promoPlaced.data?.discount ?? promoPlaced.error?.message} after=${JSON.stringify(usedQuote.data ?? usedQuote.error)}`);
 
   const [anonQuote, customerQuote, anonDiscount] = await Promise.all([
     quote(PHONES[7], undefined, anon),
     quote(PHONES[7], undefined, c1),
-    anon.rpc("order_discount", { p_phone: PHONES[7], p_subtotal: 100000, p_counts: {}, p_voucher_code: "" }),
+    anon.rpc("order_discount", { p_phone: PHONES[7], p_subtotal: 100000, p_counts: {}, p_voucher_codes: [] }),
   ]);
   check("quote: anon and signed-in customers can't call quote_order / order_discount",
     !!anonQuote.error && !!customerQuote.error && !!anonDiscount.error,
@@ -704,7 +720,7 @@ async function main() {
     p_city: "TP. Hồ Chí Minh", p_delivery_method: "express",
   });
   if (anonMethod.data) createdOrders.push((anonMethod.data as Placed).order_id); // only if the grant is wrong
-  check("delivery method: anon can't call the 16-param place_order (42501, no second overload)",
+  check("delivery method: anon can't call place_order (42501, no second overload)",
     anonMethod.error?.code === "42501", `code=${anonMethod.error?.code} msg=${anonMethod.error?.message}`);
 
   // 22. Pricing v2 schema: one gift variant, several codes per order, free shipping within the fee --------
@@ -736,6 +752,109 @@ async function main() {
   check("pricing v2: shipping_discount ≤ shipping_fee and subtracted in the total (23514 otherwise)",
     v2Fee > 0 && overFee.error?.code === "23514" && totalUnchanged.error?.code === "23514" && !waived.error,
     `fee=${v2Fee} over=${overFee.error?.code} unchanged=${totalUnchanged.error?.code} waived=${waived.error?.message ?? "ok"}`);
+
+  // 23. Pricing v2 rules (PR C): free shipping, gift from stock, PRICE_CHANGED, flash price, gacha --------
+  // Every order of V2_PHONE is confirmed right away to stay under the 3-pending limit.
+  const v2Place = async (items: { variant_id: string; qty: number }[], opts: Parameters<typeof placeOrder>[1] = {}) => {
+    const r = await placeOrder(items, { phone: V2_PHONE, ...opts });
+    if (r.data) await transition(r.data.order_id, "confirmed");
+    return r;
+  };
+  const giftRows = async (orderId?: string) =>
+    (await admin.from("order_items").select("variant_id, qty, price_snapshot, is_gift").eq("order_id", orderId ?? "").eq("is_gift", true)).data ?? [];
+  const shirt = (qty: number) => [{ variant_id: pool[2].id, qty }];
+
+  giftVariant = pool[0].id;
+  await admin.from("product_variants").update({ is_order_gift: true }).eq("id", giftVariant);
+  const giftStock = (await variant(giftVariant)).stock;
+  const v2Two = await v2Place(shirt(2));
+  const v2TwoGift = await giftRows(v2Two.data?.order_id);
+  const giftAfter = (await variant(giftVariant)).stock;
+  const v2Express = await v2Place(shirt(2), { deliveryMethod: "express" });
+  check("pricing v2: 2 units standard → whole fee waived + 1 gift from stock (₫0 line); express → no free shipping",
+    !v2Two.error && v2Two.data!.shipping_fee > 0 && v2Two.data!.shipping_discount === v2Two.data!.shipping_fee
+      && v2Two.data!.total === v2Two.data!.subtotal - v2Two.data!.discount + v2Two.data!.shipping_fee - v2Two.data!.shipping_discount
+      && v2TwoGift.length === 1 && v2TwoGift[0].qty === 1 && v2TwoGift[0].price_snapshot === 0 && giftAfter === giftStock - 1
+      && !v2Express.error && v2Express.data!.shipping_discount === 0 && v2Express.data!.gift_qty === 1,
+    `v2Two=${JSON.stringify(v2Two.data ?? v2Two.error)} gift=${JSON.stringify(v2TwoGift)} stock ${giftStock}→${giftAfter} v2Express=${JSON.stringify(v2Express.data ?? v2Express.error)}`);
+
+  const giftKeep = (await variant(giftVariant)).stock;
+  await admin.from("product_variants").update({ stock: 0 }).eq("id", giftVariant);
+  const noGift = await v2Place(shirt(1));
+  await admin.from("product_variants").update({ stock: giftKeep }).eq("id", giftVariant);
+  check("pricing v2: gift out of stock → order still placed, gift_missing, no gift line",
+    !noGift.error && noGift.data!.gift_missing && noGift.data!.gift_qty === 0 && (await giftRows(noGift.data?.order_id)).length === 0,
+    JSON.stringify(noGift.data ?? noGift.error));
+
+  // PRICE_CHANGED: the total the page showed vs the one place_order() computes (HCMC, 1 unit: ₫18.000).
+  const { data: pq } = await admin.rpc("quote_order", { p_items: shirt(1), p_phone: V2_PHONE, p_voucher_codes: ["PDZWELCOME"] });
+  const v2Shown = (pq as { subtotal: number; discount: number }).subtotal - (pq as { discount: number }).discount + 18000;
+  const pcStock = (await variant(pool[2].id)).stock;
+  const v2Stale = await v2Place(shirt(1), { voucher: "PDZWELCOME", expectedTotal: v2Shown + 1000 });
+  const pcStockAfter = (await variant(pool[2].id)).stock;
+  const v2Fresh = await v2Place(shirt(1), { voucher: "PDZWELCOME", expectedTotal: v2Shown });
+  check("pricing v2: expected total off → PRICE_CHANGED:<real total>, nothing written; matching total → placed",
+    v2Stale.error?.message === `PRICE_CHANGED:${v2Shown}` && pcStockAfter === pcStock && !v2Fresh.error && v2Fresh.data!.total === v2Shown,
+    `v2Stale=${v2Stale.error?.message} v2Shown=${v2Shown} stock ${pcStock}→${pcStockAfter} v2Fresh=${v2Fresh.data?.total ?? v2Fresh.error?.message}`);
+
+  // Flash price = item price: a window open now, the storefront's rounding (nearest ₫1.000).
+  const vnHour = Number(new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Ho_Chi_Minh", hour: "2-digit", hourCycle: "h23" }).format(new Date()));
+  const { data: hourRow } = await admin.from("flash_sale_windows").select("*").eq("start_hour", vnHour).maybeSingle();
+  flashTestWindow = hourRow ? { id: hourRow.id, prev: hourRow } : null;
+  if (hourRow) await admin.from("flash_sale_windows").update({ enabled: true, duration_minutes: 120, discount_percent: 20 }).eq("id", hourRow.id);
+  else {
+    const { data: ins } = await admin.from("flash_sale_windows").insert({ start_hour: vnHour, duration_minutes: 120, discount_percent: 20 }).select("*").single();
+    flashTestWindow = ins ? { id: ins.id, prev: null } : null;
+  }
+  const { data: picks } = await anon.rpc("flash_sale_picks");
+  const { data: pickVariant } = await admin.from("product_variants").select("id, price, stock")
+    .in("product_id", (picks as string[] | null) ?? []).gt("stock", 0).order("price").limit(1).maybeSingle();
+  const flashExpect = pickVariant ? Math.max(0, Math.round((pickVariant.price * 0.8) / 1000) * 1000) : -1;
+  const fq = pickVariant ? (await admin.rpc("quote_order", { p_items: [{ variant_id: pickVariant.id, qty: 1 }] })).data as
+    { lines: { price: number; list_price: number; flash: boolean }[]; flash_window_start: string | null } : null;
+  const flashOrder = pickVariant ? await v2Place([{ variant_id: pickVariant.id, qty: 1 }]) : null;
+  const { data: flashLine } = await admin.from("order_items").select("price_snapshot, list_price_snapshot")
+    .eq("order_id", flashOrder?.data?.order_id ?? "").eq("is_gift", false).maybeSingle();
+  check("pricing v2: flash window → quote line + order charge the rounded flash price, list price kept, window start returned",
+    !!pickVariant && fq?.lines[0]?.flash === true && fq.lines[0].price === flashExpect && !!fq.flash_window_start
+      && flashOrder?.data?.subtotal === flashExpect && flashLine?.price_snapshot === flashExpect && flashLine?.list_price_snapshot === pickVariant.price,
+    `pick=${JSON.stringify(pickVariant)} expect=${flashExpect} quote=${JSON.stringify(fq?.lines)} line=${JSON.stringify(flashLine)}`);
+  await restoreFlashWindow();
+
+  // Gacha: freeship on an order that already ships free stays unused; socks3 adds 3 to the gift line.
+  const expires = new Date(Date.now() + 86400_000).toISOString();
+  await admin.from("gacha_codes").insert([
+    { code: "GACHA-SMKFS1", prize_type: "freeship", tier: "epic", expires_at: expires },
+    { code: "GACHA-SMKSK3", prize_type: "socks3", tier: "epic", expires_at: expires },
+  ]);
+  const fsOrder = await v2Place(shirt(2), { gachaCode: "GACHA-SMKFS1" });
+  const { data: fsCode } = await admin.from("gacha_codes").select("status").eq("code", "GACHA-SMKFS1").single();
+  // +10 gift stock for the 4 pairs, taken back after, so cleanup's cancel ends at the original count.
+  await admin.from("product_variants").update({ stock: (await variant(giftVariant)).stock + 10 }).eq("id", giftVariant);
+  const skOrder = await v2Place([{ variant_id: pool[1].id, qty: 1 }], { gachaCode: "GACHA-SMKSK3" }); // pool[2] is spent by now
+  await admin.from("product_variants").update({ stock: (await variant(giftVariant)).stock - 10 }).eq("id", giftVariant);
+  const skGift = await giftRows(skOrder.data?.order_id);
+  check("pricing v2: gacha freeship not redeemed when already free; gacha socks3 → gift line of 1 + 3",
+    !fsOrder.error && fsOrder.data!.gacha_redeemed === false && fsCode?.status === "issued"
+      && !skOrder.error && skOrder.data!.gift_qty === 4 && skGift[0]?.qty === 4,
+    `fs=${JSON.stringify(fsOrder.data ?? fsOrder.error)} code=${fsCode?.status} sk=${JSON.stringify(skOrder.data ?? skOrder.error)} gift=${JSON.stringify(skGift)}`);
+
+  // Cancel releases every code of a multi-code order (lần đầu + promo from case 17).
+  if (promoPlaced.data) await transition(promoPlaced.data.order_id, "cancelled");
+  const { data: released } = await admin.from("voucher_uses").select("released_at").eq("order_id", promoPlaced.data?.order_id ?? "");
+  const { data: qvAfter } = await admin.from("vouchers").select("used_count").eq("code", QUOTE_VOUCHER).single();
+  check("pricing v2: cancelling a 2-code order releases both uses and gives the promo its count back",
+    released?.length === 2 && released.every((u) => u.released_at !== null) && qvAfter?.used_count === 0,
+    `released=${JSON.stringify(released)} used_count=${qvAfter?.used_count}`);
+}
+
+// Case 23 changes a flash window, the gift flag and PDZWELCOME's counter; put them back.
+async function restoreFlashWindow() {
+  if (!flashTestWindow) return;
+  const { id, prev } = flashTestWindow;
+  if (prev) await admin.from("flash_sale_windows").update({ enabled: false, duration_minutes: prev.duration_minutes, discount_percent: prev.discount_percent }).eq("id", id);
+  else await admin.from("flash_sale_windows").delete().eq("id", id);
+  flashTestWindow = null;
 }
 
 async function cleanup() {
@@ -752,7 +871,11 @@ async function cleanup() {
     await admin.from("product_variants").update({ stock: stock + qty }).eq("id", variant_id);
   }
   if (createdOrders.length) await admin.from("orders").delete().in("id", createdOrders);
-  await admin.from("customers").delete().in("phone", [...PHONES, QUOTE_PHONE, FEE_PHONE, LOST_PHONE, DELIVERY_PHONE]);
+  await admin.from("customers").delete().in("phone", [...PHONES, QUOTE_PHONE, FEE_PHONE, LOST_PHONE, DELIVERY_PHONE, V2_PHONE]);
+  await admin.from("gacha_codes").delete().like("code", "GACHA-SMK%");
+  if (giftVariant) await admin.from("product_variants").update({ is_order_gift: false }).eq("id", giftVariant);
+  await restoreFlashWindow();
+  if (welcomeUsedBefore !== null) await admin.from("vouchers").update({ used_count: welcomeUsedBefore }).eq("code", "PDZWELCOME");
   await admin.from("rate_limits").delete().in("bucket", PHONES.flatMap((p) => [`order:phone:${p}`, `lookup:phone:${p}`]));
   await admin.from("rate_limits").delete().or("bucket.like.order:ip:192.0.2.%,bucket.like.order:ip:2001:db8:%");
   await admin.from("vouchers").delete().in("code", [VOUCHER, BUNDLE_VOUCHER, QUOTE_VOUCHER]);

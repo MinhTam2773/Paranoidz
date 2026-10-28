@@ -70,6 +70,7 @@ export async function placeOrder({ variantId, qty = 1, phone = uniquePhone() }: 
     p_address: "1 Lê Lợi",
     p_ward: WARD,
     p_city: CITY,
+    p_voucher_codes: ["PDZWELCOME"], // what checkout sends by default (pricing v2)
   });
   if (error) throw error;
   const order = data as { order_id: string; order_number: string; total: number };
