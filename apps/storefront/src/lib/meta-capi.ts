@@ -8,7 +8,7 @@ import { SITE_URL } from "@/lib/site";
 // a closed tab stops the pixel. The hashed phone / email let Meta match COD buyers to ad clicks.
 // Called from after() in placeOrder like the order emails: an unset token (everywhere but Vercel
 // Production) or a failed send is only logged, never touches the order.
-const PIXEL_ID = "1535409166877970"; // same pixel as components/tracking/MetaPixel.tsx
+const PIXEL_ID = "1667556364856571"; // same pixel as components/tracking/MetaPixel.tsx
 const GRAPH_VERSION = "v23.0";
 
 const sha256 = (value: string) => createHash("sha256").update(value).digest("hex");
