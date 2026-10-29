@@ -31,9 +31,16 @@ import {
 import { BANK_TRANSFER, vietqrImageUrl, type PaymentMethod } from "@/lib/payment";
 import { ProvinceSelect } from "./ProvinceSelect";
 import { WardSelect } from "./WardSelect";
-import { PurchaseTracker } from "@/components/tracking/MetaPixel";
+import { PurchaseTracker, trackMeta, type MetaContent } from "@/components/tracking/MetaPixel";
 
 type Placed = Extract<CheckoutResult, { ok: true }>["order"];
+
+// Meta Pixel catalog items for the lines whose display price has loaded.
+const metaContents = (lines: CartLine[], items: Map<string, CartItem>): MetaContent[] =>
+  lines.flatMap((l) => {
+    const item = items.get(l.variantId);
+    return item ? [{ id: l.variantId, quantity: l.qty, item_price: item.price }] : [];
+  });
 
 // Signed-in customer: pre-fill source. Addresses come default-first, then newest.
 export type CheckoutAccount = { name: string; phone: string; email: string; addresses: SavedAddress[] } | null;
@@ -102,6 +109,9 @@ export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; acc
   const [ward, setWard] = useState(initial?.ward ?? "");
   const [addressId, setAddressId] = useState<string | null>(initial?.id ?? null);
   const [placed, setPlaced] = useState<Placed | null>(null);
+  // The ordered lines for the Purchase event: a cart checkout empties the cart on success.
+  const [placedContents, setPlacedContents] = useState<MetaContent[]>([]);
+  const checkoutTracked = useRef(false);
   const [pending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
   const idsKey = lines.map((l) => l.variantId).toSorted().join(",");
@@ -146,6 +156,16 @@ export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; acc
       cancelled = true;
     };
   }, [idsKey]);
+
+  // Meta Pixel: checkout opened, once per visit, as soon as the prices have loaded.
+  useEffect(() => {
+    if (checkoutTracked.current || !items || !linesKey) return;
+    const keyed = linesKey.split(",").map((s) => ({ variantId: s.split(":")[0], qty: Number(s.split(":")[1]) }));
+    const contents = metaContents(keyed, items);
+    if (!contents.length) return;
+    checkoutTracked.current = true;
+    trackMeta("InitiateCheckout", contents);
+  }, [items, linesKey]);
 
   useEffect(() => {
     if (!city || !ward || !linesKey) return;
@@ -261,6 +281,7 @@ export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; acc
       setMessage("⚡ Hoả tốc chỉ áp dụng nội thành TP.HCM. Vui lòng chọn giao thường hoặc đổi địa chỉ.");
       return;
     }
+    const contents = items ? metaContents(lines, items) : [];
     startTransition(async () => {
       const res: CheckoutResult = await placeOrder({
         items: lines.map((l) => ({ variantId: l.variantId, qty: l.qty })),
@@ -270,6 +291,7 @@ export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; acc
         ...v,
       });
       if (res.ok) {
+        setPlacedContents(contents);
         setPlaced(res.order);
         if (!buyNow) clearCart();
         window.scrollTo({ top: 0 });
@@ -284,7 +306,7 @@ export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; acc
   if (placed) {
     return (
       <div role="status" className="flex max-w-xl flex-col gap-6">
-        <PurchaseTracker orderNumber={placed.orderNumber} value={placed.total} />
+        <PurchaseTracker orderNumber={placed.orderNumber} value={placed.total} contents={placedContents} />
         <div className="flex flex-col gap-2">
           <h2 className="text-h3 uppercase">Cảm ơn bạn — đã đặt hàng thành công</h2>
           {placed.paymentMethod === "bank_transfer" ? (

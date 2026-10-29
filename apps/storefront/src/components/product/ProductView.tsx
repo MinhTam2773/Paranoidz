@@ -15,6 +15,7 @@ import {
   type DeliveryMethod,
 } from "@/lib/delivery-method";
 import { recordView } from "@/lib/recently-viewed";
+import { trackMeta } from "@/components/tracking/MetaPixel";
 
 export type ProductVariant = {
   id: string;
@@ -92,6 +93,12 @@ export function ProductView({
   useEffect(() => {
     recordView(productId);
   }, [productId]);
+
+  // Meta Pixel: the whole product (item group) was seen, at its lowest price.
+  useEffect(() => {
+    const price = variants.length ? Math.min(...variants.map((v) => v.price)) : 0;
+    trackMeta("ViewContent", [{ id: productId, quantity: 1, item_price: price }], { contentType: "product_group" });
+  }, [productId, variants]);
 
   const [color, setColor] = useState(() => (variants.find((v) => v.stock > 0) ?? variants[0])?.color ?? null);
   const [size, setSize] = useState(() => (color ? defaultSize(variants, color) : null));
