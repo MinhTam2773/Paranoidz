@@ -9,6 +9,7 @@ import { CHECKOUT_FIELDS, normalizePhone, validateAll, type CheckoutValues, type
 import { PROVINCE_NAMES } from "@paranoidz/db/provinces";
 import { sendOrderEmails } from "@/lib/order-email";
 import { sendZaloAlert } from "@/lib/order-zalo";
+import { sendMetaPurchase } from "@/lib/meta-capi";
 import { hitRateLimit } from "@/lib/rate-limit";
 import { quoteShipping } from "@/lib/shipping-quote";
 import { HOTLINE } from "@/lib/site";
@@ -184,6 +185,7 @@ export async function placeOrder(input: CheckoutInput): Promise<CheckoutResult> 
   // Confirmation + shop alerts (email, Zalo) after the response is sent; never affects the order.
   after(() => sendOrderEmails(order.order_id));
   after(() => sendZaloAlert(order.order_id));
+  after(() => sendMetaPurchase(order.order_id));
 
   return {
     ok: true,
