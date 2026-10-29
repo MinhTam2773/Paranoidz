@@ -5,7 +5,7 @@ import Script from "next/script";
 
 // Meta Pixel for paranoidz.vn. Kept in one place; move to
 // NEXT_PUBLIC_META_PIXEL_ID if the shop ever runs a second pixel.
-export const META_PIXEL_ID = "1667556364856571";
+export const META_PIXEL_ID = "2608444106337265";
 
 declare global {
   interface Window {
