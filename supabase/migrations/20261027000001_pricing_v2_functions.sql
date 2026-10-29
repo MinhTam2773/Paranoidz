@@ -717,3 +717,14 @@ on conflict (code) do nothing;
 
 -- kept for old orders (voucher_uses reference it); no longer applied anywhere
 update public.vouchers set is_active = false, is_listed = false where type = 'auto_first5';
+
+-- catalog defaults on prod (owner, 2026-10-29), so nobody has to tick them in the admin.
+-- Matched by SKU: a no-op where they don't exist (local seed, test). The admin can change both later.
+-- The gift: QT01's random-colour pair ("[QUÀ TẶNG] Tất vớ …"), unless a gift is already chosen.
+update public.product_variants set is_order_gift = true
+ where sku = 'Sck1-Random'
+   and not exists (select 1 from public.product_variants where is_order_gift);
+
+-- Socks (QT01 gift, QT03 sold) don't count toward free shipping or the gift.
+update public.products set earns_perks = false
+ where id in (select product_id from public.product_variants where sku in ('Sck1-Random', 'QT03-Random'));

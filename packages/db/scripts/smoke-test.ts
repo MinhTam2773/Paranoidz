@@ -763,6 +763,8 @@ async function main() {
   const giftRows = async (orderId?: string) =>
     (await admin.from("order_items").select("variant_id, qty, price_snapshot, is_gift").eq("order_id", orderId ?? "").eq("is_gift", true)).data ?? [];
   const shirt = (qty: number) => [{ variant_id: pool[2].id, qty }];
+  // The seed's stock is random and this case takes up to 8 units: +20 now, taken back at the end.
+  await admin.from("product_variants").update({ stock: (await variant(pool[2].id)).stock + 20 }).eq("id", pool[2].id);
 
   giftVariant = pool[0].id;
   await admin.from("product_variants").update({ is_order_gift: true }).eq("id", giftVariant);
@@ -838,6 +840,8 @@ async function main() {
     !fsOrder.error && fsOrder.data!.gacha_redeemed === false && fsCode?.status === "issued"
       && !skOrder.error && skOrder.data!.gift_qty === 4 && skGift[0]?.qty === 4,
     `fs=${JSON.stringify(fsOrder.data ?? fsOrder.error)} code=${fsCode?.status} sk=${JSON.stringify(skOrder.data ?? skOrder.error)} gift=${JSON.stringify(skGift)}`);
+
+  await admin.from("product_variants").update({ stock: (await variant(pool[2].id)).stock - 20 }).eq("id", pool[2].id);
 
   // Cancel releases every code of a multi-code order (lần đầu + promo from case 17).
   if (promoPlaced.data) await transition(promoPlaced.data.order_id, "cancelled");

@@ -103,6 +103,7 @@ Every PR: smoke cases, migration test → smoke → prod, then merge (`master` i
    - `place_order()` reads the active window from a new `flash_window()` (start + %), not `active_flash_sale_discount()`.
    - Voucher errors carry the code (`INVALID_VOUCHER:SALE10`), since one order can hold several.
    - The admin order page / SPX card / Excel export, the order email, the Zalo alert, order lookup and the account page show free shipping (net fee) and gift lines, so their sums still add up.
+   - The migration sets the prod catalog defaults by SKU (owner, 2026-10-29): `Sck1-Random` (QT01, "[QUÀ TẶNG]") is the gift, and the two socks products (QT01, QT03) get `earns_perks = false`. A no-op where those SKUs don't exist.
    - **Payment method is still written after the rpc** (Tủn's bank-transfer code). Moving it into `place_order()` is a follow-up, not in PR C.
 4. **Hand-off to Tủn** (below): the action shapes for the voucher picker.
 
