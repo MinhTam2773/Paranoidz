@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type MouseEvent, type RefObject } from "react";
+import { trackMeta } from "@/components/tracking/MetaPixel";
 import { addToCart } from "@/lib/cart";
 import { flyToCart } from "@/lib/fly-to-cart";
 import type { ProductVariant } from "./ProductView";
@@ -61,6 +62,7 @@ export function PurchaseActions({
     const added = flyToCart(e.currentTarget, imageRef.current?.currentSrc, () =>
       addToCart(variant.id, qty, variant.stock),
     );
+    if (added > 0) trackMeta("AddToCart", [{ id: variant.id, quantity: added, item_price: variant.price }]);
     setNotice({
       id: variant.id,
       added: added > 0,
