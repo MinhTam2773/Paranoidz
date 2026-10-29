@@ -13,8 +13,17 @@ export const NAV_LINKS = [
   { label: "Trang chủ", href: "/" },
   // Collections managed in the admin; these slugs must exist there (admin → Bộ sưu tập).
   // Their labels stay English: collection names (owner's decision, 2026-10-08).
-  { label: "Outlet 2026", href: "/collections/outlet-2026" },
-  { label: "New collection", href: "/collections/new-collection" },
+  // Collection links (owner's decision 2026-10-27, order confirmed 2026-10-28):
+  // header shows T-Shirtz, Backpackz, Bagz in this order; Accessoriez is
+  // intentionally NOT shown in the header. "Outlet 2026" replaced by
+  // T-Shirtz/Backpackz; "New collection" removed the same day because no
+  // collection with slug "new-collection" exists in the admin, so the header
+  // linked every visitor (and Googlebot) to a not-found page. Re-add a link
+  // only when its collection is created in the admin.
+  // Bagz added 2026-10-28, after its collection was created in the admin.
+  { label: "T-Shirtz", href: "/collections/t-shirtz" },
+  { label: "Backpackz", href: "/collections/backpackz" },
+  { label: "Bagz", href: "/collections/bagz" },
   { label: "Sản phẩm", href: "/products" },
   { label: "Đánh giá khách hàng", href: "/feedback" },
   { label: "Thương hiệu", href: "/branding" },
