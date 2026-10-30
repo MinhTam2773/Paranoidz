@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import Link from "next/link";
 import { ProductCard, type ProductCardData } from "@/components/product/ProductCard";
 import { ProductRow } from "@/components/home/ProductRow";
@@ -10,14 +10,19 @@ function pad(n: number) {
   return String(n).padStart(2, "0");
 }
 
+// Current time in whole seconds; null while server-rendering and hydrating. The page is ISR
+// (up to a minute old), so a server-rendered clock never matched the browser's and threw
+// React #418 on every homepage load (PageSpeed 2026-10-30). The boxes show "--" until hydrated.
+const subscribeSeconds = (onTick: () => void) => {
+  const t = setInterval(onTick, 1000);
+  return () => clearInterval(t);
+};
+const nowSeconds = () => Math.floor(Date.now() / 1000);
+
 function useCountdown(targetMs: number) {
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    const t = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(t);
-  }, []);
-  const ms = Math.max(0, targetMs - now);
-  const s = Math.floor(ms / 1000);
+  const now = useSyncExternalStore(subscribeSeconds, nowSeconds, () => null);
+  if (now === null) return { h: "--", m: "--", s: "--" };
+  const s = Math.max(0, Math.floor(targetMs / 1000) - now);
   return { h: pad(Math.floor(s / 3600)), m: pad(Math.floor((s % 3600) / 60)), s: pad(s % 60) };
 }
 
