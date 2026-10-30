@@ -82,6 +82,9 @@ Pick from TODO.md → "Now" first. Starting an item: move it to TODO.md → "Now
 - **Customer email = latest order email**, not necessarily the account's; the detail page shows both. Guests have no account email.
 - **Loyalty awards can't be marked fulfilled yet** — `loyalty_awards.status` stays `pending` until §8.4 (notification / fulfilment method) is decided; the customer page only displays them.
 - **Confirm-modal markup is now repeated in 3 components** (`OrderActions`, `ImageManager`, `BlacklistToggle`) — extract a shared `ConfirmDialog` next time one is touched.
+- **Slug is fixed after creation and can't be edited** — 29 imported bags kept ~80-character slugs from their first, long names (owner's choice, 2026-10-30). Shortening them needs a slug editor (and a redirect from the old URL).
+- **20 photos per product (`MAX_IMAGES`)** — Shopee listings with many colours (1089: 16) exceed it with their gallery; the overflow went into the description. Raise the cap if the owner wants those as gallery photos.
+- **Colour photos uploaded from "Màu sắc" (`ColorRename`) are not compressed** — only `ImageManager` and description images go through `compressImage()`. Use "Ảnh sản phẩm" with "Màu cho ảnh mới" for large photos until it does.
 - **Collections can't be deleted** (not in DASHBOARD_DESIGN.md §6.6) — switch one off instead. Add a delete with a confirmation if the client asks.
 
 ### Reviews + Storage
