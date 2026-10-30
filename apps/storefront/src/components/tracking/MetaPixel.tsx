@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import Script from "next/script";
+import posthog from "posthog-js";
 
 // Meta Pixel for paranoidz.vn. Kept in one place; move to
 // NEXT_PUBLIC_META_PIXEL_ID if the shop ever runs a second pixel.
@@ -48,6 +49,16 @@ export function trackMeta(
   options: { contentType?: "product" | "product_group"; value?: number; eventID?: string } = {},
   attempt = 0,
 ) {
+  // The same funnel goes to PostHog (TODO.md Now #9); skipped until NEXT_PUBLIC_POSTHOG_KEY is set.
+  if (attempt === 0 && posthog.__loaded) {
+    posthog.capture(event, {
+      content_ids: contents.map((c) => c.id),
+      num_items: contents.reduce((n, c) => n + c.quantity, 0),
+      value: options.value ?? contents.reduce((sum, c) => sum + c.item_price * c.quantity, 0),
+      currency: "VND",
+      order_number: options.eventID,
+    });
+  }
   if (typeof window.fbq !== "function") {
     if (process.env.NODE_ENV === "production" && attempt < 10) setTimeout(() => trackMeta(event, contents, options, attempt + 1), 300);
     return;

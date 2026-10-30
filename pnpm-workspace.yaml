@@ -5,3 +5,5 @@ packages:
 allowBuilds:
   sharp: true
   unrs-resolver: true
+  # posthog-js dependency; its postinstall only prints a funding banner.
+  core-js: false
