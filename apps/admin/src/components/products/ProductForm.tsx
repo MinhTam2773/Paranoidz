@@ -6,6 +6,7 @@ import { useRef, useState, useTransition, type FormEvent } from "react";
 import { saveProduct } from "@/app/(shell)/products/actions";
 import { createDescriptionImageUpload } from "@/app/(shell)/products/[id]/image-actions";
 import { createClient } from "@paranoidz/db/client";
+import { compressImage, IMAGE_CACHE_SECONDS } from "@/lib/compress-image";
 import { slugify, validateProduct, type FieldErrors, type ProductInput, type VariantInput } from "@/lib/product";
 import { Toast, type ToastMessage } from "../Toast";
 
@@ -62,10 +63,11 @@ function ProductForm({ initial, categories, setNotice, onSaved }: {
   // Description images (2026-10-17): upload to product-images/products/{slug}/desc/
   // and insert an <img> tag at the cursor. Editing-only — a new product has no
   // slug folder until it is saved once.
-  async function insertDescriptionImage(file: File) {
+  async function insertDescriptionImage(original: File) {
     if (!initial.id) return;
     setDescUploading(true);
     try {
+      const { file, width, height } = await compressImage(original);
       const ticket = await createDescriptionImageUpload(initial.id, file.type, file.size);
       if ("error" in ticket) {
         setNotice(ticket.error ?? "Không thể tải ảnh lên.");
@@ -73,12 +75,13 @@ function ProductForm({ initial, categories, setNotice, onSaved }: {
       }
       const { error } = await createClient()
         .storage.from("product-images")
-        .uploadToSignedUrl(ticket.path, ticket.token, file, { contentType: file.type });
+        .uploadToSignedUrl(ticket.path, ticket.token, file, { contentType: file.type, cacheControl: IMAGE_CACHE_SECONDS });
       if (error) {
         setNotice("Không thể tải ảnh lên. Vui lòng thử lại.");
         return;
       }
-      const tag = `<img src="${ticket.publicUrl}" alt="">`;
+      // width / height reserve the space on the storefront before the image loads (no layout shift).
+      const tag = `<img src="${ticket.publicUrl}" alt="" width="${width}" height="${height}">`;
       const el = descRef.current;
       if (el) {
         const s = el.selectionStart ?? form.description.length;

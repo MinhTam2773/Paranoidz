@@ -11,6 +11,7 @@ import {
   setImageColor,
 } from "@/app/(shell)/products/[id]/image-actions";
 import { Toast, type ToastMessage } from "../Toast";
+import { compressImage, IMAGE_CACHE_SECONDS } from "@/lib/compress-image";
 
 export type ProductImage = { id: string; url: string; color: string | null };
 
@@ -47,10 +48,11 @@ export function ImageManager({ productId, productName, images, colors }: {
   }, [confirming]);
 
   // Signed URL from the server → bytes straight to Storage → register the row.
-  async function uploadOne(file: File): Promise<{ error?: string }> {
+  async function uploadOne(original: File): Promise<{ error?: string }> {
+    const { file } = await compressImage(original);
     const ticket = await createImageUpload(productId, file.type, file.size);
     if ("error" in ticket) return ticket;
-    const { error } = await createClient().storage.from("product-images").uploadToSignedUrl(ticket.path, ticket.token, file, { contentType: file.type });
+    const { error } = await createClient().storage.from("product-images").uploadToSignedUrl(ticket.path, ticket.token, file, { contentType: file.type, cacheControl: IMAGE_CACHE_SECONDS });
     if (error) return { error: "Tải lên thất bại." };
     return addProductImage(productId, ticket.path, newColor || null);
   }

@@ -16,7 +16,8 @@ const ALLOWED: Record<string, readonly string[]> = {
   li: [],
   h3: [],
   h4: [],
-  img: ["src", "alt"],
+  // width / height: set by the admin uploader so the space is reserved before the image loads.
+  img: ["src", "alt", "width", "height"],
   a: ["href"],
 };
 
@@ -78,6 +79,8 @@ export function sanitizeDescriptionHtml(input: string): string {
         attrs += ` ${attrName}="${escapeHtml(clean)}"`;
       } else if (attrName === "alt") {
         attrs += ` alt="${escapeHtml(val.slice(0, 200))}"`;
+      } else if (/^\d{1,5}$/.test(val)) {
+        attrs += ` ${attrName}="${val}"`; // width / height: plain pixel numbers only
       }
     }
     if (name === "img" && !attrs.includes("src=")) continue; // img without a valid src is useless
