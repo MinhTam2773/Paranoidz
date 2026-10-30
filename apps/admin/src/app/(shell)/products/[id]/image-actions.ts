@@ -93,6 +93,31 @@ export async function createDescriptionImageUpload(productId: string, contentTyp
   };
 }
 
+// Product video (2026-10-30): uploaded to products/{slug}/video/; the form puts the public URL in
+// products.video_url, which is saved with the product. Size / type also enforced by the bucket
+// (migration 20261030000001).
+const VIDEO_TYPES: Record<string, string> = { "video/mp4": "mp4", "video/webm": "webm" };
+const MAX_VIDEO_BYTES = 50 * 1024 * 1024;
+
+export async function createVideoUpload(productId: string, contentType: string, size: number) {
+  await requireAdmin();
+  const ext = VIDEO_TYPES[contentType];
+  if (!ext) return { error: "Chỉ nhận video MP4 hoặc WebM." };
+  if (!(size > 0 && size <= MAX_VIDEO_BYTES)) return { error: "Video tối đa 50 MB." };
+  const product = await loadProduct(productId);
+  if (!product) return { error: "Không tìm thấy sản phẩm." };
+
+  const admin = createAdminClient();
+  const path = `products/${product.slug}/video/${randomUUID()}.${ext}`;
+  const { data, error } = await admin.storage.from(BUCKET).createSignedUploadUrl(path);
+  if (error) return { error: "Không thể tải video lên. Vui lòng thử lại." };
+  return {
+    path: data.path,
+    token: data.token,
+    publicUrl: admin.storage.from(BUCKET).getPublicUrl(path).data.publicUrl,
+  };
+}
+
 // orderedIds = every image of the product in the new order.
 export async function reorderProductImages(productId: string, orderedIds: string[]): Promise<Result> {
   await requireAdmin();
