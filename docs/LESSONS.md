@@ -30,6 +30,7 @@ Sections: Workflow · Windows & shell · Supabase · Next.js / React / Tailwind 
 - **Node 24 runs `.ts` directly** (type stripping) — handy for quick helper checks — but on Windows an absolute import needs a `file:///C:/...` URL, and the file should be `.mts` to skip the module-type warning.
 - **No pnpm on the machine (2026-10-29):** `npx pnpm …` inside the repo fails `EBADDEVENGINES` (root `package.json` `devEngines` wants pnpm). `npm i pnpm@11.13.0` in a folder outside the repo, then `node <that folder>/node_modules/pnpm/bin/pnpm.mjs install --frozen-lockfile`. On Node 26 it ends with "readStream must be readable" after a postinstall, but every package is linked. A clone in a deep folder fails "Filename too long": `git -c core.longpaths=true clone …`.
 - **Git Bash mangles non-ASCII in `curl -d '<json>'` on Windows** (PostgREST "Empty or invalid json"). Write the payload to a file with Python (`ensure_ascii=False`) and send `--data-binary @file`.
+- pnpm pin `^11.13.0` (root `package.json` devEngines): pnpm 11.28 refuses to fetch 11.13.0 (`ERR_PNPM_BROKEN_PNPM_RELEASE`). `pnpm install --config.pm-on-fail=ignore` installs with the global pnpm instead (2026-10-30).
 
 ## Supabase
 

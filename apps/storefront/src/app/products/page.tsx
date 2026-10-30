@@ -4,7 +4,13 @@ import { Breadcrumb } from "@/components/layout/Breadcrumb";
 import { ProductCard } from "@/components/product/ProductCard";
 import { productCardQuery, toProductCard } from "@/lib/catalog";
 
-export const metadata: Metadata = { title: "Tất cả sản phẩm | Paranoidz" };
+// SEO (audit 2026-10-30): own description + canonical instead of the layout's generic one.
+export const metadata: Metadata = {
+  title: "Tất cả sản phẩm | Paranoidz",
+  description:
+    "Áo thun, polo local brand, balo, túi và phụ kiện streetwear Paranoidz. Sản xuất tại Việt Nam, đổi trả 7 ngày, thanh toán khi nhận hàng (COD).",
+  alternates: { canonical: "/products" },
+};
 
 // ISR (ARCHITECTURE.md §2.2): rebuilt at most once a minute. Shown stock may lag by that much —
 // display only; place_order() re-checks stock atomically.

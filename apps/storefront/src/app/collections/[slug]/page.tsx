@@ -42,8 +42,18 @@ const getCollection = cache(async (slug: string) => {
 });
 
 export async function generateMetadata({ params }: PageProps<"/collections/[slug]">): Promise<Metadata> {
-  const collection = await getCollection((await params).slug);
-  return { title: collection ? `${collection.name} | Paranoidz` : "Không tìm thấy | Paranoidz" };
+  const slug = (await params).slug;
+  const collection = await getCollection(slug);
+  if (!collection) return { title: "Không tìm thấy | Paranoidz" };
+  // SEO (audit 2026-10-30): collections inherited the layout's generic description (shared by
+  // 13 pages) and had no canonical. The admin's collection description wins when filled in.
+  return {
+    title: `${collection.name} | Paranoidz`,
+    description:
+      collection.description ||
+      `Bộ sưu tập ${collection.name} của Paranoidz — streetwear Việt Nam, đổi trả 7 ngày, thanh toán khi nhận hàng (COD).`,
+    alternates: { canonical: `/collections/${slug}` },
+  };
 }
 
 export default async function CollectionPage({ params }: PageProps<"/collections/[slug]">) {
