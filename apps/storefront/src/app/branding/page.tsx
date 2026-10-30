@@ -10,7 +10,13 @@ import embroidery from "../../../public/branding/embroidery.jpg";
 import polo from "../../../public/branding/polo.jpg";
 import studio from "../../../public/branding/studio.jpg";
 
-export const metadata: Metadata = { title: "Thương hiệu | Paranoidz" };
+// SEO (audit 2026-10-30): own description + canonical instead of the layout's generic one.
+export const metadata: Metadata = {
+  title: "Thương hiệu | Paranoidz",
+  description:
+    "Câu chuyện Paranoidz — local brand streetwear Việt Nam: thiết kế táo bạo, hình thêu và dập nổi, chất liệu nghiêm túc, sản xuất tại Việt Nam.",
+  alternates: { canonical: "/branding" },
+};
 
 // Brand story (Stitch "PARANOIDZ - Branding Page", spec 2026-10-11 §2). The hero is a dark block,
 // not a photo: DESIGN.md keeps the hero banner for the homepage.
