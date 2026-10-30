@@ -33,7 +33,7 @@ export function Header() {
                 key={href}
                 href={href}
                 aria-current={active ? "page" : undefined}
-                className={`relative py-1 text-nav uppercase transition-colors duration-200 ${
+                className={`relative whitespace-nowrap py-1 text-nav uppercase transition-colors duration-200 ${
                   active ? "text-text-primary" : "text-text-secondary hover:text-text-primary"
                 }`}
               >
@@ -51,11 +51,11 @@ export function Header() {
         <div className="ml-auto flex items-center gap-1 lg:ml-0 lg:gap-2">
           <Link
             href="/order-lookup"
-            className="mr-1 hidden items-center rounded-sm bg-bg-dark px-4 py-2.5 text-nav font-bold uppercase text-text-on-dark transition-colors hover:bg-black lg:flex"
+            className="mr-1 hidden items-center whitespace-nowrap rounded-sm bg-bg-dark px-4 py-2.5 text-nav font-bold uppercase text-text-on-dark transition-colors hover:bg-black xl:flex"
           >
             Tra cứu đơn hàng
           </Link>
-          <AccountLink icon className="hidden items-center gap-2 text-nav uppercase text-text-primary lg:flex" />
+          <AccountLink icon className="hidden size-11 items-center justify-center text-text-primary lg:flex" />
           <CartLink />
           <MobileNav />
         </div>
