@@ -14,6 +14,7 @@ import { ProductRow } from "@/components/home/ProductRow";
 import { HeroCarousel } from "@/components/home/HeroCarousel";
 import { ProductCard, type ProductCardData } from "@/components/product/ProductCard";
 import { productCardQuery, toProductCard } from "@/lib/catalog";
+import { HOTLINE, SITE_URL } from "@/lib/site";
 
 // Homepage (DESIGN.md §5 page structure, items 5–10). ISR like /products: rebuilt at most once a
 // minute. Homepage v2 2026-10-16: video hero (shop's own TikTok clip) + marquee band +
@@ -35,6 +36,38 @@ export const metadata: Metadata = {
       "Streetwear Việt Nam — thiết kế táo bạo, chất liệu nghiêm túc, giá không trên trời. Thanh toán khi nhận hàng (COD).",
     url: "/",
   },
+};
+
+// SEO (audit 2026-10-30): the homepage had no structured data. Organization ties the brand to
+// its Shopee shop and hotline for Google / AI search; WebSite names the site in results.
+// Social profiles are left out until SOCIAL_LINKS has real URLs (lib/site.ts placeholders).
+const ORGANIZATION_JSON_LD = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": `${SITE_URL}/#organization`,
+      name: "Paranoidz",
+      url: SITE_URL,
+      logo: `${SITE_URL}/home/logo-paranoidz-dark.png`,
+      sameAs: ["https://shopee.vn/paranoidz.studio"],
+      contactPoint: {
+        "@type": "ContactPoint",
+        telephone: `+84-${HOTLINE.replace(/^0/, "").replace(/\s/g, "-")}`,
+        contactType: "customer service",
+        areaServed: "VN",
+        availableLanguage: "vi",
+      },
+    },
+    {
+      "@type": "WebSite",
+      "@id": `${SITE_URL}/#website`,
+      name: "Paranoidz",
+      url: SITE_URL,
+      inLanguage: "vi",
+      publisher: { "@id": `${SITE_URL}/#organization` },
+    },
+  ],
 };
 
 const GRID_SIZE = 6;
@@ -124,6 +157,10 @@ export default async function HomePage() {
 
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(ORGANIZATION_JSON_LD).replace(/</g, "\\u003c") }}
+      />
       <HeroCarousel />
       <Marquee />
       <GachaSection />

@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { CartView } from "@/components/cart/CartView";
 import { Breadcrumb } from "@/components/layout/Breadcrumb";
 
-export const metadata: Metadata = { title: "Giỏ hàng | Paranoidz" };
+// noindex like checkout / account: a cart is per-visitor, never a search result.
+export const metadata: Metadata = { title: "Giỏ hàng | Paranoidz", robots: { index: false } };
 
 export default function CartPage() {
   return (

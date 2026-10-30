@@ -5,7 +5,12 @@ import { FeedbackList, type FeedbackReview } from "@/components/feedback/Feedbac
 import { Breadcrumb } from "@/components/layout/Breadcrumb";
 import { Stars } from "@/components/product/ReviewSection";
 
-export const metadata: Metadata = { title: "Đánh giá khách hàng | Paranoidz" };
+// SEO (audit 2026-10-30): own description + canonical instead of the layout's generic one.
+export const metadata: Metadata = {
+  title: "Đánh giá khách hàng | Paranoidz",
+  description: "Đánh giá và hình ảnh thật từ khách hàng đã mua áo thun, polo, balo Paranoidz.",
+  alternates: { canonical: "/feedback" },
+};
 
 // Every visible review in the store (RLS: visible reviews and photos only). ISR like the catalog;
 // the whole list is fetched and tabbed client-side (spec 2026-10-11, approach A).
