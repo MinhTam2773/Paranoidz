@@ -89,7 +89,7 @@ Fonts load through `next/font` in `app/layout.tsx`: Inter 400–800 (`latin` + `
 ### Header (one row)
 - `Header.tsx`. Sticky `top-0`, `z-40`, 1px `--border` bottom. Background `--bg-primary` at 95% with `backdrop-blur` on a separate `aria-hidden` layer (never on the header itself: it would trap the mobile menu, see docs/LESSONS.md).
 - Container `max-w-7xl`, height 64px (72px from `lg`), side padding 16px / 24px.
-- **Desktop (≥1024px)**, left to right: logo → nav links (gap 28px) → search (224px, 256px from `xl`, pushed right) → "Đăng nhập / Đăng ký" with a user icon (`text-nav`, becomes "Tài khoản" when signed in) → cart.
+- **Desktop (≥1024px)**, left to right: logo → nav links (gap 28px) → search (224px, 256px from `xl`, pushed right) → "Tra cứu đơn hàng" (`--bg-dark` button, from `xl` only; the footer and mobile menu have it below that) → account: a 44px user-icon button, label "Đăng nhập / Đăng ký" / "Tài khoản" as `sr-only` text and hover title → cart. Every item stays on one line (2026-10-30: the labels used to wrap onto two lines).
 - Nav shows four links: Outlet 2026, New collection, Sản phẩm, Đánh giá khách hàng (`NAV_LINKS.slice(1, 5)` in `lib/site.ts`). `text-nav` uppercase, `--text-secondary` → `--text-primary` on hover; active = `--text-primary` + 2px `--accent` underline. Trang chủ, Thương hiệu and Chính sách are only in the mobile menu (Chính sách also in the footer).
 - Cart: bag icon in a 44px square, red 20px count badge top-right (`text-caption`, white); the badge pops when a fly-to-cart thumbnail lands.
 - **Mobile (<1024px)**: logo left; right side: search icon, cart, hamburger (each 44px). The search icon opens a full-width search row under the header.
