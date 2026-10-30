@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState, useTransition, type FormEvent } from "react";
 import { saveProduct } from "@/app/(shell)/products/actions";
-import { createDescriptionImageUpload } from "@/app/(shell)/products/[id]/image-actions";
+import { createDescriptionImageUpload, createVideoUpload } from "@/app/(shell)/products/[id]/image-actions";
 import { createClient } from "@paranoidz/db/client";
 import { compressImage, IMAGE_CACHE_SECONDS } from "@/lib/compress-image";
 import { slugify, validateProduct, type FieldErrors, type ProductInput, type VariantInput } from "@/lib/product";
@@ -96,6 +96,33 @@ function ProductForm({ initial, categories, setNotice, onSaved }: {
       }
     } finally {
       setDescUploading(false);
+    }
+  }
+
+  const videoFileRef = useRef<HTMLInputElement>(null);
+  const [videoUploading, setVideoUploading] = useState(false);
+
+  // Product video (2026-10-30): upload to product-images/products/{slug}/video/ and fill the
+  // video URL field; it is stored when the form is saved. Editing-only, like description images.
+  async function uploadVideo(file: File) {
+    if (!initial.id) return;
+    setVideoUploading(true);
+    try {
+      const ticket = await createVideoUpload(initial.id, file.type, file.size);
+      if ("error" in ticket) {
+        setNotice(ticket.error ?? "Không thể tải video lên.");
+        return;
+      }
+      const { error } = await createClient()
+        .storage.from("product-images")
+        .uploadToSignedUrl(ticket.path, ticket.token, file, { contentType: file.type, cacheControl: IMAGE_CACHE_SECONDS });
+      if (error) {
+        setNotice("Không thể tải video lên. Vui lòng thử lại.");
+        return;
+      }
+      set("videoUrl", ticket.publicUrl);
+    } finally {
+      setVideoUploading(false);
     }
   }
 
@@ -230,8 +257,31 @@ function ProductForm({ initial, categories, setNotice, onSaved }: {
           <Field id="giftLabel" label="Quà tặng kèm" hint='Hiện badge "🎁 ..." trên card, ví dụ "Quà tặng kèm". Để trống nếu không có. Quà do shop tự bỏ vào đơn khi đóng gói.'>
             <input id="giftLabel" value={form.giftLabel} onChange={(e) => set("giftLabel", e.target.value)} maxLength={40} placeholder="Quà tặng kèm" className={input} />
           </Field>
-          <Field id="videoUrl" label="Video sản phẩm" hint="Dán đường dẫn công khai của video đã tải lên bucket product-images. Để trống nếu không có video. Video hiện ở ô đầu gallery trang chi tiết, tự phát không tiếng, khách bấm mới bật tiếng.">
+          <Field id="videoUrl" label="Video sản phẩm" hint="Tải video MP4 / WebM (tối đa 50 MB) hoặc dán đường dẫn công khai. Để trống nếu không có video. Video hiện ở ô đầu gallery trang chi tiết, tự phát không tiếng, khách bấm mới bật tiếng. Bấm Lưu để lưu video.">
             <input id="videoUrl" value={form.videoUrl} onChange={(e) => set("videoUrl", e.target.value)} maxLength={500} placeholder="https://..." className={input} />
+            {!creating && (
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  disabled={videoUploading}
+                  onClick={() => videoFileRef.current?.click()}
+                  className="h-9 rounded-sm border border-border px-4 text-button uppercase transition-colors duration-200 hover:border-text-primary hover:text-text-primary disabled:opacity-50"
+                >
+                  {videoUploading ? "Đang tải…" : "Tải video"}
+                </button>
+                <input
+                  ref={videoFileRef}
+                  type="file"
+                  accept="video/mp4,video/webm"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    e.target.value = "";
+                    if (f) uploadVideo(f);
+                  }}
+                />
+              </div>
+            )}
           </Field>
           <Field id="videoPosterUrl" label="Ảnh bìa video" hint="Ảnh hiện trước khi video phát và làm thumbnail video. Để trống thì lấy ảnh sản phẩm đầu tiên.">
             <input id="videoPosterUrl" value={form.videoPosterUrl} onChange={(e) => set("videoPosterUrl", e.target.value)} maxLength={500} placeholder="https://..." className={input} />
