@@ -63,6 +63,7 @@ ARCHITECTURE.md §8.4 / §8.5 (loyalty): waits on the proposal in Now #5. §8.3 
 
 ## Last session
 
+- 2026-10-30: Homepage fixes on `fix/home-perf`: React #418 from the flash-sale countdown, lookbook videos only load when scrolled to (details in `docs/DONE.md`).
 - 2026-10-29: The pixel the code used (`1535409166877970`) isn't in the client's Meta business and the client's account has no access to it, so a new one was created there (`2608444106337265`) and the id swapped (`fix/meta-pixel-id`).
 - 2026-10-29: Meta ads tracking on `feat/meta-tracking` (Now #8, details in `docs/DONE.md`). Code only: nothing reaches Meta's Conversions API until `META_CAPI_TOKEN` is set in Vercel Production, and the catalog isn't created yet.
 - 2026-10-22: Fixed the admin product editor dropping "Lượt bán Shopee" / "Quà tặng kèm" on save (branch `fix/admin-product-badge-update`, e2e A15). After it deploys, aT re-types both fields per product so the card badges show on prod.

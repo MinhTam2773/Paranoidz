@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { InViewVideo } from "./InViewVideo";
 
 // Homepage v2 2026-10-16: big marquee band (Hydra-style) + lookbook grid
 // with the shop's real-life photos from Drive.
@@ -84,16 +85,7 @@ export function Lookbook() {
       <div className="mt-2 grid grid-cols-3 gap-2 sm:mt-3 sm:gap-3 lg:grid-cols-5">
         {CLIPS.map((clip) => (
           <div key={clip.src} className="relative aspect-square overflow-hidden rounded-sm bg-bg-dark">
-            <video
-              className="absolute inset-0 h-full w-full object-cover"
-              src={clip.src}
-              autoPlay
-              muted
-              loop
-              playsInline
-              preload="metadata"
-              aria-label={`Video ${clip.label}`}
-            />
+            <InViewVideo src={clip.src} label={clip.label} />
           </div>
         ))}
       </div>
