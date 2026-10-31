@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState, useTransition, type FocusEvent, type FormEvent, type ReactNode } from "react";
 import { getCartItems, type CartItem } from "@/app/cart/actions";
@@ -32,6 +31,7 @@ import { BANK_TRANSFER, vietqrImageUrl, type PaymentMethod } from "@/lib/payment
 import { ProvinceSelect } from "./ProvinceSelect";
 import { WardSelect } from "./WardSelect";
 import { PurchaseTracker, trackMeta, type MetaContent } from "@/components/tracking/MetaPixel";
+import { ThumbImage } from "@/components/product/ThumbImage";
 
 type Placed = Extract<CheckoutResult, { ok: true }>["order"];
 
@@ -622,7 +622,7 @@ export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; acc
             {rows.map(({ line, item }) => (
               <li key={line.variantId} className="flex gap-3">
                 <div className="relative aspect-square w-16 shrink-0 overflow-hidden rounded-sm bg-bg-tertiary">
-                  {item?.imageUrl && <Image src={item.imageUrl} alt={item.name} fill sizes="64px" className="object-cover" />}
+                  {item?.imageUrl && <ThumbImage src={item.imageUrl} thumb={120} alt={item.name} fill sizes="64px" className="object-cover" />}
                 </div>
                 <div className="flex min-w-0 flex-1 flex-col gap-1">
                   <span className="text-product-name">{item?.name ?? "Sản phẩm không còn bán"}</span>

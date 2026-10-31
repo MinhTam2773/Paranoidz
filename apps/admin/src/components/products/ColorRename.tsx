@@ -6,6 +6,7 @@ import { useState, useTransition } from "react";
 import { createClient } from "@paranoidz/db/client";
 import { renameColor, setColorHex } from "@/app/(shell)/products/actions";
 import { addProductImage, createImageUpload } from "@/app/(shell)/products/[id]/image-actions";
+import { uploadThumbs } from "@/lib/upload-thumbs";
 import { Toast, type ToastMessage } from "../Toast";
 
 const input =
@@ -48,6 +49,7 @@ export function ColorRename({ productId, colors, images }: { productId: string; 
       setUploading(null);
       return;
     }
+    await uploadThumbs(productId, ticket.path, file);
     const res = await addProductImage(productId, ticket.path, colorName);
     setToast(res.error ? { ok: false, text: res.error } : { ok: true, text: `Đã thêm ảnh cho màu "${colorName}"` });
     setUploading(null);

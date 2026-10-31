@@ -12,6 +12,7 @@ import {
 } from "@/app/(shell)/products/[id]/image-actions";
 import { Toast, type ToastMessage } from "../Toast";
 import { compressImage, IMAGE_CACHE_SECONDS } from "@/lib/compress-image";
+import { uploadThumbs } from "@/lib/upload-thumbs";
 
 export type ProductImage = { id: string; url: string; color: string | null };
 
@@ -54,6 +55,7 @@ export function ImageManager({ productId, productName, images, colors }: {
     if ("error" in ticket) return ticket;
     const { error } = await createClient().storage.from("product-images").uploadToSignedUrl(ticket.path, ticket.token, file, { contentType: file.type, cacheControl: IMAGE_CACHE_SECONDS });
     if (error) return { error: "Tải lên thất bại." };
+    await uploadThumbs(productId, ticket.path, file);
     return addProductImage(productId, ticket.path, newColor || null);
   }
 
