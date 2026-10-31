@@ -1,7 +1,7 @@
-import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { formatVnd } from "@/lib/format";
+import { ThumbImage } from "@/components/product/ThumbImage";
 
 // reviewHref is set only by "My orders" for a delivered order's item: it deep-links to that
 // product's review tab. Guest lookup never sets it, so no review button appears there.
@@ -23,7 +23,7 @@ export function OrderSummary({ items, subtotal, discount, shippingFee, total, ch
         {items.map((item, i) => (
           <li key={i} className="flex gap-3">
             <div className="relative aspect-square w-16 shrink-0 overflow-hidden rounded-sm bg-bg-tertiary">
-              {item.imageUrl && <Image src={item.imageUrl} alt={item.name} fill sizes="64px" className="object-cover" />}
+              {item.imageUrl && <ThumbImage src={item.imageUrl} thumb={120} alt={item.name} fill sizes="64px" className="object-cover" />}
             </div>
             <div className="flex min-w-0 flex-1 flex-col gap-1">
               <span className="text-product-name">{item.name}</span>

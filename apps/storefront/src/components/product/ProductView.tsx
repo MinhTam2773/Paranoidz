@@ -16,6 +16,7 @@ import {
 } from "@/lib/delivery-method";
 import { recordView } from "@/lib/recently-viewed";
 import { trackMeta } from "@/components/tracking/MetaPixel";
+import { ThumbImage } from "@/components/product/ThumbImage";
 
 export type ProductVariant = {
   id: string;
@@ -164,6 +165,7 @@ export function ProductView({
   const purchaseThumbnail =
     activeItem?.kind === "video" ? videoPoster : (mainImage?.url ?? null);
   const [muted, setMuted] = useState(true);
+  const [videoOn, setVideoOn] = useState(false);
 
   // Picking a colour shows only that colour's first photo in the main frame
   // (Shopee-style); the strip below keeps every photo + the video.
@@ -181,7 +183,18 @@ export function ProductView({
             for the thumbnail strip below to sit on screen without scrolling. */}
         <div className="flex flex-col gap-2 lg:col-span-6">
           <div className="relative aspect-square overflow-hidden rounded-sm bg-bg-secondary">
-            {activeItem?.kind === "video" ? (
+            {activeItem?.kind === "video" && !videoOn ? (
+              // Click to play (2026-10-31): autoplay downloaded the whole video (up to ~6 MB) on every
+              // visit to the page, a large share of the Storage egress over the free plan.
+              <button type="button" onClick={() => setVideoOn(true)} aria-label="Phát video" className="group absolute inset-0">
+                {(activeItem.poster ?? gallery[0]?.url) && (
+                  <Image src={(activeItem.poster ?? gallery[0]?.url)!} alt={name} fill preload sizes="(min-width: 1280px) 620px, (min-width: 1024px) 50vw, 100vw" className="object-cover" />
+                )}
+                <span aria-hidden="true" className="absolute left-1/2 top-1/2 flex size-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-bg-dark/60 pl-1 text-h2 text-text-on-dark transition-colors group-hover:bg-bg-dark/80">
+                  ▶
+                </span>
+              </button>
+            ) : activeItem?.kind === "video" ? (
               <>
                 <video
                   key={activeItem.url}
@@ -198,7 +211,7 @@ export function ProductView({
                   type="button"
                   onClick={() => setMuted((m) => !m)}
                   aria-label={muted ? "Bật tiếng video" : "Tắt tiếng video"}
-                  className="absolute bottom-3 right-3 rounded-sm bg-black/60 px-2.5 py-1.5 text-caption font-medium text-white"
+                  className="absolute bottom-3 right-3 rounded-sm bg-bg-dark/60 px-2.5 py-1.5 text-caption font-medium text-text-on-dark"
                 >
                   {muted ? "Bật tiếng" : "Tắt tiếng"}
                 </button>
@@ -230,8 +243,9 @@ export function ProductView({
                     i === activeImage ? "border-text-primary" : "border-transparent hover:border-border-hover"
                   }`}
                 >
-                  <Image
+                  <ThumbImage
                     src={item.kind === "video" ? (item.poster ?? gallery[0]?.url ?? "") : item.url}
+                    thumb={120}
                     alt=""
                     fill
                     sizes="120px"

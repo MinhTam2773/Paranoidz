@@ -1,7 +1,7 @@
-import Image from "next/image";
 import Link from "next/link";
 import { createPublicClient } from "@paranoidz/db/public";
 import { formatVnd } from "@/lib/format";
+import { ThumbImage } from "@/components/product/ThumbImage";
 
 type Offer = {
   id: string;
@@ -67,7 +67,7 @@ export function BundleOffers({ offers }: { offers: Offer[] }) {
                       <span className="relative">
                         <span className="relative block aspect-square overflow-hidden rounded-sm bg-bg-secondary">
                           {p.imageUrl && (
-                            <Image src={p.imageUrl} alt="" fill sizes="(min-width: 1024px) 180px, 30vw" className="object-cover transition-transform duration-300 group-hover:scale-105" />
+                            <ThumbImage src={p.imageUrl} thumb={600} alt="" fill sizes="(min-width: 1024px) 180px, 30vw" className="object-cover transition-transform duration-300 group-hover:scale-105" />
                           )}
                         </span>
                         {i > 0 && <span aria-hidden="true" className="absolute top-1/2 -left-6 flex w-6 -translate-y-1/2 justify-center text-h3 text-text-muted">+</span>}

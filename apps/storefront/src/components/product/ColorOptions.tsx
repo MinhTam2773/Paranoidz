@@ -1,5 +1,5 @@
-import Image from "next/image";
 import { optionClass } from "./ProductView";
+import { ThumbImage } from "@/components/product/ThumbImage";
 
 // Colour choice on the product page and the quick-add sheet. A colour with its
 // own photo gets a Shopee-style button (thumbnail + name, red border and tick
@@ -32,7 +32,7 @@ export function ColorOptions({
               name === selected ? "border-accent" : "border-border hover:border-border-hover"
             }`}
           >
-            <Image src={imageUrl} alt="" width={36} height={36} className="rounded-sm object-cover" />
+            <ThumbImage src={imageUrl} thumb={120} alt="" width={36} height={36} className="rounded-sm object-cover" />
             <span className="text-button">{name}</span>
             {name === selected && (
               <span
