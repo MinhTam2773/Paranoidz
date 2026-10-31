@@ -1,10 +1,10 @@
 "use client";
 
-import Image from "next/image";
 import Link, { useLinkStatus } from "next/link";
 import { useState } from "react";
 import { formatVnd } from "@/lib/format";
 import { WishlistButton } from "./WishlistButton";
+import { ThumbImage } from "@/components/product/ThumbImage";
 
 export type ProductCardData = {
   id: string;
@@ -65,9 +65,10 @@ export function ProductCard({ product, eager = false }: { product: ProductCardDa
         <Link href={href} tabIndex={-1} aria-hidden className="absolute inset-0">
           <PendingVeil />
           {images.filter((src) => src !== null).map((src) => (
-            <Image
+            <ThumbImage
               key={src}
               src={src}
+              thumb={600}
               alt=""
               fill
               loading={eager || warm ? "eager" : undefined}
@@ -127,7 +128,7 @@ export function ProductCard({ product, eager = false }: { product: ProductCardDa
                         c.name === color ? "border-transparent ring-2 ring-text-primary ring-offset-2" : "border-border"
                       }`}
                     >
-                      <Image src={c.imageUrl} alt="" width={36} height={36} className="size-full object-cover" />
+                      <ThumbImage src={c.imageUrl} thumb={120} alt="" width={36} height={36} className="size-full object-cover" />
                     </span>
                   </button>
                   <span className="pointer-events-none absolute -top-1 left-1/2 z-20 -translate-x-1/2 -translate-y-full whitespace-nowrap rounded-sm border border-border bg-bg-primary px-2 py-1 text-caption opacity-0 shadow-1 transition-opacity peer-hover:opacity-100">

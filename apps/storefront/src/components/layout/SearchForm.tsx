@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
@@ -9,6 +8,7 @@ import type { ProductCardData } from "@/components/product/ProductCard";
 import { formatVnd } from "@/lib/format";
 import { parseOrderNumber } from "@/lib/order-number";
 import { SearchIcon } from "./icons";
+import { ThumbImage } from "@/components/product/ThumbImage";
 
 const MIN_CHARS = 2;
 const DEBOUNCE_MS = 250;
@@ -184,7 +184,7 @@ export function SearchForm({
                 className={`flex items-center gap-3 px-3 py-2 ${optionClass(i)}`}
               >
                 <span className="relative aspect-square w-9 shrink-0 overflow-hidden rounded-sm bg-bg-secondary">
-                  {p.imageUrl && <Image src={p.imageUrl} alt="" fill sizes="36px" className="object-cover" />}
+                  {p.imageUrl && <ThumbImage src={p.imageUrl} thumb={120} alt="" fill sizes="36px" className="object-cover" />}
                 </span>
                 <span className="min-w-0 flex-1 truncate text-product-name text-text-primary">{p.name}</span>
                 {p.soldOut ? (

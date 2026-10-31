@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { getCartItems, type CartItem } from "@/app/cart/actions";
@@ -9,6 +8,7 @@ import { QuantityStepper } from "@/components/product/QuantityStepper";
 import { BundleEstimate, useBundleEstimate } from "./BundleEstimate";
 import { removeFromCart, setCartQty, useCart, useCartReady } from "@/lib/cart";
 import { formatVnd } from "@/lib/format";
+import { ThumbImage } from "@/components/product/ThumbImage";
 
 const primaryClass =
   "flex h-12 w-full items-center justify-center rounded-sm bg-accent text-button uppercase text-text-on-dark transition-all duration-200 hover:-translate-y-px hover:bg-accent-hover hover:shadow-accent";
@@ -73,7 +73,7 @@ export function CartView() {
                 href={item ? `/products/${item.slug}` : "/products"}
                 className="relative aspect-square w-24 shrink-0 overflow-hidden rounded-sm bg-bg-secondary sm:w-28"
               >
-                {item?.imageUrl && <Image src={item.imageUrl} alt={item.name} fill sizes="112px" className="object-cover" />}
+                {item?.imageUrl && <ThumbImage src={item.imageUrl} thumb={600} alt={item.name} fill sizes="112px" className="object-cover" />}
               </Link>
               <div className="flex min-w-0 flex-1 flex-col gap-3">
                 <div className="flex items-start justify-between gap-2">

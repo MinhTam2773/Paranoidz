@@ -180,7 +180,7 @@ Fonts load through `next/font` in `app/layout.tsx`: Inter 400–800 (`latin` + `
 
 ### Product page
 - Grid of 12 from `lg`: gallery 7 columns, info 5 columns (48px gap; 32px stacked below `lg`).
-- Gallery: square main image (`--bg-secondary`, `radius-sm`), then 5-column square thumbnails; the current one has a `--text-primary` border. Colourway photos first.
+- Gallery: square main image (`--bg-secondary`, `radius-sm`), then 5-column square thumbnails; the current one has a `--text-primary` border. Colourway photos first. A product video is the first tile: the main frame shows its poster with a centred ▶ (64px round, `--bg-dark` at 60%) and loads the video only when tapped, then plays muted with a "Bật tiếng" toggle (2026-10-31, Storage egress). Thumbnails, cards, swatches, cart / checkout / search / order lines use the 600 / 120 px thumbnails (`ThumbImage`, `@paranoidz/db/thumbs`), falling back to the original.
 - Info column (sticky from `lg`): name as `text-h2` uppercase H1 + wishlist heart; price `text-h3` bold (red on sale) + old price; "Màu: …" + `ColorOptions`; "Size" + option buttons + "Bảng size" link; "Chỉ còn N sản phẩm" with a yellow dot at ≤ 3; quantity stepper + primary "THÊM VÀO GIỎ"; secondary "MUA NGAY" (skips the cart); trust row.
 - Below: bundle offers, then tabs "Chi tiết sản phẩm" / "Bảng size" / "Đánh giá (n)" (`text-nav` bold uppercase, 2px underline on the active one).
 - **Sticky buy bar** (all widths): fixed to the bottom, white at 95% with blur, `shadow-2`, shown only while the inline buttons and the footer are both off screen. Thumbnail (56px, from 640px), name (15px), price + chosen colour / size, and a primary button ("THÊM VÀO GIỎ", or "CHỌN SIZE", which scrolls to the sizes).
