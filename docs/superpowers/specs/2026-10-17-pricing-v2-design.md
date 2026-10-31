@@ -110,6 +110,8 @@ Every PR: smoke cases, migration test → smoke → prod, then merge (`master` i
 
 ## Hand-off: checkout API for the storefront (PR C)
 
+**Built 2026-10-31 on PR #65 itself** (`CheckoutView.tsx`, owner's call), so the UI and the prices ship together. The shapes below are what it uses.
+
 Server actions in `apps/storefront/src/app/checkout/actions.ts`. Today's `CheckoutView` keeps working unchanged (old fields are filled for it), but it can't show free shipping, the gift or several codes. Ship the UI changes **with** PR C, or 2+ shirt orders will show a shipping fee the server doesn't charge.
 
 **`quoteOrder({ items, phone, voucher, vouchers?, deliveryMethod? })`**
