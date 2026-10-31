@@ -24,8 +24,10 @@ test("S9 bundle: offer on the product page, combo discount at checkout and on th
 
   await page.goto("/checkout");
   await fillDelivery(page, { phone: uniquePhone() });
-  // Today's checkout shows one discount label (the codes); the amount is combo + codes.
-  await expect(page.getByText("−₫85.000")).toBeVisible();
+  // One line each: the combo, then "Khách mua lần đầu" on what's left. ₫315.000 ships free (₫199.000+).
+  await expect(page.getByText("−₫50.000")).toBeVisible();
+  await expect(page.getByText("−₫35.000")).toBeVisible();
+  await expect(page.getByText("Miễn phí").first()).toBeVisible();
 
   await placeOrderButton(page).click();
   const number = await placedOrderNumber(page);

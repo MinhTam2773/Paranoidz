@@ -19,9 +19,9 @@ import { GACHA_COOKIE } from "@/lib/gacha";
 // addressId: the saved address the form was filled from, if untouched (links orders.address_id).
 // deliveryMethod: "standard" | "express", chosen on the product page / checkout (validated below).
 // paymentMethod: "bank_transfer" is special; anything else falls back to COD.
-// Pricing v2 (all optional until the checkout picker ships):
+// Pricing v2 (optional):
 //   vouchers: the codes picked in the checkout list; absent = the listed "every order" codes
-//     (PDZWELCOME), so nobody loses the 10 % meanwhile. The typed `voucher` field is added on top.
+//     (PDZWELCOME), the picker's default. The typed `voucher` field is added on top.
 //   expectedTotal / flashWindowStart: what the page showed (from quoteOrder); a different
 //     total at submit comes back as priceChanged instead of charging a total nobody saw.
 export type CheckoutInput = {
@@ -293,21 +293,9 @@ function voucherMessage(code: string) {
   return (!res.ok && res.fieldErrors?.voucher) || null;
 }
 
-// The first block keeps the shape today's checkout page reads (prices at LIST price, with the
-// flash saving as its own line, so the page's own list subtotal − discount still gives the total).
-// The rest is pricing v2, for the voucher picker (ARCHITECTURE.md §5, design D6).
+// Pricing v2 (ARCHITECTURE.md §5): the checkout's lines, discounts, voucher picker and perks.
 export type OrderQuote = {
-  subtotal: number; // list prices
-  discount: number; // flash saving + combo + vouchers
-  source: "auto_first5" | "promo" | "bundle" | null; // "auto_first5" no longer happens (pricing v2)
-  pct: number | null;
-  code: string | null;
-  flashPct: number | null;
-  flashDiscount: number | null;
   bundles: { name: string; sets: number }[];
-  phoneKnown: boolean;
-  voucherError: string | null;
-  // pricing v2
   chargedSubtotal: number; // flash prices included; what `combo` and `vouchers` apply to
   lines: { variantId: string; qty: number; listPrice: number; price: number; flash: boolean }[];
   combo: number;
@@ -351,29 +339,15 @@ export async function quoteOrder(input: {
     return null;
   }
   const q = data as {
-    list_subtotal: number; subtotal: number; discount: number; combo: number; flash_pct: number | null;
-    bundles: { name: string; sets: number }[] | null; phone_known: boolean; flash_window_start: string | null;
+    subtotal: number; combo: number; bundles: { name: string; sets: number }[] | null; flash_window_start: string | null;
     lines: { variant_id: string; qty: number; list_price: number; price: number; flash: boolean }[];
     vouchers: { code: string; type: "standing" | "promo"; pct: number; amount: number }[];
     voucher_errors: { code: string; error: string }[];
     available_vouchers: { code: string; type: "standing" | "promo"; pct: number; cap_amount: number | null; expires_at: string | null }[];
     free_shipping: boolean; gift: { eligible: boolean; in_stock: boolean };
   };
-  const flashSaving = q.list_subtotal - q.subtotal;
-  const voucherTotal = q.vouchers.reduce((sum, v) => sum + v.amount, 0);
-  const base = q.subtotal - q.combo;
   return {
-    subtotal: q.list_subtotal,
-    discount: flashSaving + q.discount,
-    // Today's page shows one label: the codes ("PDZWELCOME, SALE15") with their combined %.
-    source: q.vouchers.length ? "promo" : q.combo > 0 ? "bundle" : null,
-    pct: q.vouchers.length ? (q.vouchers.length === 1 ? q.vouchers[0].pct : Math.round((voucherTotal / Math.max(base, 1)) * 100)) : null,
-    code: q.vouchers.length ? q.vouchers.map((v) => v.code).join(", ") : null,
-    flashPct: flashSaving > 0 ? q.flash_pct : null,
-    flashDiscount: flashSaving > 0 ? flashSaving : null,
     bundles: (q.bundles ?? []).map((b) => ({ name: b.name, sets: b.sets })),
-    phoneKnown: q.phone_known,
-    voucherError: q.voucher_errors.length ? voucherMessage(`${q.voucher_errors[0].error}:${q.voucher_errors[0].code}`) : null,
     chargedSubtotal: q.subtotal,
     lines: q.lines.map((l) => ({ variantId: l.variant_id, qty: l.qty, listPrice: l.list_price, price: l.price, flash: l.flash })),
     combo: q.combo,
