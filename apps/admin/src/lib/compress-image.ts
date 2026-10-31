@@ -8,10 +8,11 @@ const QUALITY = 0.82;
 // One year: every upload gets a new UUID path, so an object never changes.
 export const IMAGE_CACHE_SECONDS = "31536000";
 
-export async function compressImage(file: File): Promise<{ file: File; width: number; height: number }> {
+// maxWidth: smaller for the storefront thumbnails (@paranoidz/db/thumbs).
+export async function compressImage(file: File, maxWidth = MAX_WIDTH): Promise<{ file: File; width: number; height: number }> {
   // imageOrientation "from-image": phone photos come out the right way up.
   const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
-  const scale = Math.min(1, MAX_WIDTH / bitmap.width);
+  const scale = Math.min(1, maxWidth / bitmap.width);
   const width = Math.round(bitmap.width * scale);
   const height = Math.round(bitmap.height * scale);
 
