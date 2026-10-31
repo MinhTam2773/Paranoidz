@@ -1,6 +1,6 @@
 -- Pricing v2, step 3 (2026-10-27): the new rules (ARCHITECTURE.md §5 "Pricing v2",
 -- docs/superpowers/specs/2026-10-17-pricing-v2-design.md, PR C). Columns came in
--- 20261026000001; this switches the functions over.
+-- 20261030000002; this switches the functions over.
 --   1. Item price = flash price inside a window for the window's picks, else list
 --      price. Rounded like the storefront's flashPrice() (nearest ₫1.000), so the
 --      order charges exactly the price shown. The flash sale leaves `discount`.

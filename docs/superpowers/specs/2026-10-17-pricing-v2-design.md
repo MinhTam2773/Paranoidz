@@ -98,7 +98,7 @@ Every PR: smoke cases, migration test → smoke → prod, then merge (`master` i
    - Rewrites the first-5 smoke cases (1, 2, 17, the bundle-vs-promo case), plus e2e S3 / S4 / A3.
 
    Quote and order must change together, so this is one PR. The migration goes on prod right before the merge.
-   *Built 2026-10-27 on `feat/pricing-v2-pricing`* (migration `20261027000001_pricing_v2_functions.sql`). Beyond the plan:
+   *Built 2026-10-27 on `feat/pricing-v2-pricing`* (migration `20261030000003_pricing_v2_functions.sql`). Beyond the plan:
    - The flash price is rounded like the storefront's `flashPrice()` (nearest ₫1.000, `flash_unit_price()`). Before v2 the server took `floor(list × pct)` off the total, so a ₫269.000 tee at −10 % showed ₫242.000 and was charged ₫242.100.
    - `place_order()` reads the active window from a new `flash_window()` (start + %), not `active_flash_sale_discount()`.
    - Voucher errors carry the code (`INVALID_VOUCHER:SALE10`), since one order can hold several.
