@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition, type FormEvent } from "react";
-import { savePromoCode, type PromoInput } from "@/app/(shell)/promo-codes/actions";
+import { savePromoCode, type PromoInput, type PromoType } from "@/app/(shell)/promo-codes/actions";
 import { Toast, type ToastMessage } from "../Toast";
 
 const input =
@@ -61,10 +61,23 @@ export function PromoCodeForm({ initial, orderCount = 0, usedCount = 0 }: { init
         <h2 className="text-card-title uppercase">Thông tin mã</h2>
         {locked && (
           <p className="rounded-sm bg-bg-secondary p-4 text-text-secondary">
-            Mã đã được dùng cho {orderCount} đơn hàng nên không đổi được mã, % giảm và mức giảm tối đa. Vẫn có thể bật / tắt, đổi số lượt và ngày hết hạn.
+            Mã đã được dùng cho {orderCount} đơn hàng nên không đổi được loại mã, mã, % giảm và mức giảm tối đa. Vẫn có thể bật / tắt, hiện trong danh sách, đổi số lượt và ngày hết hạn.
           </p>
         )}
         <div className="grid gap-5 md:grid-cols-2">
+          <div className="flex flex-col gap-2 md:col-span-2">
+            <label htmlFor="type" className="text-label uppercase">Loại mã</label>
+            <select
+              id="type" value={values.type} disabled={locked} onChange={(e) => set("type", e.target.value as PromoType)}
+              aria-describedby="type-hint" className={`${input} border-border md:max-w-sm`}
+            >
+              <option value="promo">Mỗi số điện thoại dùng 1 lần</option>
+              <option value="standing">Dùng mọi đơn</option>
+            </select>
+            <p id="type-hint" className="text-stat-label text-text-secondary">
+              &quot;Dùng mọi đơn&quot;: không giới hạn theo số điện thoại (ví dụ mã Khách mua lần đầu). Loại này và danh sách chọn mã chỉ có hiệu lực ở trang thanh toán sau bản cập nhật cộng dồn mã.
+            </p>
+          </div>
           {field("code", "Mã", "Khách nhập mã này khi đặt hàng (không phân biệt hoa thường).", {
             maxLength: 30, disabled: locked, autoCapitalize: "characters", spellCheck: false,
             onChange: (e) => set("code", e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, "")),
@@ -77,6 +90,10 @@ export function PromoCodeForm({ initial, orderCount = 0, usedCount = 0 }: { init
           <label className="flex h-10 items-center gap-3 md:self-start md:mt-6">
             <input type="checkbox" checked={values.isActive} onChange={(e) => set("isActive", e.target.checked)} className="size-5 accent-text-primary" />
             Đang bật — khách dùng được mã
+          </label>
+          <label className="flex min-h-10 items-center gap-3 md:col-span-2">
+            <input type="checkbox" checked={values.isListed} onChange={(e) => set("isListed", e.target.checked)} className="size-5 accent-text-primary" />
+            Hiện trong danh sách chọn mã ở trang thanh toán (bỏ tích: khách phải tự nhập mã)
           </label>
         </div>
       </section>

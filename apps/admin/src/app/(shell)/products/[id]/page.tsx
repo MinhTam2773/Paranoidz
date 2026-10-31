@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createAdminClient } from "@paranoidz/db/admin";
 import { ColorRename } from "@/components/products/ColorRename";
+import { GiftVariantPicker } from "@/components/products/GiftVariantPicker";
 import { ImageManager } from "@/components/products/ImageManager";
 import { ProductEditor } from "@/components/products/ProductForm";
 import { requireAdmin } from "@/lib/auth";
@@ -17,13 +18,14 @@ export default async function EditProductPage({ params }: PageProps<"/products/[
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
   const admin = createAdminClient();
 
-  const [{ data: product, error }, { data: categories }] = await Promise.all([
+  const [{ data: product, error }, { data: categories }, { data: gift }] = await Promise.all([
     admin
       .from("products")
-      .select("id, name, slug, category_id, description, care_instructions, size_guide, is_active, updated_at, shopee_sold_count, gift_label, video_url, video_poster_url, product_variants(id, color, color_hex, size, price, original_price, stock, sku, updated_at), product_images(id, storage_path, color, sort_order, is_primary)")
+      .select("id, name, slug, category_id, description, care_instructions, size_guide, is_active, updated_at, shopee_sold_count, gift_label, video_url, video_poster_url, earns_perks, product_variants(id, color, color_hex, size, price, original_price, stock, sku, is_order_gift, updated_at), product_images(id, storage_path, color, sort_order, is_primary)")
       .eq("id", id)
       .maybeSingle(),
     admin.from("categories").select("id, name").order("sort_order"),
+    admin.from("product_variants").select("product_id, color, size, products(name)").eq("is_order_gift", true).maybeSingle(),
   ]);
   if (error) throw error;
   if (!product) notFound();
@@ -49,6 +51,11 @@ export default async function EditProductPage({ params }: PageProps<"/products/[
       </div>
       <ImageManager productId={product.id} productName={product.name} images={images} colors={colors} />
       <ColorRename key={colorHexes.map((c) => `${c.name}:${c.hex}`).join("|")} productId={product.id} colors={colorHexes} images={images} />
+      <GiftVariantPicker
+        productId={product.id}
+        variants={variants.map((v) => ({ id: v.id, color: v.color, size: v.size, isGift: v.is_order_gift }))}
+        elsewhere={gift && gift.product_id !== product.id ? `${gift.products?.name} · ${gift.color} / ${gift.size}` : null}
+      />
       <ProductEditor
         version={version}
         categories={categories ?? []}
@@ -64,6 +71,7 @@ export default async function EditProductPage({ params }: PageProps<"/products/[
           giftLabel: product.gift_label ?? "",
           videoUrl: product.video_url ?? "",
           videoPosterUrl: product.video_poster_url ?? "",
+          earnsPerks: product.earns_perks,
           isActive: product.is_active,
           variants: variants.map((v) => ({
             id: v.id,

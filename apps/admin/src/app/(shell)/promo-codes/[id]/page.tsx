@@ -13,9 +13,9 @@ export default async function EditPromoCodePage({ params }: PageProps<"/promo-co
   const [{ data: v, error }, { count }] = await Promise.all([
     admin
       .from("vouchers")
-      .select("id, code, discount_pct, cap_amount, max_uses, used_count, is_active, expires_at")
+      .select("id, type, code, discount_pct, cap_amount, max_uses, used_count, is_active, is_listed, expires_at")
       .eq("id", id)
-      .eq("type", "promo")
+      .in("type", ["promo", "standing"])
       .maybeSingle(),
     // every redemption ever, released ones included: those orders were priced with this code
     admin.from("voucher_uses").select("id", { count: "exact", head: true }).eq("voucher_id", id),
@@ -34,12 +34,14 @@ export default async function EditPromoCodePage({ params }: PageProps<"/promo-co
         usedCount={v.used_count}
         initial={{
           id: v.id,
+          type: v.type === "standing" ? "standing" : "promo",
           code: v.code,
           discountPct: String(v.discount_pct),
           capAmount: v.cap_amount === null ? "" : String(v.cap_amount),
           maxUses: v.max_uses === null ? "" : String(v.max_uses),
           expiresOn: v.expires_at ? vnDate(v.expires_at) : "",
           isActive: v.is_active,
+          isListed: v.is_listed,
         }}
       />
     </div>

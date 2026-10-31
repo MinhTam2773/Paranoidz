@@ -9,15 +9,15 @@ import { setPromoActive } from "./actions";
 
 const PAGE_SIZE = 20;
 
-// DASHBOARD_DESIGN.md §6.7 list. type = 'promo' only: AUTO-FIRST5 is system-managed.
+// DASHBOARD_DESIGN.md §6.7 list. promo + standing only: AUTO-FIRST5 is system-managed.
 export default async function PromoCodesPage({ searchParams }: PageProps<"/promo-codes">) {
   await requireAdmin();
   const sp = await searchParams;
   const page = Math.max(1, Math.floor(Number(sp.page)) || 1);
   const { data, count, error } = await createAdminClient()
     .from("vouchers")
-    .select("id, code, discount_pct, cap_amount, max_uses, used_count, is_active, expires_at", { count: "exact" })
-    .eq("type", "promo")
+    .select("id, type, code, discount_pct, cap_amount, max_uses, used_count, is_active, is_listed, expires_at", { count: "exact" })
+    .in("type", ["promo", "standing"])
     .order("created_at", { ascending: false })
     .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
   if (error) throw error;
@@ -30,6 +30,7 @@ export default async function PromoCodesPage({ searchParams }: PageProps<"/promo
     exhausted: v.max_uses !== null && v.used_count >= v.max_uses,
     expires: v.expires_at ? formatDate(vnDate(v.expires_at)) : "Không hết hạn",
     expired: !!v.expires_at && vnDate(v.expires_at) < today, // expiry is always the end of a Vietnam day
+    kind: [v.type === "standing" ? "Dùng mọi đơn" : "Mỗi SĐT 1 lần", ...(v.is_listed ? ["Hiện ở thanh toán"] : [])].join(" · "),
   }));
   const pages = Math.ceil((count ?? 0) / PAGE_SIZE);
   const note = (text: string) => <span className="block text-stat-label text-accent">{text}</span>;
@@ -42,7 +43,7 @@ export default async function PromoCodesPage({ searchParams }: PageProps<"/promo
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <p className="text-text-secondary">Mỗi số điện thoại dùng một mã một lần. Mã giảm 10% cho 5 đơn đầu được áp dụng tự động, không nằm ở đây.</p>
+        <p className="text-text-secondary">Mã &quot;Mỗi SĐT 1 lần&quot;: mỗi số điện thoại dùng một lần; mã &quot;Dùng mọi đơn&quot; không giới hạn. Mã giảm 10% cho 5 đơn đầu được áp dụng tự động, không nằm ở đây.</p>
         {newButton}
       </div>
 
@@ -71,6 +72,7 @@ export default async function PromoCodesPage({ searchParams }: PageProps<"/promo
                 <tr key={v.id} className="relative h-14 border-t border-border hover:bg-bg-secondary">
                   <td className="px-4 font-semibold">
                     <Link href={`/promo-codes/${v.id}`} className="after:absolute after:inset-0">{v.code}</Link>
+                    <span className="block text-stat-label font-normal text-text-secondary">{v.kind}</span>
                   </td>
                   <td className="px-4 text-right">{v.discount_pct}%</td>
                   <td className="whitespace-nowrap px-4 text-right">{v.cap}</td>
@@ -88,6 +90,7 @@ export default async function PromoCodesPage({ searchParams }: PageProps<"/promo
               <li key={v.id} className="relative flex gap-3 rounded-sm border border-border bg-surface p-3">
                 <div className="flex min-w-0 flex-1 flex-col gap-1">
                   <Link href={`/promo-codes/${v.id}`} className="font-semibold break-all after:absolute after:inset-0">{v.code}</Link>
+                  <span className="text-stat-label text-text-secondary">{v.kind}</span>
                   <span className="text-text-secondary">Giảm {v.discount_pct}% · tối đa {v.cap}</span>
                   <span className="text-text-secondary">
                     Đã dùng {v.uses}{v.exhausted && " (hết lượt)"} · {v.expires_at ? `Hết hạn ${v.expires}` : v.expires}{v.expired && " (đã qua)"}

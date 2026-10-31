@@ -27,6 +27,7 @@ export type ProductInput = {
   giftLabel: string;
   videoUrl: string;
   videoPosterUrl: string;
+  earnsPerks: boolean; // counts toward free shipping (>= 2) and the gift socks (>= 1)
   isActive: boolean;
   variants: VariantInput[];
 };
@@ -159,6 +160,7 @@ export function validateProduct(input: ProductInput) {
       gift_label: input.giftLabel.trim() || null,
       video_url: input.videoUrl.trim() || null,
       video_poster_url: input.videoPosterUrl.trim() || null,
+      earns_perks: input.earnsPerks,
     },
     variants,
   };
