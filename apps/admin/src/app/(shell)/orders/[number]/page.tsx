@@ -40,7 +40,7 @@ export default async function OrderDetailPage({ params }: PageProps<"/orders/[nu
     .maybeSingle();
 
   const images = admin.storage.from("product-images");
-  const voucherCode = order.voucher_uses?.vouchers?.code;
+  const voucherCode = order.voucher_uses.map((u) => u.vouchers?.code).filter(Boolean).join(", ") || null;
   // Snapshot from place_order() when a bundle discount priced the order (ARCHITECTURE.md §5).
   const bundles = (order.applied_bundles ?? []) as { name: string; sets: number }[];
   const discountSource = voucherCode ?? (bundles.length ? `Combo: ${bundles.map((b) => (b.sets > 1 ? `${b.name} ×${b.sets}` : b.name)).join(", ")}` : null);

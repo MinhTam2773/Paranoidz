@@ -86,8 +86,9 @@ Every PR: smoke cases, migration test → smoke → prod, then merge (`master` i
    - The constraint with `shipping_discount` defaulting to 0.
 
    Nothing reads the new columns yet, so it's safe to ship alone.
+   *Built 2026-10-21 on `feat/pricing-v2-schema`.* Two things the plan missed: `orders_total_math` must keep `gacha_discount` (gacha game, 20261020000001), and dropping `unique (order_id)` makes the `voucher_uses` embed an array, so the admin order page and Excel export changed in the same PR.
 2. **PR B (YELLOW + a little RED):** admin fields.
-   - "Tính là áo" checkbox.
+   - "Được freeship & tặng tất" checkbox (`earns_perks`).
    - Gift-variant toggle.
    - On the promo-code form: "Hiện trong danh sách chọn mã" and type "Dùng mọi đơn".
 3. **PR C (RED, the big one):**
@@ -98,6 +99,18 @@ Every PR: smoke cases, migration test → smoke → prod, then merge (`master` i
 
    Quote and order must change together, so this is one PR. The migration goes on prod right before the merge.
 4. **Hand-off:** the `quote_order` response shape and the action's input go to Tủn for the picker.
+
+## Overlap with the gacha game (found 2026-10-21, owner's calls 2026-10-22)
+
+The gacha prizes (20261020000001) already give free shipping and socks, differently from v2:
+- **Gacha "freeship" → `shipping_discount`** (decided). PR C stops setting `shipping_fee = 0`; the fee stays what SPX charges the shop and the prize waives it through `shipping_discount`, like v2's free shipping.
+  - When the order already has v2 free shipping (≥ 2 `earns_perks` items, standard delivery), a freeship code is **not redeemed**: it stays `issued` for a later order, and the quote says it isn't needed for this one (decided).
+- **Gacha socks take stock in PR C** (decided). `socks1` / `socks3` add an `is_gift` line of 1 / 3 units of the gift variant (`is_order_gift`), with the same atomic stock guard, so stock and the BigSeller export see them. `orders.gacha_gift` stays as the packing note. Several pairs per order are fine (owner, 2026-10-22): 1 shirt + `socks1` = 2 pairs, + `socks3` = 4. Out of stock: no special handling (owner expects socks never to run out); the code reuses D2's path (order goes through, `gift_missing`), since the atomic guard must do something when stock is short.
+- **Gacha codes in the stacking order**: proposal after the vouchers, as today (`least(gacha, subtotal − discount)`); minimum spend checked on the subtotal before discounts. **Asked aT 2026-10-22.**
+
+## Gacha code back on cancel (decided 2026-10-22, separate small RED PR)
+
+Today a cancelled or refused order keeps its `GACHA-` code `redeemed`. Fix: `transition_order_status()` sets the order's gacha code back to `issued` (clears `redeemed_at` / `redeemed_order_id`) when the order goes to `cancelled` or `delivery_failed`. The +2 spin grant from the order stays (owner: fine for now). The order row keeps `gacha_code` / `gacha_discount` as history. A returned code gets a fresh 7 days: `expires_at = now() + 7 days` (owner, 2026-10-22), so a refusal that comes after the original week still leaves the customer a usable code. Independent of pricing v2, so its own PR, before or after PR C.
 
 ## Owner's answers (2026-10-18)
 

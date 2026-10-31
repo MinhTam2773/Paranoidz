@@ -706,6 +706,36 @@ async function main() {
   if (anonMethod.data) createdOrders.push((anonMethod.data as Placed).order_id); // only if the grant is wrong
   check("delivery method: anon can't call the 16-param place_order (42501, no second overload)",
     anonMethod.error?.code === "42501", `code=${anonMethod.error?.code} msg=${anonMethod.error?.message}`);
+
+  // 22. Pricing v2 schema: one gift variant, several codes per order, free shipping within the fee --------
+  const [giftA, giftB] = [pool[1].id, pool[2].id];
+  const { error: giftAError } = await admin.from("product_variants").update({ is_order_gift: true }).eq("id", giftA);
+  const { error: giftBError } = await admin.from("product_variants").update({ is_order_gift: true }).eq("id", giftB);
+  await admin.from("product_variants").update({ is_order_gift: false }).in("id", [giftA, giftB]);
+  check("pricing v2: a second gift variant is refused (23505)",
+    !giftAError && giftBError?.code === "23505", `first=${giftAError?.message ?? "ok"} second=${giftBError?.code}`);
+
+  const v2Order = standard.data?.order_id ?? "";
+  const { data: v2Codes } = await admin.from("vouchers").select("id").in("code", [VOUCHER, QUOTE_VOUCHER]);
+  const v2Ids = (v2Codes ?? []).map((v) => v.id);
+  const v2Use = (voucher_id: string) => ({ voucher_id, order_id: v2Order, phone: DELIVERY_PHONE, voucher_type: "promo" as const });
+  const { error: twoCodes } = await admin.from("voucher_uses").insert(v2Ids.map(v2Use));
+  const { error: sameCode } = await admin.from("voucher_uses").insert(v2Use(v2Ids[0]));
+  await admin.from("voucher_uses").delete().eq("order_id", v2Order).in("voucher_id", v2Ids);
+  check("pricing v2: two different codes on one order allowed, the same code twice refused (23505)",
+    v2Ids.length === 2 && !twoCodes && sameCode?.code === "23505", `two=${twoCodes?.message ?? "ok"} same=${sameCode?.code}`);
+
+  const { data: v2Row } = await admin.from("orders").select("total, shipping_fee").eq("id", v2Order).single();
+  const [v2Fee, v2Total] = [Number(v2Row?.shipping_fee), Number(v2Row?.total)];
+  const waive = (shipping_discount: number, total: number) =>
+    admin.from("orders").update({ shipping_discount, total }).eq("id", v2Order);
+  const overFee = await waive(v2Fee + 1, v2Total - v2Fee - 1);
+  const totalUnchanged = await waive(v2Fee, v2Total);
+  const waived = await waive(v2Fee, v2Total - v2Fee);
+  await waive(0, v2Total);
+  check("pricing v2: shipping_discount ≤ shipping_fee and subtracted in the total (23514 otherwise)",
+    v2Fee > 0 && overFee.error?.code === "23514" && totalUnchanged.error?.code === "23514" && !waived.error,
+    `fee=${v2Fee} over=${overFee.error?.code} unchanged=${totalUnchanged.error?.code} waived=${waived.error?.message ?? "ok"}`);
 }
 
 async function cleanup() {
