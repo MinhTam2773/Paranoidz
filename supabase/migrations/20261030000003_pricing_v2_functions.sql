@@ -8,8 +8,9 @@
 --   3. Vouchers the customer picked, one after another on what is left:
 --      'standing' ones first ("Khách mua lần đầu" PDZWELCOME, every order), then
 --      'promo' ones (once per phone). No limit on how many (aT, 2026-10-27).
---   4. Free shipping: standard delivery + ≥ 2 `earns_perks` units → the whole fee
---      goes into orders.shipping_discount (shipping_fee keeps what SPX charges).
+--   4. Free shipping: standard delivery + ≥ ₫199.000 after combo and vouchers
+--      (gacha prizes not counted; aT, 2026-10-31) → the whole fee goes into
+--      orders.shipping_discount (shipping_fee keeps what SPX charges).
 --   5. Gift: ≥ 1 `earns_perks` unit → 1 unit of the is_order_gift variant, taken
 --      from stock like any line; gacha socks prizes add 1 / 3 more. Out of stock
 --      (or no gift variant set) → the order goes through, gift_missing = true.
@@ -145,6 +146,18 @@ end $$;
 revoke execute on function public.order_discount(text, numeric, jsonb, text[], boolean) from public, anon, authenticated;
 grant execute on function public.order_discount(text, numeric, jsonb, text[], boolean) to service_role;
 
+-- free shipping, one rule for quote_order() and place_order() ------------------
+-- p_amount: charged subtotal − combo − vouchers (order_discount's `discount`).
+create function public.ships_free(p_delivery_method text, p_amount numeric)
+returns boolean
+language sql immutable set search_path = public
+as $$
+  select coalesce(p_delivery_method, 'standard') = 'standard' and p_amount >= 199000;
+$$;
+
+revoke execute on function public.ships_free(text, numeric) from public, anon, authenticated;
+grant execute on function public.ships_free(text, numeric) to service_role;
+
 -- quote_order v2 (checkout preview, no writes) -------------------------------
 drop function if exists public.quote_order(jsonb, text, text);
 
@@ -221,7 +234,7 @@ begin
     'flash_pct',          v_window.discount_percent,
     'flash_window_start', v_window.window_start,
     'perks_units',        v_perks,
-    'free_shipping',      coalesce(p_delivery_method, 'standard') = 'standard' and v_perks >= 2,
+    'free_shipping',      public.ships_free(p_delivery_method, v_subtotal - (v_pricing ->> 'discount')::numeric),
     'gift',               jsonb_build_object('eligible', v_perks >= 1, 'in_stock', coalesce(v_gift_stock, 0) >= 1),
     'available_vouchers', v_available,
     'phone_known',        v_phone is not null
@@ -231,7 +244,7 @@ end $$;
 revoke execute on function public.quote_order(jsonb, text, text[], text) from public, anon, authenticated;
 grant execute on function public.quote_order(jsonb, text, text[], text) to service_role;
 
--- gacha_quote_code: + perks_units, so checkout can say a freeship prize isn't needed
+-- gacha_quote_code: prices the cart at flash prices like place_order()
 -- (same signature: CREATE OR REPLACE keeps the grants).
 create or replace function public.gacha_quote_code(p_code text, p_items jsonb)
 returns jsonb
@@ -245,7 +258,6 @@ declare
   v_discount       numeric(12,0) := 0;
   v_freeship       boolean := false;
   v_gift           text := null;
-  v_perks          int := 0;
   v_window         record := public.flash_window();
   v_picks          uuid[] := public.flash_sale_picks();
   v_price          numeric(12,0);
@@ -267,7 +279,7 @@ begin
   end if;
 
   for v_item in
-    select v.price, v.product_id, p.name as product_name, p.earns_perks, x.qty
+    select v.price, v.product_id, p.name as product_name, x.qty
       from jsonb_to_recordset(p_items) as x(variant_id uuid, qty int)
       join public.product_variants v on v.id = x.variant_id
       join public.products p on p.id = v.product_id and p.is_active
@@ -276,7 +288,6 @@ begin
     v_price := case when v_window.discount_percent is not null and v_item.product_id = any (v_picks)
                     then public.flash_unit_price(v_item.price, v_window.discount_percent) else v_item.price end;
     v_subtotal := v_subtotal + v_price * v_item.qty;
-    if v_item.earns_perks then v_perks := v_perks + v_item.qty; end if;
     if v_item.product_name like 'Áo%' then
       v_cheapest_shirt := least(coalesce(v_cheapest_shirt, v_price), v_price);
     end if;
@@ -314,8 +325,7 @@ begin
     'tier', v_gc.tier,
     'discount', least(v_discount, v_subtotal),
     'freeship', v_freeship,
-    'gift', v_gift,
-    'perks_units', v_perks
+    'gift', v_gift
   );
 end $$;
 
@@ -513,8 +523,8 @@ begin
   v_discount := (v_pricing ->> 'discount')::numeric;
   v_applied  := nullif(v_pricing -> 'bundles', 'null'::jsonb);
 
-  -- perks: free shipping on standard delivery from 2 units, the gift from 1
-  v_free_ship := p_delivery_method = 'standard' and v_perks >= 2;
+  -- free shipping from ₫199.000 after combo and vouchers; the gift from 1 perks unit
+  v_free_ship := public.ships_free(p_delivery_method, v_subtotal - v_discount);
   if v_free_ship then
     v_ship_discount := v_shipping;
   end if;
@@ -725,6 +735,10 @@ update public.product_variants set is_order_gift = true
  where sku = 'Sck1-Random'
    and not exists (select 1 from public.product_variants where is_order_gift);
 
--- Socks (QT01 gift, QT03 sold) don't count toward free shipping or the gift.
+-- Only shirts earn the gift socks (aT, 2026-10-31): not the socks themselves (QT01 gift,
+-- QT03 sold), nor backpacks / bags. Products have no category yet, so bags are matched by
+-- name; ones added later default to ticked and are unticked in the admin.
 update public.products set earns_perks = false
- where id in (select product_id from public.product_variants where sku in ('Sck1-Random', 'QT03-Random'));
+ where id in (select product_id from public.product_variants where sku in ('Sck1-Random', 'QT03-Random'))
+    or name like 'Balo %'
+    or name like 'Túi %';

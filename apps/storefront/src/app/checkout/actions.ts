@@ -394,7 +394,9 @@ export type GachaQuote =
 // the cart from the database and reports the effect — a money discount, free
 // shipping, or a physical gift. Display only; place_order() re-validates and
 // redeems at submit. null = can't quote now (rate limited or failed).
-export async function quoteGachaCode(input: { items: CheckoutInput["items"]; code: string; deliveryMethod?: string }): Promise<GachaQuote | null> {
+export async function quoteGachaCode(input: {
+  items: CheckoutInput["items"]; code: string; deliveryMethod?: string; phone?: string; voucher?: string; vouchers?: string[];
+}): Promise<GachaQuote | null> {
   const items = validItems(input?.items);
   const code = typeof input?.code === "string" ? input.code.trim().toUpperCase().slice(0, 30) : "";
   if (!items || !code.startsWith("GACHA-")) return null;
@@ -416,12 +418,27 @@ export async function quoteGachaCode(input: { items: CheckoutInput["items"]; cod
   }
   const q = data as {
     ok: boolean; error?: string; prize_type?: string; tier?: string;
-    discount?: number; freeship?: boolean; gift?: string | null; perks_units?: number;
+    discount?: number; freeship?: boolean; gift?: string | null;
   };
   if (!q.ok) return { ok: false, message: gachaMessage(q.error ?? "") ?? "Mã quà không hợp lệ." };
-  // Pricing v2: 2+ shirts on standard delivery already ship free; place_order() keeps the code unused.
-  if (q.freeship && (q.perks_units ?? 0) >= 2 && input?.deliveryMethod !== "express")
-    return { ok: false, message: "Đơn này đã được miễn phí vận chuyển. Mã freeship được giữ lại cho đơn sau." };
+  // Pricing v2: an order that already ships free (₫199.000+ after the vouchers) doesn't use a
+  // freeship prize; place_order() keeps the code unused. quote_order() applies the same rule.
+  if (q.freeship) {
+    const phone = typeof input?.phone === "string" ? input.phone.trim().slice(0, 20) : "";
+    const voucher = typeof input?.voucher === "string" ? input.voucher.trim().slice(0, 30) : "";
+    const { data: quote, error: quoteError } = await createAdminClient().rpc("quote_order", {
+      p_items: items.map((i) => ({ variant_id: i.variantId, qty: i.qty })),
+      p_phone: phone || undefined,
+      p_voucher_codes: await voucherCodes(input?.vouchers, voucher),
+      p_delivery_method: input?.deliveryMethod === "express" ? "express" : "standard",
+    });
+    if (quoteError) {
+      console.error("quote_order failed", quoteError);
+      return null;
+    }
+    if ((quote as { free_shipping: boolean }).free_shipping)
+      return { ok: false, message: "Đơn này đã được miễn phí vận chuyển. Mã freeship được giữ lại cho đơn sau." };
+  }
   return {
     ok: true,
     prizeType: q.prize_type ?? "",

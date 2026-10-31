@@ -32,7 +32,7 @@ export function GiftVariantPicker({ productId, variants, elsewhere }: { productI
       <div className="flex flex-col gap-1">
         <h2 className="text-card-title uppercase">Quà tặng kèm đơn</h2>
         <p id="gift-hint" className="text-stat-label text-text-secondary">
-          Biến thể được tặng 1 cái cho mỗi đơn có sản phẩm &quot;Được freeship &amp; tặng tất&quot;, trừ vào tồn kho. Cả cửa hàng chỉ có 1 biến thể quà.
+          Biến thể được tặng 1 cái cho mỗi đơn có sản phẩm &quot;Được tặng tất&quot;, trừ vào tồn kho. Cả cửa hàng chỉ có 1 biến thể quà.
           {elsewhere && ` Hiện tại: ${elsewhere}. Chọn ở đây sẽ đổi quà sang biến thể này.`}
         </p>
       </div>

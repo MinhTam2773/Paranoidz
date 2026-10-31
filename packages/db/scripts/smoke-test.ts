@@ -574,7 +574,7 @@ async function main() {
   const shipped = await placeOrder([{ variant_id: shipVariant.id, qty: 2 }], { phone: PHONES[2], city: "Hà Nội" });
   const { data: shipRow } = await admin.from("orders").select("subtotal, discount, shipping_fee, shipping_discount, total").eq("id", shipped.data?.order_id ?? "").maybeSingle();
   const badCity = await placeOrder([{ variant_id: shipVariant.id, qty: 1 }], { phone: PHONES[2], city: "Atlantis" });
-  // 2 units on standard delivery also ship free (pricing v2): the fee is stored and waived in shipping_discount.
+  // ₫199.000+ on standard delivery also ships free (pricing v2): the fee is stored and waived in shipping_discount.
   check("shipping: order stores the fee, total = subtotal − discount + shipping − shipping_discount; unknown city refused before stock",
     !shipped.error && shipRow?.shipping_fee === 22000 && shipped.data?.shipping_fee === 22000 && shipRow.shipping_discount === 22000
       && shipRow.total === shipRow.subtotal - shipRow.discount + 22000 - 22000 && shipped.data?.total === shipRow.total
@@ -656,12 +656,13 @@ async function main() {
   const feeItems = [{ variant_id: pool[1].id, qty: 1 }];
   const liveFee = await placeOrder(feeItems, { phone: FEE_PHONE, city: "Hà Nội", shippingFee: 15000, spxVoucher: " SPXV1 " });
   const tableFee = await placeOrder(feeItems, { phone: FEE_PHONE, city: "Hà Nội", spxVoucher: "SPXV1" });
-  const { data: feeRows } = await admin.from("orders").select("id, subtotal, discount, shipping_fee, total, spx_voucher")
+  const { data: feeRows } = await admin.from("orders").select("id, subtotal, discount, shipping_fee, shipping_discount, total, spx_voucher")
     .in("id", [liveFee.data?.order_id ?? "", tableFee.data?.order_id ?? ""]);
   const liveRow = feeRows?.find((r) => r.id === liveFee.data?.order_id);
   const tableRow = feeRows?.find((r) => r.id === tableFee.data?.order_id);
+  // The fee is stored either way; a ₫199.000+ order also waives it (pricing v2).
   check("spx fee: quoted fee charged + voucher stored; no fee → table fee, voucher dropped",
-    liveRow?.shipping_fee === 15000 && liveRow.spx_voucher === "SPXV1" && liveRow.total === liveRow.subtotal - liveRow.discount + 15000
+    liveRow?.shipping_fee === 15000 && liveRow.spx_voucher === "SPXV1" && liveRow.total === liveRow.subtotal - liveRow.discount + 15000 - liveRow.shipping_discount
       && liveFee.data?.shipping_fee === 15000 && tableRow?.shipping_fee === 22000 && tableRow.spx_voucher === null,
     `live=${JSON.stringify(liveRow ?? liveFee.error)} table=${JSON.stringify(tableRow ?? tableFee.error)}`);
 
@@ -741,14 +742,16 @@ async function main() {
   check("pricing v2: two different codes on one order allowed, the same code twice refused (23505)",
     v2Ids.length === 2 && !twoCodes && sameCode?.code === "23505", `two=${twoCodes?.message ?? "ok"} same=${sameCode?.code}`);
 
-  const { data: v2Row } = await admin.from("orders").select("total, shipping_fee").eq("id", v2Order).single();
-  const [v2Fee, v2Total] = [Number(v2Row?.shipping_fee), Number(v2Row?.total)];
+  // v2Total: the total before any waiver (a ₫199.000+ order is already waived by place_order).
+  const { data: v2Row } = await admin.from("orders").select("total, shipping_fee, shipping_discount").eq("id", v2Order).single();
+  const [v2Fee, v2Waived] = [Number(v2Row?.shipping_fee), Number(v2Row?.shipping_discount)];
+  const v2Total = Number(v2Row?.total) + v2Waived;
   const waive = (shipping_discount: number, total: number) =>
     admin.from("orders").update({ shipping_discount, total }).eq("id", v2Order);
   const overFee = await waive(v2Fee + 1, v2Total - v2Fee - 1);
   const totalUnchanged = await waive(v2Fee, v2Total);
   const waived = await waive(v2Fee, v2Total - v2Fee);
-  await waive(0, v2Total);
+  await waive(v2Waived, v2Total - v2Waived);
   check("pricing v2: shipping_discount ≤ shipping_fee and subtracted in the total (23514 otherwise)",
     v2Fee > 0 && overFee.error?.code === "23514" && totalUnchanged.error?.code === "23514" && !waived.error,
     `fee=${v2Fee} over=${overFee.error?.code} unchanged=${totalUnchanged.error?.code} waived=${waived.error?.message ?? "ok"}`);
@@ -780,6 +783,23 @@ async function main() {
       && !v2Express.error && v2Express.data!.shipping_discount === 0 && v2Express.data!.gift_qty === 1,
     `v2Two=${JSON.stringify(v2Two.data ?? v2Two.error)} gift=${JSON.stringify(v2TwoGift)} stock ${giftStock}→${giftAfter} v2Express=${JSON.stringify(v2Express.data ?? v2Express.error)}`);
 
+  // Free shipping from ₫199.000 after combo and vouchers (aT, 2026-10-31): a ₫210.000 item ships free
+  // alone, not once PDZWELCOME takes it to ₫189.000; express never. The price is put back right after.
+  const fsVariant = pool[1].id;
+  const { data: fsRow } = await admin.from("product_variants").select("price").eq("id", fsVariant).single();
+  const fsPrice = fsRow!.price;
+  await admin.from("product_variants").update({ price: 210000 }).eq("id", fsVariant);
+  const fsQuote = async (codes: string[], deliveryMethod = "standard") =>
+    ((await admin.rpc("quote_order", { p_items: [{ variant_id: fsVariant, qty: 1 }], p_voucher_codes: codes, p_delivery_method: deliveryMethod }))
+      .data as { free_shipping: boolean } | null)?.free_shipping;
+  const [fsNoCode, fsWelcome, fsExpress] = [await fsQuote([]), await fsQuote(["PDZWELCOME"]), await fsQuote([], "express")];
+  const fsBelow = await v2Place([{ variant_id: fsVariant, qty: 1 }], { voucher: "PDZWELCOME" });
+  await admin.from("product_variants").update({ price: fsPrice }).eq("id", fsVariant);
+  check("pricing v2: free shipping from ₫199.000 after vouchers (₫210.000 ships free, −10 % → ₫189.000 pays); express pays; place_order agrees",
+    fsNoCode === true && fsWelcome === false && fsExpress === false
+      && !fsBelow.error && fsBelow.data!.subtotal === 210000 && fsBelow.data!.shipping_fee > 0 && fsBelow.data!.shipping_discount === 0,
+    `noCode=${fsNoCode} welcome=${fsWelcome} express=${fsExpress} placed=${JSON.stringify(fsBelow.data ?? fsBelow.error)}`);
+
   const giftKeep = (await variant(giftVariant)).stock;
   await admin.from("product_variants").update({ stock: 0 }).eq("id", giftVariant);
   const noGift = await v2Place(shirt(1));
@@ -788,9 +808,10 @@ async function main() {
     !noGift.error && noGift.data!.gift_missing && noGift.data!.gift_qty === 0 && (await giftRows(noGift.data?.order_id)).length === 0,
     JSON.stringify(noGift.data ?? noGift.error));
 
-  // PRICE_CHANGED: the total the page showed vs the one place_order() computes (HCMC, 1 unit: ₫18.000).
+  // PRICE_CHANGED: the total the page showed vs the one place_order() computes (HCMC, 1 unit: ₫18.000 unless it ships free).
   const { data: pq } = await admin.rpc("quote_order", { p_items: shirt(1), p_phone: V2_PHONE, p_voucher_codes: ["PDZWELCOME"] });
-  const v2Shown = (pq as { subtotal: number; discount: number }).subtotal - (pq as { discount: number }).discount + 18000;
+  const pqv = pq as { subtotal: number; discount: number; free_shipping: boolean };
+  const v2Shown = pqv.subtotal - pqv.discount + (pqv.free_shipping ? 0 : 18000);
   const pcStock = (await variant(pool[2].id)).stock;
   const v2Stale = await v2Place(shirt(1), { voucher: "PDZWELCOME", expectedTotal: v2Shown + 1000 });
   const pcStockAfter = (await variant(pool[2].id)).stock;
