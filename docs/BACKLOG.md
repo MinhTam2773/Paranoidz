@@ -70,6 +70,7 @@ Pick from TODO.md → "Now" first. Starting an item: move it to TODO.md → "Now
 
 ### Admin
 
+- **`tsc --noEmit` fails in `apps/admin`** (seen 2026-10-30): `tests/orders.test.ts`'s `order()` fixture lacks the `payment_method` / `payment_confirmed_at` fields that `9ed211c` (VietQR) made required on `BulkOrder`. `node --test` strips types, so the tests still pass and CI stays green.
 - **ARCHITECTURE.md §2.2 "Admin realtime order feed — RLS restricts channel to admin role"** has no backing policy: orders have no admin SELECT policy. Add an `is_admin` policy (or broadcast from the server) when building the feed.
 - **Order emails have no admin-side counterpart yet**: status changes (confirmed / shipped) send nothing; the shop alert is email + Zalo.
 - **Customer confirmation gets no plain-text part** (HTML only); Resend generates one, insights were clean.
