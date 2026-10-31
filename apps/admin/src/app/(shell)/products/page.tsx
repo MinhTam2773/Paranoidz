@@ -4,6 +4,7 @@ import { createAdminClient } from "@paranoidz/db/admin";
 import { ProductsIcon } from "@/components/icons";
 import { Pagination } from "@/components/Pagination";
 import { ActiveToggle } from "@/components/ActiveToggle";
+import { ThumbBackfill } from "@/components/products/ThumbBackfill";
 import { requireAdmin } from "@/lib/auth";
 import { formatDateTime, formatVnd } from "@/lib/format";
 import { setProductActive } from "./actions";
@@ -85,6 +86,7 @@ export default async function ProductsPage({ searchParams }: PageProps<"/product
           </button>
         </form>
         <div className="flex gap-2">
+          <ThumbBackfill />
           <Link href="/products/categories" className="flex h-10 flex-1 items-center justify-center rounded-sm border border-text-primary px-4 text-button uppercase transition-colors duration-200 hover:bg-text-primary hover:text-text-on-dark md:flex-none">
             Danh mục
           </Link>
