@@ -1342,6 +1342,14 @@ export type Database = {
         }[]
       }
       flash_sale_picks: { Args: { p_at?: string }; Returns: string[] }
+      flash_unit_price: {
+        Args: { p_pct: number; p_price: number }
+        Returns: number
+      }
+      flash_window: {
+        Args: { p_at?: string }
+        Returns: Record<string, unknown>
+      }
       gacha_balance: { Args: { p_player_key: string }; Returns: number }
       gacha_claim_task: {
         Args: { p_player_key: string; p_task: string }
@@ -1378,10 +1386,10 @@ export type Database = {
       order_discount: {
         Args: {
           p_counts: Json
-          p_items?: Json
           p_phone: string
+          p_strict?: boolean
           p_subtotal: number
-          p_voucher_code: string
+          p_voucher_codes?: string[]
         }
         Returns: Json
       }
@@ -1393,6 +1401,7 @@ export type Database = {
           p_delivery_method?: string
           p_district?: string
           p_email?: string
+          p_expected_total?: number
           p_gacha_code?: string
           p_gacha_player?: string
           p_items: Json
@@ -1403,13 +1412,18 @@ export type Database = {
           p_shipping_fee?: number
           p_spx_voucher?: string
           p_user_id?: string
-          p_voucher_code?: string
+          p_voucher_codes?: string[]
           p_ward?: string
         }
         Returns: Json
       }
       quote_order: {
-        Args: { p_items: Json; p_phone?: string; p_voucher_code?: string }
+        Args: {
+          p_delivery_method?: string
+          p_items: Json
+          p_phone?: string
+          p_voucher_codes?: string[]
+        }
         Returns: Json
       }
       rename_product_color: {

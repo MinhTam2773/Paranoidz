@@ -27,7 +27,7 @@ export type ProductInput = {
   giftLabel: string;
   videoUrl: string;
   videoPosterUrl: string;
-  earnsPerks: boolean; // counts toward free shipping (>= 2) and the gift socks (>= 1)
+  earnsPerks: boolean; // earns the gift socks (>= 1); free shipping doesn't depend on it (₫199.000+)
   isActive: boolean;
   variants: VariantInput[];
 };

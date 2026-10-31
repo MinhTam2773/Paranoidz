@@ -14,7 +14,8 @@ This covers the database and server side only. The checkout voucher picker, the 
 ## Decisions (approved 2026-10-18)
 
 **D1. What counts as "clothing" (free shipping and gift).**
-New column `products.earns_perks boolean not null default true`, a tick in the admin product editor ("Được freeship & tặng tất"). The client unticks it for socks and gifts. The default is true because almost every product is a shirt. One tick drives both perks: ≥ 1 such item → the gift, ≥ 2 → free shipping. Named for what it does, not "clothing" (owner, 2026-10-18).
+New column `products.earns_perks boolean not null default true`, a tick in the admin product editor ("Được tặng tất"). The client unticks it for socks and gifts. The default is true because almost every product is a shirt. Named for what it does, not "clothing" (owner, 2026-10-18).
+**Changed 2026-10-31 (aT, via PR #65):** the tick only drives the gift (≥ 1 such item). Free shipping no longer depends on it (D5 step 5). Backpacks and bags (≈ 60 imported 2026-10-30) are unticked by the PR C migration, matched by name ("Balo …" / "Túi …") since products have no category.
 *Rejected:* a flag per category (categories are empty today, and a product without a category would silently not count); two separate ticks (nobody asked for it).
 
 **D2. The gift.**
@@ -49,7 +50,7 @@ The customer sees the flash price, the window closes, then they press Đặt hà
 2. **Combo:** `best_bundles()` on the unit counts, flash items included, capped at `subtotal`.
 3. **Vouchers, one after another:** the `standing` one first, then the `promo`. Each takes `floor(remaining × pct / 100)`, then its own `cap_amount`.
 4. **`discount` = combo + vouchers.**
-5. **Shipping:** `shipping_fee` = the SPX / table fee as today. New column `orders.shipping_discount` = that fee when delivery is standard and `earns_perks` units ≥ 2, else 0. The whole fee, no cap (aT, 2026-10-27). Express never gets free shipping.
+5. **Shipping:** `shipping_fee` = the SPX / table fee as today. New column `orders.shipping_discount` = that fee when delivery is standard and `subtotal − discount` (charged prices − combo − vouchers, before gacha) ≥ ₫199.000, else 0 (aT, 2026-10-31; was "`earns_perks` units ≥ 2"). One SQL helper, `ships_free(delivery_method, amount)`, used by both `quote_order()` and `place_order()`, so the shown total and the charged one can't disagree. The whole fee, no cap (aT, 2026-10-27). Express never gets free shipping.
 6. **Constraint:** `total = subtotal − discount + shipping_fee − shipping_discount`. Old rows are valid with `shipping_discount` defaulting to 0.
 7. **Gift line** (D2).
 
@@ -88,7 +89,7 @@ Every PR: smoke cases, migration test → smoke → prod, then merge (`master` i
    Nothing reads the new columns yet, so it's safe to ship alone.
    *Built 2026-10-21 on `feat/pricing-v2-schema`.* Two things the plan missed: `orders_total_math` must keep `gacha_discount` (gacha game, 20261020000001), and dropping `unique (order_id)` makes the `voucher_uses` embed an array, so the admin order page and Excel export changed in the same PR.
 2. **PR B (YELLOW + a little RED):** admin fields.
-   - "Được freeship & tặng tất" checkbox (`earns_perks`).
+   - "Được freeship & tặng tất" checkbox (`earns_perks`), renamed "Được tặng tất" in PR C (2026-10-31).
    - Gift-variant toggle.
    - On the promo-code form: "Hiện trong danh sách chọn mã" and type "Dùng mọi đơn".
 3. **PR C (RED, the big one):**
@@ -98,13 +99,46 @@ Every PR: smoke cases, migration test → smoke → prod, then merge (`master` i
    - Rewrites the first-5 smoke cases (1, 2, 17, the bundle-vs-promo case), plus e2e S3 / S4 / A3.
 
    Quote and order must change together, so this is one PR. The migration goes on prod right before the merge.
-4. **Hand-off:** the `quote_order` response shape and the action's input go to Tủn for the picker.
+   *Built 2026-10-27 on `feat/pricing-v2-pricing`* (migration `20261030000003_pricing_v2_functions.sql`). Beyond the plan:
+   - The flash price is rounded like the storefront's `flashPrice()` (nearest ₫1.000, `flash_unit_price()`). Before v2 the server took `floor(list × pct)` off the total, so a ₫269.000 tee at −10 % showed ₫242.000 and was charged ₫242.100.
+   - `place_order()` reads the active window from a new `flash_window()` (start + %), not `active_flash_sale_discount()`.
+   - Voucher errors carry the code (`INVALID_VOUCHER:SALE10`), since one order can hold several.
+   - The admin order page / SPX card / Excel export, the order email, the Zalo alert, order lookup and the account page show free shipping (net fee) and gift lines, so their sums still add up.
+   - The migration sets the prod catalog defaults by SKU (owner, 2026-10-29): `Sck1-Random` (QT01, "[QUÀ TẶNG]") is the gift, and the two socks products (QT01, QT03) get `earns_perks = false`. A no-op where those SKUs don't exist. Since 2026-10-31 it also unticks every product named "Balo …" / "Túi …" (aT: no gift socks for bags).
+   - **Payment method is still written after the rpc** (Tủn's bank-transfer code). Moving it into `place_order()` is a follow-up, not in PR C.
+4. **Hand-off to Tủn** (below): the action shapes for the voucher picker.
+
+## Hand-off: checkout API for the storefront (PR C)
+
+**Built 2026-10-31 on PR #65 itself** (`CheckoutView.tsx`, owner's call), so the UI and the prices ship together. The shapes below are what it uses.
+
+Server actions in `apps/storefront/src/app/checkout/actions.ts`. Today's `CheckoutView` keeps working unchanged (old fields are filled for it), but it can't show free shipping, the gift or several codes. Ship the UI changes **with** PR C, or 2+ shirt orders will show a shipping fee the server doesn't charge.
+
+**`quoteOrder({ items, phone, voucher, vouchers?, deliveryMethod? })`**
+- `vouchers`: the codes ticked in the picker. Leave it out and the server uses every listed "Dùng mọi đơn" code (PDZWELCOME). `voucher` (typed) is added on top; a `GACHA-…` code is ignored here.
+- Returns the old fields (`subtotal` at list price, `discount` = flash saving + combo + codes, `flashDiscount`, `source`, `code`, `pct`, …) plus:
+  - `lines[]`: `{ variantId, qty, listPrice, price, flash }` → show `price`, strike `listPrice` when `flash`.
+  - `chargedSubtotal`, `combo`, `vouchers[]` `{ code, type, pct, amount }` in the order they apply (lần đầu first).
+  - `voucherErrors[]` `{ code, message }` (Vietnamese, ready to show).
+  - `availableVouchers[]` `{ code, type, pct, capAmount, expiresAt }` → the picker list ("standing" = "Dùng mọi đơn", tick it by default).
+  - `freeShipping` → show shipping as ₫0 ("Miễn phí vận chuyển").
+  - `gift` `{ eligible, inStock }` → "🎁 Tặng 1 đôi tất" line when eligible.
+  - `flashWindowStart` → send back to `placeOrder`.
+- Total to show = `chargedSubtotal − combo − Σ vouchers.amount − gacha discount + (freeShipping ? 0 : shipping fee)`.
+
+**`placeOrder({ …today's fields, vouchers?, expectedTotal?, flashWindowStart? })`**
+- Send `expectedTotal` (the total shown) and `flashWindowStart` (from the quote). If the server's total differs: `{ ok: false, message, priceChanged: { reason: "flash_ended" | "flash_started" | "other", oldTotal, newTotal } }`, nothing is charged; show the message and the new total, re-quote, let the customer press Đặt hàng again.
+- Success adds `shippingFeeBeforeDiscount`, `shippingDiscount`, `giftQty`; `shippingFee` is now what the customer pays.
+
+**`quoteGachaCode({ items, code, deliveryMethod?, phone?, voucher?, vouchers? })`**: pass the same phone and codes as `quoteOrder` (no `vouchers` = the listed "Dùng mọi đơn" codes). A freeship prize on an order that already ships free (₫199.000+ after the vouchers, asked of `quote_order()`) comes back `ok: false` with "Đơn này đã được miễn phí vận chuyển. Mã freeship được giữ lại cho đơn sau."
+
+**Copy to rename:** "Ưu đãi 5 đơn đầu" → "Khách mua lần đầu" (CheckoutView still has the old label and the first-5 hint for unknown phones; both are dead now).
 
 ## Overlap with the gacha game (found 2026-10-21, owner's calls 2026-10-22)
 
 The gacha prizes (20261020000001) already give free shipping and socks, differently from v2:
 - **Gacha "freeship" → `shipping_discount`** (decided). PR C stops setting `shipping_fee = 0`; the fee stays what SPX charges the shop and the prize waives it through `shipping_discount`, like v2's free shipping.
-  - When the order already has v2 free shipping (≥ 2 `earns_perks` items, standard delivery), a freeship code is **not redeemed**: it stays `issued` for a later order, and the quote says it isn't needed for this one (decided).
+  - When the order already has v2 free shipping (₫199.000+ after combo and vouchers, standard delivery; was ≥ 2 `earns_perks` items until 2026-10-31), a freeship code is **not redeemed**: it stays `issued` for a later order, and the quote says it isn't needed for this one (decided).
 - **Gacha socks take stock in PR C** (decided). `socks1` / `socks3` add an `is_gift` line of 1 / 3 units of the gift variant (`is_order_gift`), with the same atomic stock guard, so stock and the BigSeller export see them. `orders.gacha_gift` stays as the packing note. Several pairs per order are fine (owner, 2026-10-22): 1 shirt + `socks1` = 2 pairs, + `socks3` = 4. Out of stock: no special handling (owner expects socks never to run out); the code reuses D2's path (order goes through, `gift_missing`), since the atomic guard must do something when stock is short.
 - **Gacha codes in the stacking order**: after the vouchers, as today (`least(gacha, subtotal − discount)`); minimum spend checked on the subtotal before discounts. **aT, 2026-10-22: "trừ 10% mã cố định trước"**: the 10 % "lần đầu" comes off first, every other discount (another % code, the gacha ₫ amount) on what is left.
 

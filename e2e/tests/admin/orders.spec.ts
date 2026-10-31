@@ -38,7 +38,7 @@ test("A2 order lifecycle: pending → confirmed → shipped → delivered", asyn
   expect(customer?.delivered_count).toBe(1);
 });
 
-// A3. Cancelling returns the stock and frees the first-5 voucher slot.
+// A3. Cancelling returns the stock and releases the order's voucher use (PDZWELCOME).
 test("A3 cancel a pending order: stock restored, voucher slot released", async ({ page }) => {
   const product = await seedProduct([{ size: "M", stock: 5 }]);
   const variant = product.variants[0];

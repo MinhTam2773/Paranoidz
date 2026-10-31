@@ -21,7 +21,9 @@ test("A6 promo code: create → applies at checkout, deactivate → refused", as
   await page.goto(checkout);
   await page.locator("#checkout-phone").fill(phone);
   await page.getByLabel("Mã giảm giá").fill(code);
+  // Stacks on "Khách mua lần đầu": 10% of 200.000, then 15% of 180.000, one row each.
   await expect(page.getByText(`Mã ${code} (−15%)`)).toBeVisible();
+  await expect(page.getByText("−₫27.000")).toBeVisible();
 
   await page.goto("/promo-codes");
   const toggle = page.getByRole("switch", { name: `Đang bật: ${code}` });
@@ -34,7 +36,7 @@ test("A6 promo code: create → applies at checkout, deactivate → refused", as
   await page.goto(checkout);
   await page.locator("#checkout-phone").fill(phone);
   await page.getByLabel("Mã giảm giá").fill(code);
-  await expect(page.getByText("Mã không hợp lệ hoặc đã hết hạn.")).toBeVisible();
+  await expect(page.getByText(`Mã ${code} không hợp lệ hoặc đã hết hạn.`)).toBeVisible();
 });
 
 // A7. A new collection page renders on first visit (ISR builds unseen slugs on demand).

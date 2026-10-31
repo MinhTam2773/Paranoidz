@@ -22,7 +22,7 @@ export type OrderRow = {
   order_number: string; created_at: string; status: OrderStatus;
   recipient_name: string; phone: string; secondary_phone: string | null; email: string | null;
   address: string; ward: string | null; city: string; note: string | null;
-  subtotal: number; discount: number; shipping_fee: number; total: number;
+  subtotal: number; discount: number; shipping_fee: number; shipping_discount: number; total: number;
   spx_tracking_no: string | null; user_id: string | null;
   order_items: { sku_snapshot: string | null; name_snapshot: string; color_snapshot: string | null; size_snapshot: string | null; qty: number; price_snapshot: number }[];
   order_status_history: { status: OrderStatus; created_at: string }[];
@@ -69,7 +69,7 @@ export function orderSheets(orders: OrderRow[]) {
       text(o.recipient_name), text(o.phone), text(o.secondary_phone), text(o.email),
       text(o.address), text(o.ward), text(o.city), text(o.note),
       count(o.order_items.reduce((n, i) => n + i.qty, 0)), money(o.subtotal), money(o.discount),
-      text(voucherLabel(o)), money(o.shipping_fee), money(o.total), text(o.spx_tracking_no), yes(!!o.user_id),
+      text(voucherLabel(o)), money(o.shipping_fee - o.shipping_discount), money(o.total), text(o.spx_tracking_no), yes(!!o.user_id),
     ]);
     for (const i of o.order_items) {
       itemsSheet.push([
