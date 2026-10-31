@@ -210,12 +210,12 @@ Applied in this order, each step on what the previous one left:
 3. **Vouchers the customer picks at checkout** (a list of applicable codes, like Shopee; the server re-checks every pick). They are applied **one after another**, each % on the amount left after the previous one (10 % then 15 % = 23,5 %, not 25 %).
    - **"Khách mua lần đầu"**: one fixed code, 10 %, usable on **every** order with **no** per-phone limit ("lần đầu" is only a name). Replaces the first-5 rule (5 orders per phone, auto-applied) and its label "Ưu đãi 5 đơn đầu".
    - **Other promo codes** the client creates in the admin (campaigns). They stack with "lần đầu" and with combos.
-4. **Free shipping:** orders with **≥ 2 clothing items** (tees, polos, any garment; socks don't count) on **standard** delivery pay no shipping. **Express ("hoả tốc") never gets free shipping.** The shop pays SPX as usual. This reverses §8.1 for 2+ shirt orders.
-5. **Gift:** one pair of socks per order with ≥ 1 clothing item (see below). An order with 2+ shirts gets both the gift and free shipping.
+4. **Free shipping:** orders of **₫199.000 or more after combo and vouchers** (gacha prizes not counted), any products, on **standard** delivery pay no shipping (aT, 2026-10-31; replaces "≥ 2 clothing items"). **Express ("hoả tốc") never gets free shipping.** The shop pays SPX as usual. This reverses §8.1 for those orders.
+5. **Gift:** one pair of socks per order with ≥ 1 clothing item (see below). Independent of free shipping.
 6. **No cap** on the total discount. If a product sells at a loss, the client raises its price.
 
 Database design: `docs/superpowers/specs/2026-10-17-pricing-v2-design.md`. Owner's calls (2026-10-18):
-- "Clothing" = `products.earns_perks`, one tick per product in the admin ("Được freeship & tặng tất"), default on. ≥ 1 such item → gift, ≥ 2 → free shipping.
+- "Clothing" = `products.earns_perks`, one tick per product in the admin ("Được tặng tất"), default on. ≥ 1 such item → gift. Only shirts keep it: socks, backpacks and bags are unticked (aT, 2026-10-31: "Balo/túi không được tặng tất").
 - Gift out of stock → the order goes through without it, flagged for the admin.
 - If the total moved between the checkout preview and Đặt hàng (a flash window ended or started, the SPX fee changed), `place_order()` refuses with `PRICE_CHANGED` before touching stock. The page tells the customer why and shows the new total. The customer is never charged a total they didn't see.
 
