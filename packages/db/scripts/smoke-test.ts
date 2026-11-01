@@ -886,6 +886,30 @@ async function main() {
   check("pricing v2: a new product doesn't earn the gift socks by default",
     !newProductError && newProduct?.earns_perks === false, JSON.stringify(newProduct ?? newProductError));
 
+  // Gacha code back on cancel / refusal with a fresh 7 days; a delivered order's code stays redeemed.
+  // Freeship on express: always redeemed (express never ships free).
+  await admin.from("gacha_codes").insert(["GACHA-SMKBC1", "GACHA-SMKBC2", "GACHA-SMKBC3"].map((code) =>
+    ({ code, prize_type: "freeship", tier: "epic", expires_at: expires })));
+  const gachaBack = async (code: string, ...statuses: Database["public"]["Enums"]["order_status"][]) => {
+    const o = await v2Place(shirt(1), { gachaCode: code, deliveryMethod: "express" });
+    if (o.data) await transition(o.data.order_id, ...statuses);
+    const { data: gc } = await admin.from("gacha_codes").select("status, redeemed_at, redeemed_order_id, expires_at").eq("code", code).single();
+    const { data: ord } = await admin.from("orders").select("gacha_code").eq("id", o.data?.order_id ?? "").maybeSingle();
+    return { o, gc, ord };
+  };
+  const inAWeek = (iso?: string | null) => !!iso && Math.abs(Date.parse(iso) - (Date.now() + 7 * 86400_000)) < 5 * 60_000;
+  const bcCancel = await gachaBack("GACHA-SMKBC1", "cancelled");
+  const bcRefused = await gachaBack("GACHA-SMKBC2", "shipped", "delivery_failed");
+  const bcDelivered = await gachaBack("GACHA-SMKBC3", "shipped", "delivered");
+  const { data: bcDeliveredLines } = await admin.from("order_items").select("variant_id, qty").eq("order_id", bcDelivered.o.data?.order_id ?? "");
+  for (const l of bcDeliveredLines ?? []) if (l.variant_id) deliveredItems.push({ variant_id: l.variant_id, qty: l.qty });
+  check("gacha: cancelled / refused order → code issued again, redeemed fields cleared, expires in 7 days, order keeps the code; delivered → stays redeemed",
+    [bcCancel, bcRefused].every(({ o, gc, ord }) => !o.error && o.data!.gacha_redeemed && gc?.status === "issued"
+      && gc.redeemed_at === null && gc.redeemed_order_id === null && inAWeek(gc.expires_at) && !!ord?.gacha_code)
+      && !bcDelivered.o.error && bcDelivered.o.data!.gacha_redeemed && bcDelivered.gc?.status === "redeemed"
+      && bcDelivered.gc.redeemed_order_id === bcDelivered.o.data!.order_id,
+    JSON.stringify({ cancel: bcCancel.gc, refused: bcRefused.gc, delivered: bcDelivered.gc, err: [bcCancel, bcRefused, bcDelivered].map((r) => r.o.error?.message) }));
+
   await admin.from("product_variants").update({ stock: (await variant(pool[2].id)).stock - 20 }).eq("id", pool[2].id);
 
   // Cancel releases every code of a multi-code order (lần đầu + promo from case 17).
@@ -919,9 +943,10 @@ async function cleanup() {
     const { stock } = await variant(variant_id);
     await admin.from("product_variants").update({ stock: stock + qty }).eq("id", variant_id);
   }
+  // Codes first: a delivered order's code still points at it (redeemed_order_id).
+  await admin.from("gacha_codes").delete().like("code", "GACHA-SMK%");
   if (createdOrders.length) await admin.from("orders").delete().in("id", createdOrders);
   await admin.from("customers").delete().in("phone", [...PHONES, QUOTE_PHONE, FEE_PHONE, LOST_PHONE, DELIVERY_PHONE, V2_PHONE]);
-  await admin.from("gacha_codes").delete().like("code", "GACHA-SMK%");
   if (giftVariant) await admin.from("product_variants").update({ is_order_gift: false }).eq("id", giftVariant);
   await restoreFlashWindow();
   if (welcomeUsedBefore !== null) await admin.from("vouchers").update({ used_count: welcomeUsedBefore }).eq("code", "PDZWELCOME");
