@@ -19,11 +19,26 @@ import { GACHA_COOKIE } from "@/lib/gacha";
 // addressId: the saved address the form was filled from, if untouched (links orders.address_id).
 // deliveryMethod: "standard" | "express", chosen on the product page / checkout (validated below).
 // paymentMethod: "bank_transfer" is special; anything else falls back to COD.
-export type CheckoutInput = { items: { variantId: string; qty: number }[]; addressId?: string; deliveryMethod?: string; paymentMethod?: string } & CheckoutValues;
+// Pricing v2 (optional):
+//   vouchers: the codes picked in the checkout list; absent = the listed "every order" codes
+//     (PDZWELCOME), the picker's default. The typed `voucher` field is added on top.
+//   expectedTotal / flashWindowStart: what the page showed (from quoteOrder); a different
+//     total at submit comes back as priceChanged instead of charging a total nobody saw.
+export type CheckoutInput = {
+  items: { variantId: string; qty: number }[]; addressId?: string; deliveryMethod?: string; paymentMethod?: string;
+  vouchers?: string[]; expectedTotal?: number; flashWindowStart?: string | null;
+} & CheckoutValues;
+
+export type PriceChange = { reason: "flash_ended" | "flash_started" | "other"; oldTotal: number; newTotal: number };
 
 export type CheckoutResult =
-  | { ok: true; order: { orderNumber: string; subtotal: number; discount: number; gachaDiscount: number; gachaGift: string | null; shippingFee: number; total: number; phone: string; deliveryMethod: string; paymentMethod: "cod" | "bank_transfer" } }
-  | { ok: false; message?: string; fieldErrors?: FieldErrors };
+  | { ok: true; order: {
+      orderNumber: string; subtotal: number; discount: number; gachaDiscount: number; gachaGift: string | null;
+      shippingFee: number; // what the customer pays for shipping (after free shipping)
+      shippingFeeBeforeDiscount: number; shippingDiscount: number; giftQty: number;
+      total: number; phone: string; deliveryMethod: string; paymentMethod: "cod" | "bank_transfer";
+    } }
+  | { ok: false; message?: string; fieldErrors?: FieldErrors; priceChanged?: PriceChange };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 // 1–20 lines of { variantId: uuid, qty: 1–20 }, or null.
@@ -43,7 +58,23 @@ async function subtotalOf(items: CheckoutInput["items"]) {
   return items.reduce((sum, i) => sum + (price.get(i.variantId) ?? 0) * i.qty, 0);
 }
 
-const PHONE_HELP = "Nhập số di động Việt Nam: 10 chữ số, bắt đầu bằng 03, 05, 07, 08 hoặc 09.";
+// The voucher codes an order is priced with (pricing v2): the picker's choice, or by default
+// every listed "every order" code (PDZWELCOME), plus a typed code that isn't a gacha prize.
+async function voucherCodes(picked: unknown, typed: string): Promise<string[]> {
+  let codes: string[];
+  if (Array.isArray(picked)) {
+    codes = picked.filter((c): c is string => typeof c === "string").slice(0, 20);
+  } else {
+    const { data } = await createAdminClient()
+      .from("vouchers").select("code").eq("type", "standing").eq("is_active", true).eq("is_listed", true);
+    codes = (data ?? []).map((v) => v.code);
+  }
+  const t = typed.trim().toUpperCase();
+  if (t && !t.startsWith("GACHA-")) codes.push(t);
+  return [...new Set(codes.map((c) => c.trim().toUpperCase().slice(0, 30)).filter(Boolean))];
+}
+
+const PHONE_HELP ="Nhập số di động Việt Nam: 10 chữ số, bắt đầu bằng 03, 05, 07, 08 hoặc 09.";
 
 // Gacha prize-code errors (place_order / gacha_quote_code) → the same wording
 // at preview and at submit, shown under the code field.
@@ -57,16 +88,21 @@ function gachaMessage(code: string): string | null {
 }
 
 // place_order() error codes → what the customer sees (and which field it belongs to).
-function explain(code: string): CheckoutResult {
+// Voucher errors carry the code since an order can hold several: "INVALID_VOUCHER:SALE10".
+function explain(error: string): CheckoutResult {
+  const [code, detail] = error.split(":", 2);
+  const which = detail ? `Mã ${detail}` : "Mã";
   if (code === "INVALID_PHONE") return { ok: false, fieldErrors: { phone: PHONE_HELP } };
   if (code === "INVALID_SECONDARY_PHONE") return { ok: false, fieldErrors: { secondaryPhone: PHONE_HELP } };
-  if (code === "INVALID_VOUCHER") return { ok: false, fieldErrors: { voucher: "Mã không hợp lệ hoặc đã hết hạn." } };
-  if (code === "VOUCHER_EXHAUSTED") return { ok: false, fieldErrors: { voucher: "Mã đã hết lượt sử dụng." } };
+  if (code === "INVALID_VOUCHER") return { ok: false, fieldErrors: { voucher: `${which} không hợp lệ hoặc đã hết hạn.` } };
+  if (code === "VOUCHER_EXHAUSTED") return { ok: false, fieldErrors: { voucher: `${which} đã hết lượt sử dụng.` } };
   if (code === "VOUCHER_ALREADY_USED")
-    return { ok: false, fieldErrors: { voucher: "Số điện thoại này đã dùng mã này rồi." } };
+    return { ok: false, fieldErrors: { voucher: `Số điện thoại này đã dùng ${detail ? `mã ${detail}` : "mã này"} rồi.` } };
+  if (code === "PRICE_CHANGED")
+    return { ok: false, message: "Tổng tiền vừa thay đổi. Vui lòng kiểm tra lại rồi đặt hàng." };
   const gachaError = gachaMessage(code);
   if (gachaError) return { ok: false, fieldErrors: { voucher: gachaError } };
-  if (code.startsWith("OUT_OF_STOCK") || code.startsWith("PRODUCT_INACTIVE"))
+  if (code === "OUT_OF_STOCK" || code === "PRODUCT_INACTIVE")
     return { ok: false, message: "Một số sản phẩm vừa hết hàng hoặc không còn bán. Vui lòng kiểm tra lại giỏ hàng." };
   if (code === "SHIPPING_UNAVAILABLE")
     return { ok: false, fieldErrors: { city: `Chưa tính được phí giao hàng đến đây. Vui lòng gọi ${HOTLINE}.` } };
@@ -131,6 +167,8 @@ export async function placeOrder(input: CheckoutInput): Promise<CheckoutResult> 
   // spin grant lands on that player inside place_order(). Read-only — a
   // browser without the cookie simply gets no grant.
   const gachaPlayer = (await cookies()).get(GACHA_COOKIE)?.value || undefined;
+  const codes = await voucherCodes(input?.vouchers, f.voucher);
+  const expectedTotal = typeof input?.expectedTotal === "number" && Number.isFinite(input.expectedTotal) ? input.expectedTotal : undefined;
 
   const { data, error } = await admin.rpc("place_order", {
     p_items: items.map((i) => ({ variant_id: i.variantId, qty: i.qty })),
@@ -142,7 +180,7 @@ export async function placeOrder(input: CheckoutInput): Promise<CheckoutResult> 
     p_ward: f.ward,
     p_city: f.city, // one of the 34 post-2025 provinces; districts no longer exist (p_district unused)
     p_note: f.note || undefined,
-    p_voucher_code: gachaCode ? undefined : f.voucher || undefined,
+    p_voucher_codes: codes,
     p_user_id: claims?.claims.sub,
     p_address_id: addressId,
     // A table quote is left to place_order() (NULL), which computes the same fee itself.
@@ -151,13 +189,20 @@ export async function placeOrder(input: CheckoutInput): Promise<CheckoutResult> 
     p_delivery_method: deliveryMethod,
     p_gacha_code: gachaCode,
     p_gacha_player: gachaPlayer,
+    p_expected_total: expectedTotal,
   });
   if (error) {
     if (!/^[A-Z_]+(:|$)/.test(error.message)) console.error("place_order failed", error);
+    if (error.message.startsWith("PRICE_CHANGED:") && expectedTotal !== undefined) {
+      return priceChanged(expectedTotal, Number(error.message.split(":")[1]), input?.flashWindowStart ?? null);
+    }
     return explain(error.message);
   }
 
-  const order = data as { order_id: string; order_number: string; subtotal: number; discount: number; gacha_discount: number; gacha_gift: string | null; shipping_fee: number; total: number };
+  const order = data as {
+    order_id: string; order_number: string; subtotal: number; discount: number; gacha_discount: number; gacha_gift: string | null;
+    shipping_fee: number; shipping_discount: number; gift_qty: number; total: number;
+  };
 
   // Payment method: only "bank_transfer" is special; anything else falls back to COD.
   // place_order() is frozen, so the method is attached the same way delivery_method used
@@ -195,13 +240,29 @@ export async function placeOrder(input: CheckoutInput): Promise<CheckoutResult> 
       discount: order.discount,
       gachaDiscount: order.gacha_discount,
       gachaGift: order.gacha_gift,
-      shippingFee: order.shipping_fee,
+      shippingFee: order.shipping_fee - order.shipping_discount,
+      shippingFeeBeforeDiscount: order.shipping_fee,
+      shippingDiscount: order.shipping_discount,
+      giftQty: order.gift_qty,
       total: order.total,
       phone: normalizePhone(f.phone)!,
       deliveryMethod,
       paymentMethod,
     },
   };
+}
+
+// The total moved between the page's quote and place_order(): say why (design D3b). The page sent
+// the flash window it priced with; comparing it with the window now tells "ended" from "started".
+async function priceChanged(oldTotal: number, newTotal: number, pageWindow: string | null): Promise<CheckoutResult> {
+  const { data } = await createAdminClient().rpc("flash_window");
+  const nowWindow = (data as { window_start: string | null } | null)?.window_start ?? null;
+  const same = (a: string | null, b: string | null) => (a && b ? Date.parse(a) === Date.parse(b) : a === b);
+  const reason: PriceChange["reason"] = same(pageWindow, nowWindow) ? "other" : pageWindow ? "flash_ended" : "flash_started";
+  const message = reason === "flash_ended" ? "Flash sale vừa kết thúc, tổng tiền đã thay đổi."
+    : reason === "flash_started" ? "Flash sale vừa bắt đầu, bạn được giá tốt hơn!"
+    : "Tổng tiền vừa thay đổi.";
+  return { ok: false, message: `${message} Vui lòng kiểm tra lại rồi đặt hàng.`, priceChanged: { reason, oldTotal, newTotal } };
 }
 
 // SPX's wards for a province, for the checkout and address-book ward pickers.
@@ -232,25 +293,28 @@ function voucherMessage(code: string) {
   return (!res.ok && res.fieldErrors?.voucher) || null;
 }
 
+// Pricing v2 (ARCHITECTURE.md §5): the checkout's lines, discounts, voucher picker and perks.
 export type OrderQuote = {
-  subtotal: number;
-  discount: number;
-  source: "auto_first5" | "promo" | "bundle" | null;
-  pct: number | null;
-  code: string | null;
-  flashPct: number | null;
-  flashDiscount: number | null;
   bundles: { name: string; sets: number }[];
-  phoneKnown: boolean;
-  voucherError: string | null;
+  chargedSubtotal: number; // flash prices included; what `combo` and `vouchers` apply to
+  lines: { variantId: string; qty: number; listPrice: number; price: number; flash: boolean }[];
+  combo: number;
+  vouchers: { code: string; type: "standing" | "promo"; pct: number; amount: number }[];
+  voucherErrors: { code: string; message: string }[];
+  availableVouchers: { code: string; type: "standing" | "promo"; pct: number; capAmount: number | null; expiresAt: string | null }[];
+  freeShipping: boolean; // the page shows shipping as ₫0 when true
+  gift: { eligible: boolean; inStock: boolean };
+  flashWindowStart: string | null; // send back with placeOrder (with expectedTotal)
 };
 
 // Checkout preview of the discount (client, 2026-10-11): quote_order() runs the same
-// order_discount() as place_order(), without touching stock. No valid phone yet = priced as a new
-// customer. Display only — place_order() decides at submit. null = can't quote now (rate limited or
-// failed): the page falls back to "applied at checkout". Rate limited per IP + phone so it can't be
-// used to try promo codes faster than placing orders would allow by much.
-export async function quoteOrder(input: { items: CheckoutInput["items"]; phone: string; voucher: string }): Promise<OrderQuote | null> {
+// order_discount() as place_order(), without touching stock. No valid phone yet = no
+// once-per-phone check. Display only — place_order() decides at submit. null = can't quote now
+// (rate limited or failed): the page falls back to "applied at checkout". Rate limited per IP +
+// phone so it can't be used to try promo codes faster than placing orders would allow by much.
+export async function quoteOrder(input: {
+  items: CheckoutInput["items"]; phone: string; voucher: string; vouchers?: string[]; deliveryMethod?: string;
+}): Promise<OrderQuote | null> {
   const items = validItems(input?.items);
   if (!items) return null;
   const phone = typeof input?.phone === "string" ? input.phone.trim().slice(0, 20) : "";
@@ -266,30 +330,33 @@ export async function quoteOrder(input: { items: CheckoutInput["items"]; phone: 
   const { data, error } = await createAdminClient().rpc("quote_order", {
     p_items: items.map((i) => ({ variant_id: i.variantId, qty: i.qty })),
     p_phone: phone || undefined,
-    // Gacha prize codes are quoted separately (quoteGachaCode); quote_order
-    // would only reject them as INVALID_VOUCHER.
-    p_voucher_code: voucher.toUpperCase().startsWith("GACHA-") ? undefined : voucher || undefined,
+    // Gacha prize codes are quoted separately (quoteGachaCode); voucherCodes() leaves them out.
+    p_voucher_codes: await voucherCodes(input?.vouchers, voucher),
+    p_delivery_method: input?.deliveryMethod === "express" ? "express" : "standard",
   });
   if (error) {
     if (!/^[A-Z_]+(:|$)/.test(error.message)) console.error("quote_order failed", error);
     return null;
   }
   const q = data as {
-    subtotal: number; discount: number; source: OrderQuote["source"]; pct: number | null; code: string | null;
-    flash_pct: number | null; flash_discount: number | null;
-    bundles: { name: string; sets: number }[] | null; phone_known: boolean; voucher_error: string | null;
+    subtotal: number; combo: number; bundles: { name: string; sets: number }[] | null; flash_window_start: string | null;
+    lines: { variant_id: string; qty: number; list_price: number; price: number; flash: boolean }[];
+    vouchers: { code: string; type: "standing" | "promo"; pct: number; amount: number }[];
+    voucher_errors: { code: string; error: string }[];
+    available_vouchers: { code: string; type: "standing" | "promo"; pct: number; cap_amount: number | null; expires_at: string | null }[];
+    free_shipping: boolean; gift: { eligible: boolean; in_stock: boolean };
   };
   return {
-    subtotal: q.subtotal,
-    discount: q.discount,
-    source: q.source,
-    pct: q.pct,
-    code: q.code,
-    flashPct: q.flash_pct,
-    flashDiscount: q.flash_discount,
     bundles: (q.bundles ?? []).map((b) => ({ name: b.name, sets: b.sets })),
-    phoneKnown: q.phone_known,
-    voucherError: q.voucher_error ? voucherMessage(q.voucher_error) : null,
+    chargedSubtotal: q.subtotal,
+    lines: q.lines.map((l) => ({ variantId: l.variant_id, qty: l.qty, listPrice: l.list_price, price: l.price, flash: l.flash })),
+    combo: q.combo,
+    vouchers: q.vouchers.map((v) => ({ code: v.code, type: v.type, pct: v.pct, amount: v.amount })),
+    voucherErrors: q.voucher_errors.map((e) => ({ code: e.code, message: voucherMessage(`${e.error}:${e.code}`) ?? e.error })),
+    availableVouchers: q.available_vouchers.map((v) => ({ code: v.code, type: v.type, pct: v.pct, capAmount: v.cap_amount, expiresAt: v.expires_at })),
+    freeShipping: q.free_shipping,
+    gift: { eligible: q.gift.eligible, inStock: q.gift.in_stock },
+    flashWindowStart: q.flash_window_start,
   };
 }
 
@@ -301,7 +368,9 @@ export type GachaQuote =
 // the cart from the database and reports the effect — a money discount, free
 // shipping, or a physical gift. Display only; place_order() re-validates and
 // redeems at submit. null = can't quote now (rate limited or failed).
-export async function quoteGachaCode(input: { items: CheckoutInput["items"]; code: string }): Promise<GachaQuote | null> {
+export async function quoteGachaCode(input: {
+  items: CheckoutInput["items"]; code: string; deliveryMethod?: string; phone?: string; voucher?: string; vouchers?: string[];
+}): Promise<GachaQuote | null> {
   const items = validItems(input?.items);
   const code = typeof input?.code === "string" ? input.code.trim().toUpperCase().slice(0, 30) : "";
   if (!items || !code.startsWith("GACHA-")) return null;
@@ -326,6 +395,24 @@ export async function quoteGachaCode(input: { items: CheckoutInput["items"]; cod
     discount?: number; freeship?: boolean; gift?: string | null;
   };
   if (!q.ok) return { ok: false, message: gachaMessage(q.error ?? "") ?? "Mã quà không hợp lệ." };
+  // Pricing v2: an order that already ships free (₫199.000+ after the vouchers) doesn't use a
+  // freeship prize; place_order() keeps the code unused. quote_order() applies the same rule.
+  if (q.freeship) {
+    const phone = typeof input?.phone === "string" ? input.phone.trim().slice(0, 20) : "";
+    const voucher = typeof input?.voucher === "string" ? input.voucher.trim().slice(0, 30) : "";
+    const { data: quote, error: quoteError } = await createAdminClient().rpc("quote_order", {
+      p_items: items.map((i) => ({ variant_id: i.variantId, qty: i.qty })),
+      p_phone: phone || undefined,
+      p_voucher_codes: await voucherCodes(input?.vouchers, voucher),
+      p_delivery_method: input?.deliveryMethod === "express" ? "express" : "standard",
+    });
+    if (quoteError) {
+      console.error("quote_order failed", quoteError);
+      return null;
+    }
+    if ((quote as { free_shipping: boolean }).free_shipping)
+      return { ok: false, message: "Đơn này đã được miễn phí vận chuyển. Mã freeship được giữ lại cho đơn sau." };
+  }
   return {
     ok: true,
     prizeType: q.prize_type ?? "",

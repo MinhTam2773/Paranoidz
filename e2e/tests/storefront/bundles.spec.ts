@@ -2,8 +2,8 @@ import { expect, test } from "../../fixtures/test";
 import { fillDelivery, placedOrderNumber, placeOrderButton } from "../../fixtures/checkout";
 import { createBundle, db, seedProduct, uniquePhone } from "../../fixtures/data";
 
-// S9. A bundle beats the first-5 discount when it saves more (ARCHITECTURE.md §5: no stacking,
-// the better of the two). 2 × ₫200.000: first-5 = −₫40.000, bundle = −₫50.000.
+// S9. Pricing v2: the combo comes off first, then "Khách mua lần đầu" 10% on the rest (they stack).
+// 2 × ₫200.000: combo −₫50.000, then 10% of ₫350.000 = −₫35.000 → −₫85.000.
 test("S9 bundle: offer on the product page, combo discount at checkout and on the order", async ({ page }) => {
   const tee = await seedProduct([{ size: "M", stock: 5 }]);
   const cap = await seedProduct([{ size: "FREE", stock: 5 }]);
@@ -24,12 +24,14 @@ test("S9 bundle: offer on the product page, combo discount at checkout and on th
 
   await page.goto("/checkout");
   await fillDelivery(page, { phone: uniquePhone() });
-  await expect(page.getByText(`Combo: ${bundle.name}`)).toBeVisible();
+  // One line each: the combo, then "Khách mua lần đầu" on what's left. ₫315.000 ships free (₫199.000+).
   await expect(page.getByText("−₫50.000")).toBeVisible();
+  await expect(page.getByText("−₫35.000")).toBeVisible();
+  await expect(page.getByText("Miễn phí").first()).toBeVisible();
 
   await placeOrderButton(page).click();
   const number = await placedOrderNumber(page);
   const { data: order } = await db.from("orders").select("discount, applied_bundles").eq("order_number", number).single();
-  expect(order?.discount).toBe(50_000);
+  expect(order?.discount).toBe(85_000);
   expect(order?.applied_bundles).toEqual([expect.objectContaining({ bundle_id: bundle.id, sets: 1 })]);
 });

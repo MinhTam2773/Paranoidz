@@ -24,7 +24,7 @@ export function useBundleEstimate(lines: CartLine[]) {
   return estimate;
 }
 
-// "Combo: <name> ×2 … −₫X" + the no-stacking note, for the cart and checkout summaries.
+// "Combo: <name> ×2 … −₫X" + the stacking note, for the cart and checkout summaries.
 export function BundleEstimate({ estimate, subtotal }: { estimate: Estimate | null; subtotal: number }) {
   if (!estimate) return null;
   const names = estimate.bundles.map((b) => (b.sets > 1 ? `${b.name} ×${b.sets}` : b.name)).join(", ");
@@ -35,7 +35,7 @@ export function BundleEstimate({ estimate, subtotal }: { estimate: Estimate | nu
         <dd className="shrink-0 text-accent">−{formatVnd(Math.min(estimate.amount, subtotal))}</dd>
       </dl>
       <p className="text-caption text-text-muted">
-        Ưu đãi combo không cộng dồn với mã giảm giá hay ưu đãi 5 đơn đầu — khi đặt hàng, bạn được mức giảm cao hơn.
+        Ưu đãi combo được cộng dồn với mã giảm giá (kể cả ưu đãi Khách mua lần đầu −10%) — mã tính trên phần còn lại sau combo.
       </p>
     </div>
   );

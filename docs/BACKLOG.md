@@ -70,6 +70,7 @@ Pick from TODO.md → "Now" first. Starting an item: move it to TODO.md → "Now
 
 ### Admin
 
+- **`tsc --noEmit` fails in `apps/admin`** (seen 2026-10-30): `tests/orders.test.ts`'s `order()` fixture lacks the `payment_method` / `payment_confirmed_at` fields that `9ed211c` (VietQR) made required on `BulkOrder`. `node --test` strips types, so the tests still pass and CI stays green.
 - **ARCHITECTURE.md §2.2 "Admin realtime order feed — RLS restricts channel to admin role"** has no backing policy: orders have no admin SELECT policy. Add an `is_admin` policy (or broadcast from the server) when building the feed.
 - **Order emails have no admin-side counterpart yet**: status changes (confirmed / shipped) send nothing; the shop alert is email + Zalo.
 - **Customer confirmation gets no plain-text part** (HTML only); Resend generates one, insights were clean.
@@ -96,6 +97,9 @@ Pick from TODO.md → "Now" first. Starting an item: move it to TODO.md → "Now
 
 ### Pricing, security, rate limits
 
+- **Payment method is written after `place_order()`** (Tủn's bank transfer, PR #35): a second UPDATE, and the order is cancelled if it fails. That's the pattern PR #23 removed for `delivery_method`. Move `p_payment_method` into `place_order()` (RED).
+- **Smoke case 14 (reviews) fails on a second run without `db reset`** (found 2026-10-27): customer 1 keeps a delivered purchase from run 1, so the "no review before delivery" insert goes through. CI always resets, so it's fine for now.
+- **Gift socks count in the SPX parcel weight** (pricing v2): weight = 0,3 kg × every unit, the gift line included. A pair of socks weighs far less; harmless while orders stay under 1 kg.
 - **Express orders pay the standard SPX fee** (PR #19). Express (HCMC only) is booked by hand on another service, so its real cost isn't charged to the customer. Price it before express gets real volume (client's call).
 - **The product-description sanitizer has no tests** (`apps/storefront/src/lib/sanitize-description.ts`, rendered with `dangerouslySetInnerHTML` in `products/[slug]/page.tsx:110`). Reviewed 2026-10-17: allowlist, output rebuilt from scratch, attributes re-quoted and escaped, `src` / `href` https-only. No bypass found. Keep it even though only the admin writes descriptions: the text partly comes from Shopee copy-paste, and an admin-session or service-key leak would otherwise become script on every product page. Owner's decision (2026-10-17): leave it as is, no tests and no library swap, judged secure enough.
 - **Phone numbers aren't verified (no OTP), by the client's choice** (2026-10-17: "càng ít phiền càng tốt"). The phone-related items (account phones here, review eligibility above) stay accepted risks.

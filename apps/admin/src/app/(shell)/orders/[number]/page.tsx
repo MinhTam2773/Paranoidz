@@ -24,7 +24,7 @@ export default async function OrderDetailPage({ params }: PageProps<"/orders/[nu
     .from("orders")
     // One literal: supabase-js infers the row type from it.
     .select(
-      "id, order_number, status, created_at, recipient_name, phone, secondary_phone, email, address, ward, district, city, note, subtotal, discount, shipping_fee, total, applied_bundles, delivery_method, payment_method, payment_confirmed_at, gacha_discount, gacha_code, gacha_gift, spx_tracking_no, spx_ward, spx_fee, spx_created_at, order_items(id, name_snapshot, color_snapshot, size_snapshot, price_snapshot, image_snapshot, qty), order_status_history(id, status, note, created_at), voucher_uses(vouchers(code))",
+      "id, order_number, status, created_at, recipient_name, phone, secondary_phone, email, address, ward, district, city, note, subtotal, discount, shipping_fee, shipping_discount, total, gift_missing, applied_bundles, delivery_method, payment_method, payment_confirmed_at, gacha_discount, gacha_code, gacha_gift, spx_tracking_no, spx_ward, spx_fee, spx_created_at, order_items(id, name_snapshot, color_snapshot, size_snapshot, price_snapshot, list_price_snapshot, image_snapshot, qty, is_gift), order_status_history(id, status, note, created_at), voucher_uses(vouchers(code))",
     )
     .eq("order_number", number)
     .order("created_at", { referencedTable: "order_status_history" })
@@ -88,6 +88,11 @@ export default async function OrderDetailPage({ params }: PageProps<"/orders/[nu
 
           <section className={card}>
             <h3 className={cardTitle}>Sản phẩm</h3>
+            {order.gift_missing && (
+              <p role="alert" className="mb-4 rounded-sm border border-accent p-3 font-semibold text-accent">
+                Hết quà tặng khi đặt: đơn này được tặng tất nhưng kho quà không đủ (hoặc chưa chọn biến thể quà). Bỏ quà vào đơn bằng tay hoặc báo khách.
+              </p>
+            )}
             <ul className="flex flex-col divide-y divide-border">
               {order.order_items.map((item) => (
                 <li key={item.id} className="flex gap-3 py-3 first:pt-0 last:pb-0">
@@ -97,11 +102,19 @@ export default async function OrderDetailPage({ params }: PageProps<"/orders/[nu
                     )}
                   </div>
                   <div className="flex min-w-0 flex-1 flex-col gap-1">
-                    <span className="font-medium wrap-break-word">{item.name_snapshot}</span>
+                    <span className="font-medium wrap-break-word">
+                      {item.is_gift && <span className="mr-2 rounded-sm bg-accent px-1.5 py-0.5 text-badge uppercase text-text-on-dark">Quà tặng</span>}
+                      {item.name_snapshot}
+                    </span>
                     <span className="text-stat-label uppercase text-text-secondary">
                       {[item.color_snapshot, item.size_snapshot].filter(Boolean).join(" / ")}
                     </span>
-                    <span className="text-text-secondary">{item.qty} × {formatVnd(item.price_snapshot)}</span>
+                    <span className="text-text-secondary">
+                      {item.qty} × {formatVnd(item.price_snapshot)}
+                      {!item.is_gift && item.list_price_snapshot !== null && item.list_price_snapshot > item.price_snapshot && (
+                        <> <s>{formatVnd(item.list_price_snapshot)}</s> (flash sale)</>
+                      )}
+                    </span>
                   </div>
                   <span className="whitespace-nowrap font-semibold">{formatVnd(item.price_snapshot * item.qty)}</span>
                 </li>
@@ -134,6 +147,11 @@ export default async function OrderDetailPage({ params }: PageProps<"/orders/[nu
                 </div>
               )}
               <div className="flex justify-between gap-4"><dt className="text-text-secondary">Phí vận chuyển</dt><dd>{formatVnd(order.shipping_fee)}</dd></div>
+              {order.shipping_discount > 0 && (
+                <div className="flex justify-between gap-4">
+                  <dt className="text-text-secondary">Miễn phí vận chuyển</dt><dd>−{formatVnd(order.shipping_discount)}</dd>
+                </div>
+              )}
               <div className="flex justify-between gap-4">
                 <dt className="text-text-secondary">Phương thức giao hàng</dt>
                 <dd className={order.delivery_method === "express" ? "font-semibold text-accent" : ""}>

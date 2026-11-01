@@ -14,8 +14,8 @@ const FROM = "Paranoidz <donhang@paranoidz.vn>"; // not "noreply" (Resend delive
 type Order = {
   order_number: string; recipient_name: string; phone: string; secondary_phone: string | null; email: string | null;
   address: string; ward: string | null; city: string; note: string | null;
-  subtotal: number; discount: number; shipping_fee: number; total: number; payment_method: string;
-  order_items: { name_snapshot: string; color_snapshot: string | null; size_snapshot: string | null; qty: number; price_snapshot: number }[];
+  subtotal: number; discount: number; shipping_fee: number; shipping_discount: number; total: number; payment_method: string;
+  order_items: { name_snapshot: string; color_snapshot: string | null; size_snapshot: string | null; qty: number; price_snapshot: number; is_gift: boolean }[];
 };
 
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
@@ -27,7 +27,7 @@ const button = (href: string, label: string) =>
 function summary(o: Order) {
   const items = o.order_items.map((i) => {
     const variant = [i.color_snapshot, i.size_snapshot].filter(Boolean).join(" / ");
-    return row(`${esc(i.name_snapshot)}${variant ? ` — ${esc(variant)}` : ""} × ${i.qty}`, formatVnd(i.price_snapshot * i.qty));
+    return row(`${i.is_gift ? "🎁 Quà tặng: " : ""}${esc(i.name_snapshot)}${variant ? ` — ${esc(variant)}` : ""} × ${i.qty}`, formatVnd(i.price_snapshot * i.qty));
   });
   const transfer = o.payment_method === "bank_transfer";
   return `<table style="width:100%;border-collapse:collapse;font-size:14px">${items.join("")}
@@ -35,6 +35,7 @@ function summary(o: Order) {
     ${row("Tạm tính", formatVnd(o.subtotal))}
     ${o.discount ? row("Giảm giá", `<span style="color:#ff2d2d">−${formatVnd(o.discount)}</span>`) : ""}
     ${row("Phí vận chuyển", formatVnd(o.shipping_fee))}
+    ${o.shipping_discount ? row("Miễn phí vận chuyển", `<span style="color:#ff2d2d">−${formatVnd(o.shipping_discount)}</span>`) : ""}
     ${row(transfer ? "TỔNG CẦN CHUYỂN KHOẢN" : "TỔNG THANH TOÁN KHI NHẬN HÀNG", formatVnd(o.total), true)}</table>`;
 }
 
@@ -88,7 +89,7 @@ export async function sendOrderEmails(orderId: string) {
   if (!key) return console.error("RESEND_API_KEY missing: order emails not sent");
 
   const { data, error } = await createAdminClient().from("orders")
-    .select("order_number, recipient_name, phone, secondary_phone, email, address, ward, city, note, subtotal, discount, shipping_fee, total, payment_method, order_items(name_snapshot, color_snapshot, size_snapshot, qty, price_snapshot)")
+    .select("order_number, recipient_name, phone, secondary_phone, email, address, ward, city, note, subtotal, discount, shipping_fee, shipping_discount, total, payment_method, order_items(name_snapshot, color_snapshot, size_snapshot, qty, price_snapshot, is_gift)")
     .eq("id", orderId).single();
   if (error) return console.error("order email: order not readable", orderId, error);
   const o = data as Order;

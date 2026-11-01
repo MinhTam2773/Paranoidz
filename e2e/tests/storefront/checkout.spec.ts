@@ -28,7 +28,9 @@ test("S3 guest checkout: cart → order placed, priced server-side @mobile", asy
 
   await page.goto("/checkout");
   await fillDelivery(page, { phone: uniquePhone() });
-  await expect(page.getByText("Ưu đãi 5 đơn đầu (−10%)")).toBeVisible();
+  // "Khách mua lần đầu" is ticked in the picker by default (pricing v2); ₫180.000 is under the free-shipping line.
+  await expect(page.getByRole("checkbox", { name: /Khách mua lần đầu/ })).toBeChecked();
+  await expect(page.getByText("Khách mua lần đầu · PDZWELCOME (−10%)")).toBeVisible();
   await expect(page.getByText("−₫20.000")).toBeVisible();
   await expect(page.getByText(vnd(200_000 - 20_000 + fee))).toBeVisible();
 
@@ -41,7 +43,7 @@ test("S3 guest checkout: cart → order placed, priced server-side @mobile", asy
   await expect(page.getByRole("link", { name: /^Giỏ hàng, \d+ sản phẩm$/ })).toHaveAccessibleName("Giỏ hàng, 0 sản phẩm");
 });
 
-// S4. A better promo replaces the first-5 discount; a bad code shows the error and prices without it.
+// S4. Pricing v2: a promo stacks on "Khách mua lần đầu" (10% then 20% of the rest); a bad code shows the error and prices without it.
 test("S4 promo code: invalid → error, valid → lower total, honoured by the order", async ({ page }) => {
   const product = await seedProduct([{ size: "M", stock: 5, price: 200_000 }]);
   const code = await createPromo(20);
@@ -51,16 +53,18 @@ test("S4 promo code: invalid → error, valid → lower total, honoured by the o
   const voucher = page.getByLabel("Mã giảm giá");
 
   await voucher.fill("E2EKHONGTONTAI");
-  await expect(page.getByText("Mã không hợp lệ hoặc đã hết hạn.")).toBeVisible();
-  await expect(page.getByText("Ưu đãi 5 đơn đầu (−10%)")).toBeVisible();
+  await expect(page.getByText("Mã E2EKHONGTONTAI không hợp lệ hoặc đã hết hạn.")).toBeVisible();
+  await expect(page.getByText("Khách mua lần đầu · PDZWELCOME (−10%)")).toBeVisible();
 
   await voucher.fill(code);
   await expect(page.getByText(`Mã ${code} (−20%)`)).toBeVisible();
-  await expect(page.getByText("−₫40.000")).toBeVisible();
+  await expect(page.getByText("−₫20.000")).toBeVisible(); // 10% of 200.000
+  await expect(page.getByText("−₫36.000")).toBeVisible(); // then 20% of 180.000
+  await expect(page.getByText(vnd(200_000 - 56_000 + (await shippingFee(1))))).toBeVisible();
 
   await placeOrderButton(page).click();
   const order = await orderByNumber(await placedOrderNumber(page));
-  expect(order.discount).toBe(40_000);
+  expect(order.discount).toBe(56_000);
   const { data: promo } = await db.from("vouchers").select("used_count").eq("code", code).single();
   expect(promo?.used_count).toBe(1);
 });

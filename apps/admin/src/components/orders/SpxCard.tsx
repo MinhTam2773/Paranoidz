@@ -12,6 +12,7 @@ type Order = {
   city: string;
   ward: string | null;
   shipping_fee: number;
+  shipping_discount: number; // free shipping (pricing v2): the customer paid shipping_fee − this
   delivery_method: string | null;
   spx_tracking_no: string | null;
   spx_ward: string | null;
@@ -42,7 +43,7 @@ export async function SpxCard({ order }: { order: Order }) {
           </Row>
           <Row label="Phường / xã">{order.spx_ward}</Row>
           <Row label="Phí SPX">{order.spx_fee === null ? "—" : formatVnd(order.spx_fee)}</Row>
-          <Row label="Phí đã thu">{formatVnd(order.shipping_fee)}</Row>
+          <Row label="Phí đã thu">{formatVnd(order.shipping_fee - order.shipping_discount)}</Row>
           {order.spx_created_at && <Row label="Tạo lúc">{formatDateTime(order.spx_created_at)}</Row>}
         </dl>
         {(order.status === "pending" || order.status === "confirmed" || order.status === "shipped") && <SpxLabelButton orderId={order.id} />}

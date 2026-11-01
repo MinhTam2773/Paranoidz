@@ -11,19 +11,19 @@ const MAX_TEXT = 2000; // sendMessage limit
 type Order = {
   order_number: string; recipient_name: string; phone: string; secondary_phone: string | null;
   address: string; ward: string | null; city: string; note: string | null;
-  subtotal: number; discount: number; shipping_fee: number; total: number; payment_method: string;
-  order_items: { name_snapshot: string; color_snapshot: string | null; size_snapshot: string | null; qty: number }[];
+  subtotal: number; discount: number; shipping_fee: number; shipping_discount: number; total: number; payment_method: string;
+  order_items: { name_snapshot: string; color_snapshot: string | null; size_snapshot: string | null; qty: number; is_gift: boolean }[];
 };
 
 export function zaloAlertText(o: Order) {
   const items = o.order_items.map((i) => {
     const variant = [i.color_snapshot, i.size_snapshot].filter(Boolean).join(" / ");
-    return `${i.qty} × ${i.name_snapshot}${variant ? ` (${variant})` : ""}`;
+    return `${i.is_gift ? "🎁 " : ""}${i.qty} × ${i.name_snapshot}${variant ? ` (${variant})` : ""}`;
   });
   const totals = [
     `Tạm tính ${formatVnd(o.subtotal)}`,
     o.discount ? `Giảm −${formatVnd(o.discount)}` : "",
-    `Ship ${formatVnd(o.shipping_fee)}`,
+    o.shipping_discount ? `Ship ${formatVnd(o.shipping_fee)} (freeship −${formatVnd(o.shipping_discount)})` : `Ship ${formatVnd(o.shipping_fee)}`,
   ].filter(Boolean).join(" · ");
   return [
     `${TEST_PREFIX}🛒 ĐƠN MỚI ${o.order_number}`,
@@ -43,7 +43,7 @@ export async function sendZaloAlert(orderId: string) {
   if (!token || !chatId) return console.warn("ZALO_BOT_TOKEN / ZALO_OWNER_CHAT_ID unset: Zalo alert skipped");
 
   const { data, error } = await createAdminClient().from("orders")
-    .select("order_number, recipient_name, phone, secondary_phone, address, ward, city, note, subtotal, discount, shipping_fee, total, payment_method, order_items(name_snapshot, color_snapshot, size_snapshot, qty)")
+    .select("order_number, recipient_name, phone, secondary_phone, address, ward, city, note, subtotal, discount, shipping_fee, shipping_discount, total, payment_method, order_items(name_snapshot, color_snapshot, size_snapshot, qty, is_gift)")
     .eq("id", orderId).single();
   if (error) return console.error("zalo alert: order not readable", orderId, error);
 
