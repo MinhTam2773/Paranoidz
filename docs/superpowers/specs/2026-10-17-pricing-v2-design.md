@@ -15,7 +15,7 @@ This covers the database and server side only. The checkout voucher picker, the 
 
 **D1. What counts as "clothing" (free shipping and gift).**
 New column `products.earns_perks boolean not null default true`, a tick in the admin product editor ("Được tặng tất"). The client unticks it for socks and gifts. The default is true because almost every product is a shirt. Named for what it does, not "clothing" (owner, 2026-10-18).
-**Changed 2026-10-31 (aT, via PR #65):** the tick only drives the gift (≥ 1 such item). Free shipping no longer depends on it (D5 step 5). Backpacks and bags (≈ 60 imported 2026-10-30) are unticked by the PR C migration, matched by name ("Balo …" / "Túi …") since products have no category.
+**Changed 2026-10-31 (aT, via PR #65):** the tick only drives the gift (≥ 1 such item). Free shipping no longer depends on it (D5 step 5). Backpacks and bags (≈ 60 imported 2026-10-30) are unticked by the PR C migration, matched by name ("Balo …" / "Túi …") since products have no category. **New products default to unticked** (owner, 2026-10-31, after Tủn's review): the PR C migration sets the column default to `false` and the admin's new-product form starts unticked.
 *Rejected:* a flag per category (categories are empty today, and a product without a category would silently not count); two separate ticks (nobody asked for it).
 
 **D2. The gift.**
@@ -140,6 +140,7 @@ The gacha prizes (20261020000001) already give free shipping and socks, differen
 - **Gacha "freeship" → `shipping_discount`** (decided). PR C stops setting `shipping_fee = 0`; the fee stays what SPX charges the shop and the prize waives it through `shipping_discount`, like v2's free shipping.
   - When the order already has v2 free shipping (₫199.000+ after combo and vouchers, standard delivery; was ≥ 2 `earns_perks` items until 2026-10-31), a freeship code is **not redeemed**: it stays `issued` for a later order, and the quote says it isn't needed for this one (decided).
 - **Gacha socks take stock in PR C** (decided). `socks1` / `socks3` add an `is_gift` line of 1 / 3 units of the gift variant (`is_order_gift`), with the same atomic stock guard, so stock and the BigSeller export see them. `orders.gacha_gift` stays as the packing note. Several pairs per order are fine (owner, 2026-10-22): 1 shirt + `socks1` = 2 pairs, + `socks3` = 4. Out of stock: no special handling (owner expects socks never to run out); the code reuses D2's path (order goes through, `gift_missing`), since the atomic guard must do something when stock is short.
+  - **Changed 2026-10-31 (owner, after Tủn's review):** the regular gift and the gacha socks are taken from stock separately. If the gacha part can't be covered, the order still gets its regular gift and the gacha code is **not** redeemed (it stays `issued`), so a customer never loses a prize to a shared shortage.
 - **Gacha codes in the stacking order**: after the vouchers, as today (`least(gacha, subtotal − discount)`); minimum spend checked on the subtotal before discounts. **aT, 2026-10-22: "trừ 10% mã cố định trước"**: the 10 % "lần đầu" comes off first, every other discount (another % code, the gacha ₫ amount) on what is left.
 
 ## Gacha code back on cancel (decided 2026-10-22, separate small RED PR)

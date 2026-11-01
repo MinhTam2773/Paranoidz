@@ -215,7 +215,7 @@ Applied in this order, each step on what the previous one left:
 6. **No cap** on the total discount. If a product sells at a loss, the client raises its price.
 
 Database design: `docs/superpowers/specs/2026-10-17-pricing-v2-design.md`. Owner's calls (2026-10-18):
-- "Clothing" = `products.earns_perks`, one tick per product in the admin ("Được tặng tất"), default on. ≥ 1 such item → gift. Only shirts keep it: socks, backpacks and bags are unticked (aT, 2026-10-31: "Balo/túi không được tặng tất").
+- "Clothing" = `products.earns_perks`, one tick per product in the admin ("Được tặng tất"), default **off** for new products since 2026-10-31 (owner: the catalog is mostly bags). ≥ 1 such item → gift. Only shirts keep it: socks, backpacks and bags are unticked (aT, 2026-10-31: "Balo/túi không được tặng tất").
 - Gift out of stock → the order goes through without it, flagged for the admin.
 - If the total moved between the checkout preview and Đặt hàng (a flash window ended or started, the SPX fee changed), `place_order()` refuses with `PRICE_CHANGED` before touching stock. The page tells the customer why and shows the new total. The customer is never charged a total they didn't see.
 
