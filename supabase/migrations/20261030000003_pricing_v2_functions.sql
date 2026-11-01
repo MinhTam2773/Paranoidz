@@ -12,8 +12,9 @@
 --      (gacha prizes not counted; aT, 2026-10-31) → the whole fee goes into
 --      orders.shipping_discount (shipping_fee keeps what SPX charges).
 --   5. Gift: ≥ 1 `earns_perks` unit → 1 unit of the is_order_gift variant, taken
---      from stock like any line; gacha socks prizes add 1 / 3 more. Out of stock
---      (or no gift variant set) → the order goes through, gift_missing = true.
+--      from stock like any line; gacha socks prizes add 1 / 3 more, taken on their
+--      own. Gift out of stock (or no gift variant set) → the order goes through,
+--      gift_missing = true; gacha socks out of stock → the code stays unused.
 --   6. Gacha: freeship prize → shipping_discount; not redeemed when the order
 --      already ships free. Its ₫ prizes still come after the vouchers.
 --   7. p_expected_total: the total the page showed; a different total raises
@@ -388,7 +389,8 @@ declare
   -- perks
   v_perks          int := 0;
   v_free_ship      boolean;
-  v_gift_qty       int := 0;
+  v_gift_qty       int := 0;   -- the regular gift (0 / 1), then every sock actually taken
+  v_gacha_socks    int := 0;   -- a gacha socks prize (1 / 3), taken separately
   v_gift           record;
   v_gift_missing   boolean := false;
   v_gift_found     boolean := false;
@@ -568,10 +570,10 @@ begin
         end if;
       when 'socks1' then
         v_gacha_gift := 'Tặng 1 đôi vớ kèm đơn (quà quay thưởng)';
-        v_gift_qty := v_gift_qty + 1;
+        v_gacha_socks := 1;
       when 'socks3' then
         v_gacha_gift := 'Tặng bộ 3 đôi vớ kèm đơn (quà quay thưởng)';
-        v_gift_qty := v_gift_qty + 3;
+        v_gacha_socks := 3;
       when 'shirt' then
         if v_cheapest_shirt is null then
           raise exception 'GACHA_NO_SHIRT';
@@ -590,25 +592,40 @@ begin
     raise exception 'PRICE_CHANGED:%', v_total;
   end if;
 
-  -- gift: the same atomic stock guard; short or unset → order goes through, flagged
+  -- gift socks, each part with the same atomic stock guard (Tủn's review, owner 2026-10-31):
+  -- the regular gift first; short or unset → the order goes through, flagged (gift_missing).
+  -- Then a gacha socks prize on its own; short → the code isn't used, it stays for a later order.
   if v_gift_qty > 0 then
     update public.product_variants
        set stock = stock - v_gift_qty
      where is_order_gift
-       and stock >= v_gift_qty
-    returning * into v_variant;
-    if found then
-      select v.*, p.name, (select storage_path from public.product_images i
-                            where i.product_id = p.id and (i.color = v.color or i.color is null)
-                            order by (i.color = v.color) desc nulls last, i.is_primary desc, i.sort_order
-                            limit 1) as image
-        into v_gift
-        from public.product_variants v join public.products p on p.id = v.product_id
-       where v.id = v_variant.id;
-      v_gift_found := true;
-    else
+       and stock >= v_gift_qty;
+    if not found then
+      v_gift_qty := 0;
       v_gift_missing := true;
     end if;
+  end if;
+  if v_gacha_socks > 0 then
+    update public.product_variants
+       set stock = stock - v_gacha_socks
+     where is_order_gift
+       and stock >= v_gacha_socks;
+    if found then
+      v_gift_qty := v_gift_qty + v_gacha_socks;
+    else
+      v_has_gacha := false;
+      v_gacha_gift := null;
+    end if;
+  end if;
+  if v_gift_qty > 0 then
+    select v.*, p.name, (select storage_path from public.product_images i
+                          where i.product_id = p.id and (i.color = v.color or i.color is null)
+                          order by (i.color = v.color) desc nulls last, i.is_primary desc, i.sort_order
+                          limit 1) as image
+      into v_gift
+      from public.product_variants v join public.products p on p.id = v.product_id
+     where v.is_order_gift;
+    v_gift_found := true;
   end if;
 
   -- order + items + history + voucher uses --------------------
@@ -734,6 +751,9 @@ update public.vouchers set is_active = false, is_listed = false where type = 'au
 update public.product_variants set is_order_gift = true
  where sku = 'Sck1-Random'
    and not exists (select 1 from public.product_variants where is_order_gift);
+
+-- New products start unticked (owner, 2026-10-31): the catalog is now mostly bags.
+alter table public.products alter column earns_perks set default false;
 
 -- Only shirts earn the gift socks (aT, 2026-10-31): not the socks themselves (QT01 gift,
 -- QT03 sold), nor backpacks / bags. Products have no category yet, so bags are matched by

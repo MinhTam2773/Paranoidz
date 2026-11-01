@@ -25,6 +25,10 @@ insert into public.products (id, name, slug, description, care_instructions, cat
   ('d0000000-0000-4000-8000-000000000010', 'Paranoidz tote bag',   'paranoidz-tote-bag',   'Heavy canvas tote with inner pocket.',                  'Spot clean only.',               'c0000000-0000-4000-8000-000000000004')
 on conflict (slug) do nothing;
 
+-- New products start without the gift socks (pricing v2, 2026-10-31); the mock catalog keeps
+-- them, as before, so the smoke test's gift cases have products that earn one.
+update public.products set earns_perks = true where id::text like 'd0000000-%';
+
 -- ---------- variants: colours x sizes ----------
 -- Stock is a deterministic pseudo-random 0..14, so some variants are sold out
 -- (0) and some are low stock (<= 3) for the storefront and dashboard states.

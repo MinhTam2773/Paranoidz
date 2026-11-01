@@ -862,6 +862,30 @@ async function main() {
       && !skOrder.error && skOrder.data!.gift_qty === 4 && skGift[0]?.qty === 4,
     `fs=${JSON.stringify(fsOrder.data ?? fsOrder.error)} code=${fsCode?.status} sk=${JSON.stringify(skOrder.data ?? skOrder.error)} gift=${JSON.stringify(skGift)}`);
 
+  // Gacha socks the gift stock can't cover (2 left, 1 + 3 needed): the regular gift is still taken
+  // and the code stays issued (Tủn's review, 2026-10-31). Stock is set back so cleanup's cancel
+  // (+1 gift, +1 pool[1]) ends at the original counts.
+  await admin.from("gacha_codes").insert({ code: "GACHA-SMKSK3B", prize_type: "socks3", tier: "epic", expires_at: expires });
+  const giftBefore = (await variant(giftVariant)).stock;
+  await admin.from("product_variants").update({ stock: 2 }).eq("id", giftVariant);
+  await admin.from("product_variants").update({ stock: (await variant(pool[1].id)).stock + 1 }).eq("id", pool[1].id);
+  const shortOrder = await v2Place([{ variant_id: pool[1].id, qty: 1 }], { gachaCode: "GACHA-SMKSK3B" });
+  const shortStock = (await variant(giftVariant)).stock;
+  await admin.from("product_variants").update({ stock: (await variant(pool[1].id)).stock - 1 }).eq("id", pool[1].id);
+  await admin.from("product_variants").update({ stock: giftBefore - (2 - shortStock) }).eq("id", giftVariant);
+  const { data: shortCode } = await admin.from("gacha_codes").select("status").eq("code", "GACHA-SMKSK3B").single();
+  check("pricing v2: gacha socks the stock can't cover → regular gift still taken, code stays issued",
+    !shortOrder.error && shortOrder.data!.gift_qty === 1 && !shortOrder.data!.gift_missing && shortOrder.data!.gacha_redeemed === false
+      && shortStock === 1 && shortCode?.status === "issued",
+    `order=${JSON.stringify(shortOrder.data ?? shortOrder.error)} gift stock 2→${shortStock} code=${shortCode?.status}`);
+
+  // New products start without the gift socks (owner, 2026-10-31: the catalog is mostly bags).
+  const { data: newProduct, error: newProductError } = await admin.from("products")
+    .insert({ name: "Smoke default perks", slug: `smoke-default-perks-${Date.now()}` }).select("id, earns_perks").single();
+  if (newProduct) await admin.from("products").delete().eq("id", newProduct.id);
+  check("pricing v2: a new product doesn't earn the gift socks by default",
+    !newProductError && newProduct?.earns_perks === false, JSON.stringify(newProduct ?? newProductError));
+
   await admin.from("product_variants").update({ stock: (await variant(pool[2].id)).stock - 20 }).eq("id", pool[2].id);
 
   // Cancel releases every code of a multi-code order (lần đầu + promo from case 17).
