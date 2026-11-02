@@ -39,7 +39,7 @@ Pick from TODO.md → "Now" first. Starting an item: move it to TODO.md → "Now
 
 ## Before launch
 
-- **Check prod for leftover dev accounts before launch** — the 2026-10-12 cleanup removed the dev catalog, all orders and the test customer rows, but nothing records deleting the seeded auth users `customer*@paranoidz.test` (fixed id prefix `c0000000-`; seeded on prod 2026-09-25 by `supabase/seeds/dev.sql`). Check `auth.users` on prod and delete them, then drop `./seeds/dev.sql` + `./seeds/dev_size_guides.sql` from `supabase/config.toml` `sql_paths` (local / CI seed — the smoke suite and e2e rely on them, so give those their own fixtures first).
+- **Dev seed accounts are still on prod (confirmed 2026-11-02)** — `customer1..3@paranoidz.test` (ids `e0000000-…`). The 2026-10-12 cleanup removed the dev catalog, orders and customer rows, but not these auth users. Their password is in `supabase/seeds/dev.sql` in this public repo, so anyone can sign in as them. Read-only check: no admin rights, no orders, last sign-in 2026-10-12. Delete them in Authentication → Users (TODO "Waiting"). Then drop `./seeds/dev.sql` + `./seeds/dev_size_guides.sql` from `supabase/config.toml` `sql_paths` (local / CI seed — the smoke suite and e2e rely on them, so give those their own fixtures first).
 - **`order_number_seq` has gaps from smoke runs** (`last_value` = 3 after the first run). Real orders will not start at `PZ-2026-0001` unless it is reset with `setval` before launch. Each smoke run consumes ~3 more.
 
 ---
