@@ -64,6 +64,7 @@ ARCHITECTURE.md §8.4 / §8.5 (loyalty): waits on the proposal in Now #5. §8.3 
 
 ## Last session
 
+- 2026-11-02: Removed the `/con-rot` diary page and its images on `chore/remove-con-rot` (Tủn's call; nothing linked to it).
 - 2026-11-02: Repo check, docs only. Gacha migration confirmed on prod and test (41/41, function has the new code). Stale TODO entries closed (Sentry / PostHog keys, photo compression, nav links, policy placeholders). Found 3 dev seed accounts still on prod (Waiting).
 - 2026-11-01: Quota review after Supabase's "exceeded usage quota" email (TODO Now #11, `docs/BACKLOG.md` "Free-plan quotas"). Read the McLovin and Vercel usage pages; measured live pages in a browser (homepage ~1.5 MB from Storage, PDP video not loaded until tapped). The Supabase connector still has no access to McLovin. No code changed.
 - 2026-11-01: Gacha code back on cancel on `fix/gacha-code-back-on-cancel` (migration `20261101000001`, **not on test or prod yet**): `transition_order_status()` puts the order's `GACHA-…` code back to `issued` on `cancelled` / `delivery_failed` (redeemed fields cleared, `expires_at = now() + 7 days`); the +2 spin grant and the order's `gacha_code` / `gacha_discount` / `gacha_gift` stay. Locally: `db reset`, smoke 76/76 (new gacha case fails on the old function), `smoke:inventory` green.
