@@ -49,3 +49,16 @@ test("S13 mobile: no sideways scroll, the open menu covers the screen @mobile", 
   await expect(menu).toBeVisible();
   await expect.poll(async () => (await menu.boundingBox())?.height).toBe(812);
 });
+
+// S14. e2e's `next start` runs with NODE_ENV=production like Vercel previews do: neither may reach
+// the real Meta pixel (components/tracking/MetaPixel.tsx, Vercel Production only).
+test("S14 the Meta pixel stays off outside Vercel Production", async ({ page }) => {
+  const meta: string[] = [];
+  page.on("request", (r) => {
+    if (/facebook\.(com|net)/.test(new URL(r.url()).hostname)) meta.push(r.url());
+  });
+  await page.goto("/login");
+  await page.waitForLoadState("networkidle");
+  expect(meta).toEqual([]);
+  expect(await page.evaluate(() => "fbq" in window)).toBe(false);
+});

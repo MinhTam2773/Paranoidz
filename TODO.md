@@ -64,6 +64,7 @@ ARCHITECTURE.md §8.4 / §8.5 (loyalty): waits on the proposal in Now #5. §8.3 
 
 ## Last session
 
+- 2026-11-02: Meta pixel gated to Vercel Production on `fix/meta-pixel-production-only`: the `NODE_ENV` check let previews and e2e send events to the real pixel. S7 hang investigated, not reproduced (`docs/BACKLOG.md`).
 - 2026-11-02: Removed the `/con-rot` diary page and its images on `chore/remove-con-rot` (Tủn's call; nothing linked to it).
 - 2026-11-02: Repo check, docs only. Gacha migration confirmed on prod and test (41/41, function has the new code). Stale TODO entries closed (Sentry / PostHog keys, photo compression, nav links, policy placeholders). Found 3 dev seed accounts still on prod (Waiting).
 - 2026-11-01: Quota review after Supabase's "exceeded usage quota" email (TODO Now #11, `docs/BACKLOG.md` "Free-plan quotas"). Read the McLovin and Vercel usage pages; measured live pages in a browser (homepage ~1.5 MB from Storage, PDP video not loaded until tapped). The Supabase connector still has no access to McLovin. No code changed.
