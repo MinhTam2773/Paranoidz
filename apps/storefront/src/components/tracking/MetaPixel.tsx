@@ -14,10 +14,11 @@ declare global {
   }
 }
 
-// Base code: PageView on every page. Production only, so dev and preview
-// traffic never pollutes the pixel's data.
+// Base code: PageView on every page. Vercel Production only, so dev, preview and CI traffic never
+// pollutes the pixel's data. Not NODE_ENV: Vercel previews and e2e's `next start` are "production"
+// there too, and sent PageView / clicks / test Purchases to the real pixel until 2026-11-02.
 export function MetaPixel() {
-  if (process.env.NODE_ENV !== "production") return null;
+  if (process.env.NEXT_PUBLIC_VERCEL_ENV !== "production") return null;
   return (
     <>
       <Script id="meta-pixel" strategy="afterInteractive">
@@ -42,7 +43,7 @@ export function MetaPixel() {
 export type MetaContent = { id: string; quantity: number; item_price: number };
 
 // Standard event with the catalog fields. The base code runs afterInteractive, so an event raised
-// before it (first page view) waits up to ~3s; never fires in dev, where the base code is off.
+// before it (first page view) waits up to ~3s; never fires where the base code is off.
 export function trackMeta(
   event: "ViewContent" | "AddToCart" | "InitiateCheckout" | "Purchase",
   contents: MetaContent[],

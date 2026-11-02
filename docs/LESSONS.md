@@ -161,6 +161,7 @@ Decisions are in ARCHITECTURE.md §5 "SPX Open API"; the build log is in `docs/D
 
 ## Vercel, DNS, email, Zalo
 
+- **`NODE_ENV` doesn't mean production on Vercel or in e2e** (2026-11-02): previews and `next start` are `production` too. To target the live site use `NEXT_PUBLIC_VERCEL_ENV === "production"`.
 - **Timing from this dev machine misleads for region work** (2026-10-16) — it reaches Vercel through `pdx1` (US West), so moving functions to `sin1` makes no-query pages look *slower* from here (0.31s → 0.60s) while customers in Vietnam get faster. Compare server time (page TTFB minus a no-DB page's TTFB), not raw TTFB.
 - **P.A Việt Nam DNS panel (access.pavietnam.vn/dns) quirks:** "Thêm bản ghi" inserts the blank row at the TOP and pushes the button down (clicking a fixed coordinate repeatedly adds rows elsewhere); the Ưu tiên (priority) box only matters for MX; blank rows must be removed (trash icon, no dialog for unsaved rows) before "Lưu cấu hình", which opens an in-page "Đồng ý" confirm. Edits are batched — nothing is live until that save.
 - **P.A DNS panel: one new record per save.** With a blank row pending, "Thêm bản ghi" adds nothing; fill the row, "Lưu cấu hình" → "Đồng ý", reload, repeat. Clicking the confirm button by accessibility ref sometimes did nothing (no save, no error) — click it by coordinates and verify each record with `nslookup -type=X <host> ns1.pavietnam.vn`.
