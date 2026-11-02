@@ -227,3 +227,7 @@ Entries describe the code as it was then; later work may have changed it (e.g. t
 ## 2026-11-02 (con-rot page removed)
 
 - [x] **`/con-rot` removed** (branch `chore/remove-con-rot`, Tủn's call): the "Con rọt của Sâu" diary page from 2026-10-28 and its 9 images in `public/con-rot/`. Nothing else linked to the page or used the images, and it wasn't in the sitemap code. The URL now answers 404. Restore from git history (`c2d10e5`…`4272b7a`) if it's wanted back.
+
+## 2026-11-02 (repo check)
+
+- [x] **Stale TODO entries closed, docs only.** Read-only SQL in the Supabase dashboard: prod and test both have 41 migrations ending at `20261101000001`, and `transition_order_status()` contains the gacha update. Sentry DSN and PostHog key found in the storefront's production bundle. `NAV_LINKS` no longer has "Outlet 2026" / "New collection"; `app/policy/page.tsx` no longer has the `[số ngày]` / `[cửa hàng / khách hàng]` placeholders (whether its text is the client's final one wasn't checked). `paranoidz.vn` nameservers are PA Vietnam's, for the Cloudflare R2 plan.
