@@ -2,11 +2,11 @@
 
 import Script from "next/script";
 
-// Google Ads tag + order conversion. Both values come from Google Ads → Goals → Conversions; either
-// unset = nothing loads. Vercel Production only, like the Meta pixel: previews and e2e never count.
-const GOOGLE_ADS_ID = process.env.NEXT_PUBLIC_GOOGLE_ADS_ID;
-const PURCHASE_LABEL = process.env.NEXT_PUBLIC_GOOGLE_ADS_PURCHASE_LABEL;
-const ENABLED = process.env.NEXT_PUBLIC_VERCEL_ENV === "production" && !!GOOGLE_ADS_ID && !!PURCHASE_LABEL;
+// Google Ads tag + order conversion "Đơn hàng web" (account 205-602-2319). Public values, kept in one
+// place like META_PIXEL_ID. Vercel Production only, like the Meta pixel: previews and e2e never count.
+const GOOGLE_ADS_ID = "AW-18554163640";
+const PURCHASE_LABEL = "05e-COOUtbEdELijqI9F";
+const ENABLED = process.env.NEXT_PUBLIC_VERCEL_ENV === "production";
 
 declare global {
   interface Window {
