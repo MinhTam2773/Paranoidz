@@ -86,10 +86,10 @@ const SECTIONS: { id: string; title: string; body: ReactNode[] }[] = [
     id: "privacy",
     title: "Chính sách bảo mật",
     body: [
-      "Mục đích và phạm vi thu thập: khi đặt hàng, chúng tôi thu thập họ tên, số điện thoại, địa chỉ giao hàng và email (nếu bạn cung cấp). Khi bạn tạo tài khoản, chúng tôi lưu thêm email đăng nhập và các địa chỉ bạn đã lưu. Trang web dùng cookie và bộ nhớ trình duyệt để giữ đăng nhập, giỏ hàng và danh sách yêu thích.",
-      "Phạm vi sử dụng: thông tin chỉ dùng để xử lý, giao đơn hàng, liên hệ với bạn về đơn hàng và chăm sóc khách hàng.",
+      "Mục đích và phạm vi thu thập: khi đặt hàng, chúng tôi thu thập họ tên, số điện thoại, địa chỉ giao hàng và email (nếu bạn cung cấp). Khi bạn tạo tài khoản, chúng tôi lưu thêm email đăng nhập và các địa chỉ bạn đã lưu. Trang web dùng cookie và bộ nhớ trình duyệt để giữ đăng nhập, giỏ hàng và danh sách yêu thích, và dùng cookie của Meta, Google để đo hiệu quả quảng cáo.",
+      "Phạm vi sử dụng: thông tin dùng để xử lý, giao đơn hàng, liên hệ với bạn về đơn hàng, chăm sóc khách hàng và đo hiệu quả quảng cáo.",
       "Thời hạn lưu trữ: dữ liệu đơn hàng được lưu ít nhất 1 năm; dữ liệu tài khoản được lưu cho tới khi bạn yêu cầu xóa.",
-      "Tổ chức, cá nhân có thể tiếp cận: nhân viên xử lý đơn hàng của cửa hàng và đơn vị vận chuyển SPX (chỉ thông tin cần để giao hàng).",
+      "Tổ chức, cá nhân có thể tiếp cận: nhân viên xử lý đơn hàng của cửa hàng; đơn vị vận chuyển SPX (chỉ thông tin cần để giao hàng); Meta và Google (dữ liệu truy cập, sản phẩm đã xem hoặc mua, giá trị đơn hàng; riêng Meta có thể nhận số điện thoại và email đã mã hóa để đo đơn hàng đến từ quảng cáo).",
       "Biện pháp bảo đảm an toàn: quyền truy cập dữ liệu bị hạn chế cho người xử lý đơn hàng; thông tin của bạn không được công khai.",
       "Cách xem, sửa dữ liệu: gọi hotline 0345 267 709 hoặc email support@paranoidz.vn.",
       "Cách yêu cầu xóa, hủy hoặc hạn chế xử lý dữ liệu: gọi hotline 0345 267 709 hoặc email support@paranoidz.vn.",

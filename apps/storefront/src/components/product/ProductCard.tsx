@@ -170,24 +170,22 @@ export function ProductCard({ product, eager = false }: { product: ProductCardDa
           {onSale && <s className="text-[13px] text-text-muted">{formatVnd(originalPrice)}</s>}
         </p>
         {(() => {
-          // Default 5 stars (owner 2026-10-17); real reviews take over when they exist.
+          // Real reviews only (client 2026-11-03): the default 5 stars would misrepresent products in ads.
           // Sold count comes from the Shopee shop (manual field, no Shopee API).
-          const hasReal = reviewCount > 0 && ratingAverage >= 3;
-          const shown = hasReal ? ratingAverage : 5;
           return (
             // Rating, express badge, sold count and gift share one row (owner 2026-10-20);
             // on a narrow card the row wraps, stars + express first.
             <p className="flex w-fit max-w-full flex-wrap items-center gap-1.5">
               {/* relative: contains the absolutely-positioned sr-only text (S13 2026-10-17:
                   without it, the sr-only sat at x=377px, widening the page to 378px). */}
-              <span className="relative flex items-center gap-1 whitespace-nowrap rounded-sm border border-warning px-1.5 py-0.5 text-caption">
-                <span aria-hidden className="text-warning">★</span>
-                <span className="text-text-primary">{shown.toFixed(1)}</span>
-                {hasReal && <span className="text-text-secondary">({reviewCount})</span>}
-                <span className="sr-only">
-                  {hasReal ? `điểm trung bình, ${reviewCount} đánh giá` : "đánh giá 5 sao"}
+              {reviewCount > 0 && (
+                <span className="relative flex items-center gap-1 whitespace-nowrap rounded-sm border border-warning px-1.5 py-0.5 text-caption">
+                  <span aria-hidden className="text-warning">★</span>
+                  <span className="text-text-primary">{ratingAverage.toFixed(1)}</span>
+                  <span className="text-text-secondary">({reviewCount})</span>
+                  <span className="sr-only">{`điểm trung bình, ${reviewCount} đánh giá`}</span>
                 </span>
-              </span>
+              )}
               <span className="flex items-center gap-1 whitespace-nowrap rounded-sm bg-accent/10 px-1.5 py-0.5 text-caption font-medium text-accent">
                 <span aria-hidden>⚡</span>Hoả tốc HCM
               </span>

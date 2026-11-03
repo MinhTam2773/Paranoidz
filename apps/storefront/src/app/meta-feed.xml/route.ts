@@ -8,6 +8,14 @@ import { SITE_URL } from "@/lib/site";
 // product pages; a variant whose product has no photo is left out (Meta rejects items without one).
 export const revalidate = 3600;
 
+// custom_label_0: the Google Ads campaign filter. Gifts and the licensed-look design are never advertised.
+function adGroup(name: string) {
+  const n = name.toLowerCase();
+  if (n.includes("quà tặng") || n.startsWith("tất") || n.includes("sharingan")) return "khong-chay";
+  if (n.includes("balo")) return "balo";
+  return n.includes("túi") ? "tui" : "ao";
+}
+
 const xml = (s: string) =>
   s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
@@ -47,6 +55,8 @@ export async function GET() {
         ...(onSale ? [["g:sale_price", `${v.price} VND`]] : []),
         ["g:color", v.color],
         ["g:size", v.size],
+        ["g:identifier_exists", "no"], // own brand: no GTIN / MPN
+        ["g:custom_label_0", adGroup(p.name)],
       ];
       return [`<item>${fields.map(([tag, value]) => `<${tag}>${xml(String(value))}</${tag}>`).join("")}</item>`];
     });

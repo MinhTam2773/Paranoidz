@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import Script from "next/script";
 import posthog from "posthog-js";
+import { trackGooglePurchase } from "./GoogleTag";
 
 // Meta Pixel for paranoidz.vn. Kept in one place; move to
 // NEXT_PUBLIC_META_PIXEL_ID if the shop ever runs a second pixel.
@@ -84,6 +85,7 @@ export function PurchaseTracker({ orderNumber, value, contents }: { orderNumber:
     if (fired.current === orderNumber) return;
     fired.current = orderNumber;
     trackMeta("Purchase", contents, { value, eventID: orderNumber });
+    trackGooglePurchase(orderNumber, value);
   }, [orderNumber, value, contents]);
   return null;
 }
