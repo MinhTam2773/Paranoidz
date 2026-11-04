@@ -27,6 +27,7 @@
     "smoke": "node --env-file=../../apps/admin/.env.local scripts/smoke-test.ts",
     "smoke:inventory": "node --env-file=../../apps/admin/.env.local scripts/inventory-smoke.ts",
     "seed:images": "node --env-file=../../apps/admin/.env.local scripts/upload-dev-images.ts",
+    "media:copy": "node --env-file=../../apps/admin/.env.prod.local scripts/copy-media-to-r2.ts",
     "seed:spx-locations": "node --env-file=../../apps/admin/.env.local scripts/spx-locations.ts"
   },
   "dependencies": {
