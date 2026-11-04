@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { createAdminClient } from "@paranoidz/db/admin";
+import { mediaUrl } from "@paranoidz/db/media";
 import { OrderActions } from "@/components/orders/OrderActions";
 import { PaymentConfirmButton } from "@/components/orders/PaymentConfirmButton";
 import { SpxCard } from "@/components/orders/SpxCard";
@@ -38,8 +39,6 @@ export default async function OrderDetailPage({ params }: PageProps<"/orders/[nu
     .select("delivered_count, refusal_count, is_blacklisted")
     .eq("phone", order.phone)
     .maybeSingle();
-
-  const images = admin.storage.from("product-images");
   const voucherCode = order.voucher_uses.map((u) => u.vouchers?.code).filter(Boolean).join(", ") || null;
   // Snapshot from place_order() when a bundle discount priced the order (ARCHITECTURE.md §5).
   const bundles = (order.applied_bundles ?? []) as { name: string; sets: number }[];
@@ -98,7 +97,7 @@ export default async function OrderDetailPage({ params }: PageProps<"/orders/[nu
                 <li key={item.id} className="flex gap-3 py-3 first:pt-0 last:pb-0">
                   <div className="relative aspect-3/4 w-14 shrink-0 overflow-hidden rounded-sm bg-bg-tertiary">
                     {item.image_snapshot && (
-                      <Image src={images.getPublicUrl(item.image_snapshot).data.publicUrl} alt="" fill sizes="56px" className="object-cover" />
+                      <Image src={mediaUrl("product-images", item.image_snapshot)} alt="" fill sizes="56px" className="object-cover" />
                     )}
                   </div>
                   <div className="flex min-w-0 flex-1 flex-col gap-1">

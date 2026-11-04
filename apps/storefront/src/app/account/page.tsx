@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createPublicClient } from "@paranoidz/db/public";
+import { mediaUrl } from "@paranoidz/db/media";
 import { createClient } from "@paranoidz/db/server";
 import { AddressBook } from "@/components/account/AddressBook";
 import { ProfileCard } from "@/components/account/ProfileCard";
@@ -51,7 +52,6 @@ export default async function AccountPage() {
   if (savedError) throw savedError;
   const order = new Map(saved.map((w, i) => [w.product_id, i]));
   const wishlist = savedRows.toSorted((a, b) => order.get(a.id)! - order.get(b.id)!).map((p) => toProductCard(catalog, p));
-  const images = supabase.storage.from("product-images");
   // Slugs for the review deep-links: only delivered orders get a button, and only for
   // products that are still active (inactive ones drop out of the public query, so no dead link).
   const orderedProductIds = [...new Set(orders.flatMap((o) => o.order_items.map((i) => i.product_id).filter((id): id is string => id !== null)))];
@@ -96,7 +96,7 @@ export default async function AccountPage() {
                 size: i.size_snapshot,
                 qty: i.qty,
                 price: i.price_snapshot,
-                imageUrl: i.image_snapshot ? images.getPublicUrl(i.image_snapshot).data.publicUrl : null,
+                imageUrl: i.image_snapshot ? mediaUrl("product-images", i.image_snapshot) : null,
                 reviewHref: o.status === "delivered" && slug ? `/products/${slug}?tab=reviews` : null,
               };
             }),

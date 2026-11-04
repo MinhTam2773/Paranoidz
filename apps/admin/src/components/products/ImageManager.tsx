@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useOptimistic, useRef, useState, useTransition, type DragEvent } from "react";
-import { createClient } from "@paranoidz/db/client";
+import { uploadWithTicket } from "@paranoidz/db/media";
 import {
   addProductImage,
   createImageUpload,
@@ -53,7 +53,7 @@ export function ImageManager({ productId, productName, images, colors }: {
     const { file } = await compressImage(original);
     const ticket = await createImageUpload(productId, file.type, file.size);
     if ("error" in ticket) return ticket;
-    const { error } = await createClient().storage.from("product-images").uploadToSignedUrl(ticket.path, ticket.token, file, { contentType: file.type, cacheControl: IMAGE_CACHE_SECONDS });
+    const { error } = await uploadWithTicket("product-images", ticket, file, { contentType: file.type, cacheControl: IMAGE_CACHE_SECONDS });
     if (error) return { error: "Tải lên thất bại." };
     await uploadThumbs(productId, ticket.path, file);
     return addProductImage(productId, ticket.path, newColor || null);

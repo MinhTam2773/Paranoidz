@@ -3,11 +3,13 @@
 import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@paranoidz/db/admin";
+import { mediaUrl, type UploadTicket } from "@paranoidz/db/media";
+import { createUploadTicket, listMedia, mediaExists, removeMedia } from "@paranoidz/db/media-server";
 import { THUMB_WIDTHS, thumbPath } from "@paranoidz/db/thumbs";
 import { requireAdmin } from "@/lib/auth";
 
 // Product photos (DASHBOARD_DESIGN.md §5 Image uploader). Bytes go browser →
-// Storage through a signed upload URL issued here; the bucket enforces type and
+// Storage (R2 in production, @paranoidz/db/media) through an upload ticket issued here; the bucket enforces type and
 // size (migration 20261006000001). Rows: position = sort_order, and the first
 // image is the cover (is_primary), so the storefront card (lowest sort_order),
 // the admin thumbnail and order snapshots agree.
@@ -16,6 +18,7 @@ const BUCKET = "product-images";
 const TYPES: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" };
 const MAX_BYTES = 10 * 1024 * 1024;
 const MAX_IMAGES = 20;
+const CACHE_SECONDS = 31536000; // a path never changes content (uuid names)
 
 type Result = { error?: string };
 
@@ -43,10 +46,8 @@ export async function createImageUpload(productId: string, contentType: string, 
   if (!product) return { error: "Không tìm thấy sản phẩm." };
   if (product.product_images.length >= MAX_IMAGES) return { error: `Tối đa ${MAX_IMAGES} ảnh mỗi sản phẩm.` };
 
-  const path = `products/${product.slug}/${randomUUID()}.${ext}`;
-  const { data, error } = await createAdminClient().storage.from(BUCKET).createSignedUploadUrl(path);
-  if (error) return { error: "Không thể tải ảnh lên. Vui lòng thử lại." };
-  return { path: data.path, token: data.token };
+  const ticket = await createUploadTicket(BUCKET, `products/${product.slug}/${randomUUID()}.${ext}`, { contentType, size, cacheSeconds: CACHE_SECONDS });
+  return ticket ?? { error: "Không thể tải ảnh lên. Vui lòng thử lại." };
 }
 
 // After the browser upload: register the row. The path must be in this product's
@@ -58,15 +59,14 @@ export async function addProductImage(productId: string, path: string, color: st
   const admin = createAdminClient();
   if (!new RegExp(`^products/${product.slug}/[0-9a-f-]{36}\\.(jpg|png|webp)$`).test(path)) return { error: "Đường dẫn ảnh không hợp lệ." };
   if (color !== null && !product.product_variants.some((v) => v.color === color)) return { error: "Màu không thuộc sản phẩm này." };
-  const { data: exists } = await admin.storage.from(BUCKET).exists(path);
-  if (!exists) return { error: "Ảnh chưa được tải lên. Vui lòng thử lại." };
+  if (!(await mediaExists(BUCKET, path))) return { error: "Ảnh chưa được tải lên. Vui lòng thử lại." };
 
   const last = Math.max(-1, ...product.product_images.map((i) => i.sort_order));
   const { error } = await admin.from("product_images").insert({
     product_id: productId, storage_path: path, color, sort_order: last + 1, is_primary: product.product_images.length === 0,
   });
   if (error) {
-    await admin.storage.from(BUCKET).remove([path]);
+    await removeMedia(BUCKET, [path]);
     return { error: "Không thể lưu ảnh. Vui lòng thử lại." };
   }
   return done(productId);
@@ -83,15 +83,10 @@ export async function createDescriptionImageUpload(productId: string, contentTyp
   const product = await loadProduct(productId);
   if (!product) return { error: "Không tìm thấy sản phẩm." };
 
-  const admin = createAdminClient();
   const path = `products/${product.slug}/desc/${randomUUID()}.${ext}`;
-  const { data, error } = await admin.storage.from(BUCKET).createSignedUploadUrl(path);
-  if (error) return { error: "Không thể tải ảnh lên. Vui lòng thử lại." };
-  return {
-    path: data.path,
-    token: data.token,
-    publicUrl: admin.storage.from(BUCKET).getPublicUrl(path).data.publicUrl,
-  };
+  const ticket = await createUploadTicket(BUCKET, path, { contentType, size, cacheSeconds: CACHE_SECONDS });
+  if (!ticket) return { error: "Không thể tải ảnh lên. Vui lòng thử lại." };
+  return { ticket, publicUrl: mediaUrl(BUCKET, path) };
 }
 
 // Product video (2026-10-30): uploaded to products/{slug}/video/; the form puts the public URL in
@@ -108,30 +103,27 @@ export async function createVideoUpload(productId: string, contentType: string, 
   const product = await loadProduct(productId);
   if (!product) return { error: "Không tìm thấy sản phẩm." };
 
-  const admin = createAdminClient();
   const path = `products/${product.slug}/video/${randomUUID()}.${ext}`;
-  const { data, error } = await admin.storage.from(BUCKET).createSignedUploadUrl(path);
-  if (error) return { error: "Không thể tải video lên. Vui lòng thử lại." };
-  return {
-    path: data.path,
-    token: data.token,
-    publicUrl: admin.storage.from(BUCKET).getPublicUrl(path).data.publicUrl,
-  };
+  const ticket = await createUploadTicket(BUCKET, path, { contentType, size, cacheSeconds: CACHE_SECONDS });
+  if (!ticket) return { error: "Không thể tải video lên. Vui lòng thử lại." };
+  return { ticket, publicUrl: mediaUrl(BUCKET, path) };
 }
 
 // Thumbnails (2026-10-31, @paranoidz/db/thumbs): the browser makes them right after the photo
-// and uploads them here. upsert: the backfill below can run again over the same photo.
-export async function createThumbUploads(productId: string, path: string) {
+// and uploads them here (`files`: type and byte size of each one, made before asking). upsert: the
+// backfill below can run again over the same photo.
+export async function createThumbUploads(productId: string, path: string, files: Record<(typeof THUMB_WIDTHS)[number], { type: string; size: number }>) {
   await requireAdmin();
   const product = await loadProduct(productId);
   if (!product) return { error: "Không tìm thấy sản phẩm." };
   if (!new RegExp(`^products/${product.slug}/[0-9a-f-]{36}\\.(jpg|png|webp)$`).test(path)) return { error: "Đường dẫn ảnh không hợp lệ." };
-  const storage = createAdminClient().storage.from(BUCKET);
-  const uploads: { width: (typeof THUMB_WIDTHS)[number]; path: string; token: string }[] = [];
+  const uploads: { width: (typeof THUMB_WIDTHS)[number]; ticket: UploadTicket }[] = [];
   for (const width of THUMB_WIDTHS) {
-    const { data, error } = await storage.createSignedUploadUrl(thumbPath(path, width), { upsert: true });
-    if (error) return { error: "Không thể tải ảnh thu nhỏ lên." };
-    uploads.push({ width, path: data.path, token: data.token });
+    const { type, size } = files[width] ?? {};
+    if (!TYPES[type] || !(size > 0 && size <= MAX_BYTES)) return { error: "Ảnh thu nhỏ không hợp lệ." };
+    const ticket = await createUploadTicket(BUCKET, thumbPath(path, width), { contentType: type, size, cacheSeconds: CACHE_SECONDS }, { upsert: true });
+    if (!ticket) return { error: "Không thể tải ảnh thu nhỏ lên." };
+    uploads.push({ width, ticket });
   }
   return { uploads };
 }
@@ -147,8 +139,7 @@ export async function listMissingThumbs() {
   // One listing per product folder, 10 at a time.
   for (let i = 0; i < slugs.length; i += 10) {
     await Promise.all(slugs.slice(i, i + 10).map(async (slug) => {
-      const { data: files } = await admin.storage.from(BUCKET).list(`products/${slug}/thumbs`, { limit: 1000 });
-      for (const f of files ?? []) have.add(`products/${slug}/thumbs/${f.name}`);
+      for (const name of await listMedia(BUCKET, `products/${slug}/thumbs`)) have.add(`products/${slug}/thumbs/${name}`);
     }));
   }
   return (rows ?? [])
@@ -156,7 +147,7 @@ export async function listMissingThumbs() {
       const wanted = THUMB_WIDTHS.map((w) => thumbPath(img.storage_path, w));
       return wanted[0] !== img.storage_path && !wanted.every((p) => have.has(p));
     })
-    .map((img) => ({ productId: img.product_id, path: img.storage_path, url: admin.storage.from(BUCKET).getPublicUrl(img.storage_path).data.publicUrl }));
+    .map((img) => ({ productId: img.product_id, path: img.storage_path, url: mediaUrl(BUCKET, img.storage_path) }));
 }
 
 // orderedIds = every image of the product in the new order.
@@ -200,7 +191,7 @@ export async function deleteProductImage(productId: string, imageId: string): Pr
   // order_items.image_snapshot stores the path, not a copy: keep the file while
   // any order shows it, so past orders keep their photo.
   const { count } = await admin.from("order_items").select("id", { count: "exact", head: true }).eq("image_snapshot", image.storage_path);
-  if (!count) await admin.storage.from(BUCKET).remove([image.storage_path, ...THUMB_WIDTHS.map((w) => thumbPath(image.storage_path, w))]);
+  if (!count) await removeMedia(BUCKET, [image.storage_path, ...THUMB_WIDTHS.map((w) => thumbPath(image.storage_path, w))]);
   const rest = product.product_images.filter((i) => i.id !== imageId).sort((a, b) => a.sort_order - b.sort_order);
   await writeOrder(rest.map((i) => i.id));
   return done(productId);

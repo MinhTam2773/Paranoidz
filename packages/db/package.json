@@ -13,6 +13,8 @@
     "./types": "./src/types.ts",
     "./provinces": "./src/provinces.ts",
     "./thumbs": "./src/thumbs.ts",
+    "./media": "./src/media.ts",
+    "./media-server": "./src/media-server.ts",
     "./spx": "./src/spx/client.ts",
     "./spx/order-body": "./src/spx/order-body.ts",
     "./spx/sign": "./src/spx/sign.ts",
@@ -30,6 +32,7 @@
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.117.1",
+    "aws4fetch": "1.0.20",
     "server-only": "^0.0.1"
   },
   "peerDependencies": {

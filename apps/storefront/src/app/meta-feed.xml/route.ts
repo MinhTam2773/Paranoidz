@@ -1,4 +1,5 @@
 import { createPublicClient } from "@paranoidz/db/public";
+import { mediaUrl } from "@paranoidz/db/media";
 import { SITE_URL } from "@/lib/site";
 
 // Product feed for the Meta catalog that Advantage+ catalog ads draw from (Commerce Manager →
@@ -47,7 +48,7 @@ export async function GET() {
         ["g:title", p.name.slice(0, 150)],
         ["g:description", description.slice(0, 5000)],
         ["g:link", `${SITE_URL}/products/${p.slug}`],
-        ["g:image_link", supabase.storage.from("product-images").getPublicUrl(image.storage_path).data.publicUrl],
+        ["g:image_link", mediaUrl("product-images", image.storage_path)],
         ["g:brand", "Paranoidz"],
         ["g:condition", "new"],
         ["g:availability", v.stock > 0 ? "in stock" : "out of stock"],

@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { createAdminClient } from "@paranoidz/db/admin";
+import { mediaUrl } from "@paranoidz/db/media";
 import { ActiveToggle } from "@/components/ActiveToggle";
 import { ReviewsIcon } from "@/components/icons";
 import { Pagination } from "@/components/Pagination";
@@ -132,7 +133,6 @@ async function ReviewDetail({ id, closeHref }: { id: string; closeHref: string }
   const { data: customer } = phone
     ? await admin.from("customers").select("phone").eq("phone", phone).maybeSingle()
     : { data: null };
-  const photos = admin.storage.from("review-images");
 
   return (
     <ReviewDrawer closeHref={closeHref}>
@@ -161,7 +161,7 @@ async function ReviewDetail({ id, closeHref }: { id: string; closeHref: string }
           )}
           <ul className="grid grid-cols-2 gap-2 sm:grid-cols-4">
             {review.review_images.map((img, i) => {
-              const url = photos.getPublicUrl(img.storage_path).data.publicUrl;
+              const url = mediaUrl("review-images", img.storage_path);
               return (
                 <li key={img.id} className="flex flex-col">
                   <a href={url} target="_blank" rel="noreferrer" className="relative aspect-square overflow-hidden rounded-sm bg-bg-tertiary">

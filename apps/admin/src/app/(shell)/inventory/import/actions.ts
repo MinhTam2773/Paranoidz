@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import readXlsxFile from "read-excel-file/node";
 import { createAdminClient } from "@paranoidz/db/admin";
+import { putMedia, removeMedia } from "@paranoidz/db/media-server";
 import { createClient } from "@paranoidz/db/server";
 import { requireAdmin } from "@/lib/auth";
 import { formatDateTime } from "@/lib/format";
@@ -228,7 +229,7 @@ export async function applyImport(form: FormData): Promise<ApplyResult> {
           ok.map((p, i) => ({ product_id: product.id, storage_path: p.path, color: p.label, sort_order: i, is_primary: i === 0 })),
         );
         if (iErr) {
-          await admin.storage.from(BUCKET).remove(ok.map((p) => p.path));
+          await removeMedia(BUCKET, ok.map((p) => p.path));
           photoFailures = paths.length;
         } else photos = ok.length;
       }
@@ -267,7 +268,7 @@ async function importPhoto(url: string, slug: string): Promise<string | null> {
     const bytes = Buffer.from(await res.arrayBuffer());
     if (!bytes.length || bytes.length > MAX_PHOTO_BYTES) return null;
     const path = `products/${slug}/${randomUUID()}.${ext}`;
-    const { error } = await createAdminClient().storage.from(BUCKET).upload(path, bytes, { contentType: type });
+    const { error } = await putMedia(BUCKET, path, bytes, type);
     return error ? null : path;
   } catch {
     return null;

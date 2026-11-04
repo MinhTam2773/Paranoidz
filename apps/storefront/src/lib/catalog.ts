@@ -1,4 +1,5 @@
 import { createPublicClient } from "@paranoidz/db/public";
+import { mediaUrl } from "@paranoidz/db/media";
 import type { ProductCardData } from "@/components/product/ProductCard";
 
 type PublicClient = ReturnType<typeof createPublicClient>;
@@ -32,7 +33,7 @@ export function toProductCard(supabase: PublicClient, p: CardRow): ProductCardDa
   const inStock = p.product_variants.filter((v) => v.stock > 0);
   // Cheapest variant the customer can actually buy; any variant once sold out.
   const [cheapest] = (inStock.length ? inStock : p.product_variants).toSorted((a, b) => a.price - b.price);
-  const imageUrl = (path: string) => supabase.storage.from("product-images").getPublicUrl(path).data.publicUrl;
+  const imageUrl = (path: string) => mediaUrl("product-images", path);
   const image = p.product_images[0];
   const reviewCount = p.reviews.length;
   // One dot per colour: the first non-null hex (a size added later has none yet) and the colour's

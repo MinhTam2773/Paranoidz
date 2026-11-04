@@ -3,6 +3,8 @@
 import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@paranoidz/db/admin";
+import { mediaUrl, type UploadTicket } from "@paranoidz/db/media";
+import { createUploadTicket, mediaExists, removeMedia } from "@paranoidz/db/media-server";
 import { createClient } from "@paranoidz/db/server";
 import { MAX_REPLY, MAX_REVIEW, MAX_REVIEW_IMAGE_BYTES, MAX_REVIEW_IMAGES, REVIEW_IMAGE_TYPES } from "@/lib/reviews";
 
@@ -70,7 +72,7 @@ export async function getReviewViewer(productId: string): Promise<ReviewViewer> 
           isVisible: own.data.is_visible,
           photos: own.data.review_images.map((i) => ({
             id: i.id,
-            url: s.supabase.storage.from(BUCKET).getPublicUrl(i.storage_path).data.publicUrl,
+            url: mediaUrl(BUCKET, i.storage_path),
             isVisible: i.is_visible,
           })),
         }
@@ -108,16 +110,16 @@ export async function deleteReview(productId: string, slug: string): Promise<Rev
   const { error } = await s.supabase.from("reviews").delete().eq("user_id", s.userId).eq("product_id", productId);
   if (error) return FAILED;
   const paths = photos?.review_images.map((i) => i.storage_path) ?? [];
-  if (paths.length) await createAdminClient().storage.from(BUCKET).remove(paths);
+  await removeMedia(BUCKET, paths);
   return done(slug);
 }
 
-/** Signed upload URL for one photo of the caller's own review (the review must be saved first). */
+/** Upload ticket for one photo of the caller's own review (the review must be saved first). */
 export async function createReviewImageUpload(
   productId: string,
   contentType: string,
   size: number,
-): Promise<{ ok: true; path: string; token: string } | Failure> {
+): Promise<{ ok: true; ticket: UploadTicket } | Failure> {
   const ext = Object.hasOwn(REVIEW_IMAGE_TYPES, contentType) ? REVIEW_IMAGE_TYPES[contentType] : null;
   if (!UUID.test(productId)) return FAILED;
   if (!ext) return { ok: false, message: "Chỉ nhận ảnh JPG, PNG hoặc WebP." };
@@ -129,9 +131,9 @@ export async function createReviewImageUpload(
   const admin = createAdminClient();
   const { count } = await admin.from("review_images").select("id", { count: "exact", head: true }).eq("review_id", reviewId);
   if ((count ?? 0) >= MAX_REVIEW_IMAGES) return PHOTO_LIMIT;
-  const { data, error } = await admin.storage.from(BUCKET).createSignedUploadUrl(`${s.userId}/${reviewId}/${randomUUID()}.${ext}`);
-  if (error) return { ok: false, message: "Không thể tải ảnh lên. Vui lòng thử lại." };
-  return { ok: true, path: data.path, token: data.token };
+  const ticket = await createUploadTicket(BUCKET, `${s.userId}/${reviewId}/${randomUUID()}.${ext}`, { contentType, size, cacheSeconds: 31536000 });
+  if (!ticket) return { ok: false, message: "Không thể tải ảnh lên. Vui lòng thử lại." };
+  return { ok: true, ticket };
 }
 
 // After the browser upload: the path must be in the caller's folder for their own review of this
@@ -146,8 +148,7 @@ export async function addReviewImage(productId: string, slug: string, path: stri
     return { ok: false, message: "Đường dẫn ảnh không hợp lệ." };
   }
   const admin = createAdminClient();
-  const { data: exists } = await admin.storage.from(BUCKET).exists(path);
-  if (!exists) return { ok: false, message: "Ảnh chưa được tải lên. Vui lòng thử lại." };
+  if (!(await mediaExists(BUCKET, path))) return { ok: false, message: "Ảnh chưa được tải lên. Vui lòng thử lại." };
 
   const { data: last } = await admin
     .from("review_images").select("sort_order").eq("review_id", reviewId).order("sort_order", { ascending: false }).limit(1).maybeSingle();
@@ -155,7 +156,7 @@ export async function addReviewImage(productId: string, slug: string, path: stri
     .from("review_images").insert({ review_id: reviewId, user_id: s.userId, storage_path: path, sort_order: (last?.sort_order ?? -1) + 1 });
   if (error) {
     // 23505 = this path is already registered: that row owns the object, keep it.
-    if (error.code !== "23505") await admin.storage.from(BUCKET).remove([path]);
+    if (error.code !== "23505") await removeMedia(BUCKET, [path]);
     return error.message === "REVIEW_IMAGE_LIMIT" ? PHOTO_LIMIT : FAILED;
   }
   return done(slug);
@@ -168,7 +169,7 @@ export async function deleteReviewImage(imageId: string, slug: string): Promise<
   const admin = createAdminClient();
   const { data, error } = await admin.from("review_images").delete().eq("id", imageId).eq("user_id", s.userId).select("storage_path");
   if (error) return FAILED;
-  if (data.length) await admin.storage.from(BUCKET).remove(data.map((i) => i.storage_path));
+  await removeMedia(BUCKET, data.map((i) => i.storage_path));
   return done(slug);
 }
 

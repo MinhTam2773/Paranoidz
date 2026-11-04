@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { cache } from "react";
 import { createPublicClient } from "@paranoidz/db/public";
+import { mediaUrl } from "@paranoidz/db/media";
 import { AsciiPageReveal } from "@/components/loading/AsciiPageReveal";
 import { Breadcrumb } from "@/components/layout/Breadcrumb";
 import { BundleOffers, getBundleOffers } from "@/components/product/BundleOffers";
@@ -43,7 +44,7 @@ const getProduct = cache(async (slug: string) => {
   const { product_images, ...product } = data;
   const images = product_images.map((i) => ({
     color: i.color,
-    url: supabase.storage.from("product-images").getPublicUrl(i.storage_path).data.publicUrl,
+    url: mediaUrl("product-images", i.storage_path),
   }));
   return {
     ...product,
@@ -76,7 +77,7 @@ async function getReviews(productId: string): Promise<ReviewData[]> {
     createdAt: r.created_at,
     photos: r.review_images.map((i) => ({
       id: i.id,
-      url: supabase.storage.from("review-images").getPublicUrl(i.storage_path).data.publicUrl,
+      url: mediaUrl("review-images", i.storage_path),
     })),
     replies: r.review_replies.map((p) => ({
       id: p.id,

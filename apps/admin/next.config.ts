@@ -8,7 +8,11 @@ const nextConfig: NextConfig = {
     // Supabase originals directly. See the storefront config for the full note.
     unoptimized: true,
     // Public Storage objects only (product-images, review-images buckets).
-    remotePatterns: [new URL(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/**`)],
+    remotePatterns: [
+      new URL(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/**`),
+      // Cloudflare R2 in production (@paranoidz/db/media).
+      ...(process.env.NEXT_PUBLIC_MEDIA_URL ? [new URL(`${process.env.NEXT_PUBLIC_MEDIA_URL}/**`)] : []),
+    ],
   },
 };
 
