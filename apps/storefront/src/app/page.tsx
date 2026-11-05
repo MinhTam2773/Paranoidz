@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 import { createPublicClient } from "@paranoidz/db/public";
 import { mediaUrl } from "@paranoidz/db/media";
 import { HomeTabs } from "@/components/home/HomeTabs";
-import { Marquee, Lookbook } from "@/components/home/HomepageV2";
+import { Lookbook } from "@/components/home/HomepageV2";
 import { GachaSection } from "@/components/home/GachaSection";
 import { Faq } from "@/components/home/Faq";
 import { FlashSale } from "@/components/home/FlashSale";
@@ -164,8 +164,7 @@ export default async function HomePage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(ORGANIZATION_JSON_LD).replace(/</g, "\\u003c") }}
       />
-      {/* Hero carousel removed 2026-11-05 at the owner's request: the runway lookbook opens the page. */}
-      <Marquee />
+      {/* Hero carousel and marquee removed 2026-11-05 at the owner's request: the runway lookbook opens the page. */}
       <RunwayLookbook looks={looks} />
       <GachaSection />
 
