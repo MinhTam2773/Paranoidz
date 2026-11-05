@@ -13,8 +13,10 @@ import { Testimonials } from "@/components/home/Testimonials";
 import { getFlashSaleState, flashPrice, type FlashSaleWindow } from "@/lib/flash-sale";
 import { ProductRow } from "@/components/home/ProductRow";
 import { HeroCarousel } from "@/components/home/HeroCarousel";
+import { RunwayLookbook } from "@/components/home/RunwayLookbook";
 import { ProductCard, type ProductCardData } from "@/components/product/ProductCard";
 import { productCardQuery, toProductCard } from "@/lib/catalog";
+import { runwayLooks } from "@/lib/runway-lookbook";
 import { HOTLINE, SITE_URL } from "@/lib/site";
 
 // Homepage (DESIGN.md §5 page structure, items 5–10). ISR like /products: rebuilt at most once a
@@ -96,6 +98,7 @@ export default async function HomePage() {
 
   const cards = products.data!.map((p) => ({ card: toProductCard(supabase, p), categoryId: p.category_id }));
   const byId = new Map(cards.map(({ card }) => [card.id, card]));
+  const looks = runwayLooks(new Map(cards.map(({ card }) => [card.slug, card])));
   const newGoods = cards.slice(0, GRID_SIZE).map(({ card }) => card);
   // Áo là sản phẩm chính của shop, nhưng "Hàng mới" và "Bán chạy" hiện toàn balo/túi
   // (6 mã mới nhất và 6 lượt bán cao nhất đều là balo/túi), nên áo cần một section
@@ -164,6 +167,8 @@ export default async function HomePage() {
       />
       <HeroCarousel />
       <Marquee />
+      {/* Runway lookbook (2026-11-05): right under the hero, above the gacha and Back to Basicz. */}
+      <RunwayLookbook looks={looks} />
       <GachaSection />
 
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-14 px-4 py-14 lg:gap-20 lg:px-6 lg:py-20">
