@@ -17,6 +17,9 @@
   grid-template-columns: minmax(0, 1fr) 340px;
   background: var(--paper);
   color: var(--ink);
+  /* The rail cards slide in from 24px right on every look change; without this the page grows a
+     horizontal scrollbar for the length of the animation. */
+  overflow-x: clip;
   font-size: 14px;
   line-height: 1.5;
 }
