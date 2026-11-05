@@ -87,6 +87,7 @@ Sections: Workflow · Windows & shell · Supabase · Next.js / React / Tailwind 
 
 ## Built-in browser pane & Claude in Chrome
 
+- **A hidden browser pane leaves the page un-hydrated** (2026-11-05) — React 19 reveals the streamed page body (`<div hidden id="S:0">`) on the next animation frame, and a hidden pane paints none, so only the header hydrates (the live paranoidz.vn too: 4 of ~150 buttons). Show the pane or take a screenshot (that paints a frame), then test; timers are throttled too, so drive one step per call and screenshot between steps.
 - **The built-in browser pane blocks `window.open`** (2026-10-15) — returns `null` even inside a click, so the admin's IN PHIẾU shows its popup-blocked toast there. Check new-tab flows in Chrome.
 - **Agents can't sign in through the built-in browser pane** — login sends the password to supabase.co (not a local host), and the storefront callback only takes PKCE codes. Signed-in checks (saved addresses, admin pages) need the owner to sign in in the pane or in Chrome first.
 - **Claude in Chrome: the first click after switching tabs often does nothing** (2026-10-15) — click again and check with a screenshot. Once, a tab with a `<dialog>` open stopped responding (screenshots and JS timed out, renderer "frozen") — close it and use a fresh tab. The built-in pane can't screenshot or click while the Claude window is behind another window; `form_input` + `javascript_tool` still work.
