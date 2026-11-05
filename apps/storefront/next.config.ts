@@ -10,7 +10,11 @@ const nextConfig: NextConfig = {
     // pipeline is chosen. Re-enable optimisation by deleting this line.
     unoptimized: true,
     // Public Storage objects only (product-images bucket).
-    remotePatterns: [new URL(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/**`)],
+    remotePatterns: [
+      new URL(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/**`),
+      // Cloudflare R2 in production (@paranoidz/db/media).
+      ...(process.env.NEXT_PUBLIC_MEDIA_URL ? [new URL(`${process.env.NEXT_PUBLIC_MEDIA_URL}/**`)] : []),
+    ],
   },
 };
 

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { createPublicClient } from "@paranoidz/db/public";
+import { mediaUrl } from "@paranoidz/db/media";
 import { FeedbackList, type FeedbackReview } from "@/components/feedback/FeedbackList";
 import { Breadcrumb } from "@/components/layout/Breadcrumb";
 import { Stars } from "@/components/product/ReviewSection";
@@ -33,7 +34,7 @@ async function getReviews(): Promise<FeedbackReview[]> {
     // null when RLS hides the product (inactive): the card just has no product link
     product: r.products,
     photoUrl: r.review_images[0]
-      ? supabase.storage.from("review-images").getPublicUrl(r.review_images[0].storage_path).data.publicUrl
+      ? mediaUrl("review-images", r.review_images[0].storage_path)
       : null,
   }));
 }

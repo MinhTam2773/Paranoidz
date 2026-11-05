@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { createAdminClient } from "@paranoidz/db/admin";
+import { mediaUrl } from "@paranoidz/db/media";
 import { ProductsIcon } from "@/components/icons";
 import { Pagination } from "@/components/Pagination";
 import { ActiveToggle } from "@/components/ActiveToggle";
@@ -43,8 +44,6 @@ export default async function ProductsPage({ searchParams }: PageProps<"/product
     admin.from("categories").select("id, name").order("sort_order"),
   ]);
   if (error) throw error;
-
-  const images = admin.storage.from("product-images");
   const products = data.map((p) => {
     const prices = p.product_variants.map((v) => v.price);
     const [min, max] = [Math.min(...prices), Math.max(...prices)];
@@ -53,7 +52,7 @@ export default async function ProductsPage({ searchParams }: PageProps<"/product
       ...p,
       priceRange: !prices.length ? "—" : min === max ? formatVnd(min) : `${formatVnd(min)} – ${formatVnd(max)}`,
       stock: p.product_variants.reduce((n, v) => n + v.stock, 0),
-      thumbUrl: thumb ? images.getPublicUrl(thumb.storage_path).data.publicUrl : null,
+      thumbUrl: thumb ? mediaUrl("product-images", thumb.storage_path) : null,
     };
   });
   const pages = Math.ceil((count ?? 0) / PAGE_SIZE);

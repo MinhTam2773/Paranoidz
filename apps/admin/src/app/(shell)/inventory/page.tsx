@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createAdminClient } from "@paranoidz/db/admin";
+import { mediaUrl } from "@paranoidz/db/media";
 import { InventoryTable, type InventoryRowView } from "@/components/inventory/InventoryTable";
 import { InventoryIcon } from "@/components/icons";
 import { Pagination } from "@/components/Pagination";
@@ -43,7 +44,6 @@ export default async function InventoryPage({ searchParams }: PageProps<"/invent
   if (uErr) throw uErr;
 
   const pendingBy = new Map(unsent.map((u) => [u.variant_id, u.unsent_adj + u.unsent_back - u.unsent_out]));
-  const images = admin.storage.from("product-images");
   const all: InventoryRowView[] = variants
     .flatMap((v) => (v.products ? [{ ...v, product: v.products }] : []))
     .map((v) => {
@@ -53,7 +53,7 @@ export default async function InventoryPage({ searchParams }: PageProps<"/invent
       return {
         id: v.id, productId: v.product.id, productName: v.product.name, active: v.product.is_active,
         color: v.color, size: v.size, sku: v.sku, stock: v.stock, pending: pendingBy.get(v.id) ?? 0,
-        thumbUrl: photo ? images.getPublicUrl(photo.storage_path).data.publicUrl : null,
+        thumbUrl: photo ? mediaUrl("product-images", photo.storage_path) : null,
       };
     })
     .sort((a, b) => a.productName.localeCompare(b.productName, "vi") || a.color.localeCompare(b.color, "vi") || sizeRank(a.size) - sizeRank(b.size));

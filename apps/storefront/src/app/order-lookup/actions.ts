@@ -1,6 +1,7 @@
 "use server";
 
 import { createAdminClient } from "@paranoidz/db/admin";
+import { mediaUrl } from "@paranoidz/db/media";
 import type { Database } from "@paranoidz/db/types";
 import { normalizePhone } from "@/lib/checkout-validation";
 import { parseOrderNumber } from "@/lib/order-number";
@@ -85,7 +86,7 @@ export async function lookupOrder(input: { orderNumber: string; phone: string })
         size: i.size_snapshot,
         qty: i.qty,
         price: i.price_snapshot,
-        imageUrl: i.image_snapshot ? admin.storage.from("product-images").getPublicUrl(i.image_snapshot).data.publicUrl : null,
+        imageUrl: i.image_snapshot ? mediaUrl("product-images", i.image_snapshot) : null,
       })),
     },
   };

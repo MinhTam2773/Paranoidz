@@ -1,6 +1,7 @@
 "use server";
 
 import { createAdminClient } from "@paranoidz/db/admin";
+import { mediaUrl } from "@paranoidz/db/media";
 import { createClient } from "@paranoidz/db/server";
 
 export type CartItem = {
@@ -44,7 +45,7 @@ export async function getCartItems(variantIds: unknown): Promise<CartItem[]> {
       price: v.price,
       originalPrice: v.original_price,
       stock: v.stock,
-      imageUrl: image ? supabase.storage.from("product-images").getPublicUrl(image.storage_path).data.publicUrl : null,
+      imageUrl: image ? mediaUrl("product-images", image.storage_path) : null,
     };
   });
 }

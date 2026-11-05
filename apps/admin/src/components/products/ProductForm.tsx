@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useRef, useState, useTransition, type FormEvent } from "react";
 import { saveProduct } from "@/app/(shell)/products/actions";
 import { createDescriptionImageUpload, createVideoUpload } from "@/app/(shell)/products/[id]/image-actions";
-import { createClient } from "@paranoidz/db/client";
+import { uploadWithTicket } from "@paranoidz/db/media";
 import { compressImage, IMAGE_CACHE_SECONDS } from "@/lib/compress-image";
 import { slugify, validateProduct, type FieldErrors, type ProductInput, type VariantInput } from "@/lib/product";
 import { Toast, type ToastMessage } from "../Toast";
@@ -73,9 +73,7 @@ function ProductForm({ initial, categories, setNotice, onSaved }: {
         setNotice(ticket.error ?? "Không thể tải ảnh lên.");
         return;
       }
-      const { error } = await createClient()
-        .storage.from("product-images")
-        .uploadToSignedUrl(ticket.path, ticket.token, file, { contentType: file.type, cacheControl: IMAGE_CACHE_SECONDS });
+      const { error } = await uploadWithTicket("product-images", ticket.ticket, file, { contentType: file.type, cacheControl: IMAGE_CACHE_SECONDS });
       if (error) {
         setNotice("Không thể tải ảnh lên. Vui lòng thử lại.");
         return;
@@ -113,9 +111,7 @@ function ProductForm({ initial, categories, setNotice, onSaved }: {
         setNotice(ticket.error ?? "Không thể tải video lên.");
         return;
       }
-      const { error } = await createClient()
-        .storage.from("product-images")
-        .uploadToSignedUrl(ticket.path, ticket.token, file, { contentType: file.type, cacheControl: IMAGE_CACHE_SECONDS });
+      const { error } = await uploadWithTicket("product-images", ticket.ticket, file, { contentType: file.type, cacheControl: IMAGE_CACHE_SECONDS });
       if (error) {
         setNotice("Không thể tải video lên. Vui lòng thử lại.");
         return;

@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { createClient } from "@paranoidz/db/client";
+import { uploadWithTicket } from "@paranoidz/db/media";
 import { renameColor, setColorHex } from "@/app/(shell)/products/actions";
 import { addProductImage, createImageUpload } from "@/app/(shell)/products/[id]/image-actions";
 import { uploadThumbs } from "@/lib/upload-thumbs";
@@ -43,7 +43,7 @@ export function ColorRename({ productId, colors, images }: { productId: string; 
       setUploading(null);
       return;
     }
-    const { error } = await createClient().storage.from("product-images").uploadToSignedUrl(ticket.path, ticket.token, file, { contentType: file.type });
+    const { error } = await uploadWithTicket("product-images", ticket, file, { contentType: file.type });
     if (error) {
       setToast({ ok: false, text: "Tải lên thất bại." });
       setUploading(null);

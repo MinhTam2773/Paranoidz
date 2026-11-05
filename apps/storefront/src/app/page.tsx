@@ -3,6 +3,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { createPublicClient } from "@paranoidz/db/public";
+import { mediaUrl } from "@paranoidz/db/media";
 import { HomeTabs } from "@/components/home/HomeTabs";
 import { Marquee, Lookbook } from "@/components/home/HomepageV2";
 import { GachaSection } from "@/components/home/GachaSection";
@@ -151,7 +152,7 @@ export default async function HomePage() {
       name: c.name,
       slug: c.slug,
       year: c.created_at.slice(0, 4),
-      imageUrl: path ? supabase.storage.from("product-images").getPublicUrl(path).data.publicUrl : null,
+      imageUrl: path ? mediaUrl("product-images", path) : null,
     };
   });
 

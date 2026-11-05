@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createAdminClient } from "@paranoidz/db/admin";
+import { mediaUrl } from "@paranoidz/db/media";
 import { ColorRename } from "@/components/products/ColorRename";
 import { GiftVariantPicker } from "@/components/products/GiftVariantPicker";
 import { ImageManager } from "@/components/products/ImageManager";
@@ -33,10 +34,9 @@ export default async function EditProductPage({ params }: PageProps<"/products/[
   const variants = [...product.product_variants].sort(
     (a, b) => a.color.localeCompare(b.color, "vi") || sizeRank(a.size) - sizeRank(b.size) || a.size.localeCompare(b.size),
   );
-  const storage = admin.storage.from("product-images");
   const images = [...product.product_images]
     .sort((a, b) => a.sort_order - b.sort_order || Number(b.is_primary) - Number(a.is_primary))
-    .map((i) => ({ id: i.id, color: i.color, url: storage.getPublicUrl(i.storage_path).data.publicUrl }));
+    .map((i) => ({ id: i.id, color: i.color, url: mediaUrl("product-images", i.storage_path) }));
   const colors = [...new Set(variants.map((v) => v.color))];
   // First non-null hex per colour: a size added after the hex was picked has none yet.
   const colorHexes = colors.map((c) => ({ name: c, hex: variants.find((v) => v.color === c && v.color_hex)?.color_hex ?? null }));

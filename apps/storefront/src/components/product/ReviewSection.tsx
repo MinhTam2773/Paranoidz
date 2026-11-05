@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition, type ReactNode } from "react";
 import { createClient } from "@paranoidz/db/client";
+import { uploadWithTicket } from "@paranoidz/db/media";
 import {
   addReply,
   addReviewImage,
@@ -123,11 +124,9 @@ function useAction(onDone: () => void | Promise<void>) {
 async function uploadPhoto(productId: string, slug: string, file: File): Promise<ReviewResult> {
   const ticket = await createReviewImageUpload(productId, file.type, file.size);
   if (!ticket.ok) return ticket;
-  const { error } = await createClient()
-    .storage.from("review-images")
-    .uploadToSignedUrl(ticket.path, ticket.token, file, { contentType: file.type });
+  const { error } = await uploadWithTicket("review-images", ticket.ticket, file, { contentType: file.type });
   if (error) return { ok: false, message: "Tải lên thất bại." };
-  return addReviewImage(productId, slug, ticket.path);
+  return addReviewImage(productId, slug, ticket.ticket.path);
 }
 
 function YourReview({

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createPublicClient } from "@paranoidz/db/public";
+import { mediaUrl } from "@paranoidz/db/media";
 import { formatVnd } from "@/lib/format";
 import { ThumbImage } from "@/components/product/ThumbImage";
 
@@ -37,7 +38,7 @@ export async function getBundleOffers(productId: string): Promise<Offer[]> {
         name: p.name,
         slug: p.slug,
         price: Math.min(...inStock.map((v) => v.price)),
-        imageUrl: image ? supabase.storage.from("product-images").getPublicUrl(image.storage_path).data.publicUrl : null,
+        imageUrl: image ? mediaUrl("product-images", image.storage_path) : null,
       };
     });
     if (products.some((p) => p === null)) return [];
