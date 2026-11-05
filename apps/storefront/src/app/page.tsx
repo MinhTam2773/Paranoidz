@@ -12,7 +12,6 @@ import { FlashSale } from "@/components/home/FlashSale";
 import { Testimonials } from "@/components/home/Testimonials";
 import { getFlashSaleState, flashPrice, type FlashSaleWindow } from "@/lib/flash-sale";
 import { ProductRow } from "@/components/home/ProductRow";
-import { HeroCarousel } from "@/components/home/HeroCarousel";
 import { RunwayLookbook } from "@/components/home/RunwayLookbook";
 import { ProductCard, type ProductCardData } from "@/components/product/ProductCard";
 import { productCardQuery, toProductCard } from "@/lib/catalog";
@@ -165,9 +164,8 @@ export default async function HomePage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(ORGANIZATION_JSON_LD).replace(/</g, "\\u003c") }}
       />
-      <HeroCarousel />
+      {/* Hero carousel removed 2026-11-05 at the owner's request: the runway lookbook opens the page. */}
       <Marquee />
-      {/* Runway lookbook (2026-11-05): right under the hero, above the gacha and Back to Basicz. */}
       <RunwayLookbook looks={looks} />
       <GachaSection />
 
