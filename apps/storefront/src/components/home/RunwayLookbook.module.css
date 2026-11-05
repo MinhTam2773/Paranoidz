@@ -14,7 +14,7 @@
   --red: var(--color-accent);
   --ease: cubic-bezier(.65, 0, .25, 1);
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 312px;
+  grid-template-columns: minmax(0, 1fr) 340px;
   background: var(--paper);
   color: var(--ink);
   font-size: 14px;
@@ -124,7 +124,8 @@
 
 /* rail */
 /* Desktop: exactly the stage's height, the three cards share it (real product photos are large and
-   would otherwise stretch the row). */
+   would otherwise stretch the row). Each card is a row: a square thumbnail on the left, so the whole
+   product shows (a full-width photo got cropped into a thin landscape strip, owner 2026-11-05). */
 .rail { display: flex; flex-direction: column; min-width: 0; height: var(--stage-h); border-left: 1px solid var(--line); background: var(--paper-hi); }
 .railHead {
   display: flex; justify-content: space-between; align-items: baseline;
@@ -135,7 +136,7 @@
 .items { display: flex; flex-direction: column; flex: 1; min-height: 0; }
 .item {
   position: relative; flex: 1; min-height: 0;
-  display: grid; grid-template-rows: minmax(0, 1fr) auto;
+  display: grid; grid-template-columns: 128px minmax(0, 1fr); align-items: center;
   border-bottom: 1px solid var(--line); background: var(--card);
   animation: itemIn .65s var(--ease) backwards;
 }
@@ -143,12 +144,12 @@
 .item:nth-child(3) { animation-delay: .16s; }
 @keyframes itemIn { from { opacity: .4; transform: translateX(24px); } }
 .item.missing { box-shadow: inset 0 0 0 2px var(--red); }
-.itemImg { display: block; overflow: hidden; min-height: 0; }
+.itemImg { position: relative; display: block; overflow: hidden; aspect-ratio: 1; margin-left: 10px; }
 .itemImg img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .6s var(--ease); }
 .item:hover .itemImg img { transform: scale(1.04); }
 .itemInfo {
-  display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 10px; align-items: end;
-  padding: 10px 14px 12px;
+  display: grid; gap: 5px; align-content: center;
+  padding: 10px 14px 10px 12px;
 }
 .itemName {
   font-size: 12px; font-weight: 500; line-height: 1.35;
@@ -164,16 +165,17 @@
 }
 .chips button:hover { border-color: var(--ink); }
 .chips button[aria-pressed="true"] { border-color: var(--ink); background: var(--ink); color: #fff; }
-.price { display: flex; gap: 6px; align-items: baseline; font-variant-numeric: tabular-nums; }
+.price { display: flex; gap: 6px; align-items: baseline; padding-right: 40px; font-variant-numeric: tabular-nums; }
 .price b { font-size: 13px; font-weight: 700; line-height: 1; color: var(--red); }
 .price s { font-size: 11px; color: var(--mute); }
 .off {
-  position: absolute; top: 10px; right: 10px; padding: 4px 6px; border-radius: 2px;
+  position: absolute; top: 6px; right: 6px; padding: 4px 6px; border-radius: 2px;
   background: var(--red); color: #fff; font-size: 11px; font-weight: 800; line-height: 1;
 }
-.heart { position: absolute; top: 2px; left: 2px; border-radius: 50%; background: color-mix(in srgb, var(--card) 80%, transparent); }
+/* On the thumbnail's top-left corner (the thumbnail is 118px, centred in the card). */
+.heart { position: absolute; z-index: 1; top: calc(50% - 59px); left: 10px; border-radius: 50%; background: color-mix(in srgb, var(--card) 80%, transparent); }
 .add {
-  grid-row: span 4; align-self: end;
+  position: absolute; right: 12px; bottom: 10px;
   width: 34px; height: 34px; display: grid; place-items: center; cursor: pointer;
   border: 1px solid var(--ink); border-radius: 50%; background: none;
   transition: background .2s, color .2s;
@@ -196,8 +198,9 @@
   .hint { display: none; }
   .rail { border-left: 0; border-top: 1px solid var(--line); }
   .items { flex-direction: row; overflow-x: auto; scroll-snap-type: x mandatory; }
-  .item { flex: 0 0 min(64vw, 260px); grid-template-rows: auto auto; border-right: 1px solid var(--line); scroll-snap-align: start; }
-  .itemImg { aspect-ratio: 1; }
+  .item { flex: 0 0 min(64vw, 260px); grid-template-columns: minmax(0, 1fr); align-items: start; border-right: 1px solid var(--line); scroll-snap-align: start; }
+  .itemImg { margin-left: 0; }
+  .heart { top: 2px; left: 2px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

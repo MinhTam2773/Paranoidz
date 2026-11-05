@@ -32,7 +32,6 @@ const NARROW: Slot[] = [
 ];
 const AUTOPLAY_MS = 5000;
 const HOLD_MS = 12000; // autoplay pause after any interaction
-const WHEEL_LOCK_MS = 850;
 
 const pad = (i: number) => String(i + 1).padStart(2, "0");
 
@@ -71,9 +70,8 @@ export function RunwayLookbook({ looks }: { looks: RunwayLook[] }) {
     return () => { ro.disconnect(); cancelAnimationFrame(raf); };
   }, []);
 
-  // Keys, wheel, swipe, autoplay. The arrow keys only while the section is on screen; the wheel only
-  // on wide screens, and it hands the scroll back to the page past the first / last look, so the
-  // section can't trap the page.
+  // Keys, swipe, autoplay. The arrow keys only while the section is on screen. No mouse-wheel
+  // control: the owner found it took over page scrolling (removed 2026-11-05).
   useEffect(() => {
     const stage = stageRef.current!;
     const io = new IntersectionObserver(([e]) => { inView.current = e.isIntersecting; }, { threshold: 0.5 });
@@ -83,19 +81,6 @@ export function RunwayLookbook({ looks }: { looks: RunwayLook[] }) {
       if (!inView.current || (e.target as Element | null)?.closest("input, textarea, select, [contenteditable]")) return;
       if (e.key === "ArrowRight") { go(curRef.current + 1); hold(); }
       if (e.key === "ArrowLeft") { go(curRef.current - 1); hold(); }
-    };
-    let wheelLock = 0;
-    const onWheel = (e: WheelEvent) => {
-      const dv = Math.abs(e.deltaY) > Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
-      if (Math.abs(dv) < 8 || innerWidth <= 900) return;
-      const c = curRef.current;
-      if ((dv > 0 && c === n - 1) || (dv < 0 && c === 0)) return;
-      e.preventDefault();
-      const now = performance.now();
-      if (now < wheelLock) return;
-      wheelLock = now + WHEEL_LOCK_MS;
-      go(c + (dv > 0 ? 1 : -1));
-      hold();
     };
     let tx: number | null = null;
     let ty = 0;
@@ -111,7 +96,6 @@ export function RunwayLookbook({ looks }: { looks: RunwayLook[] }) {
     const onLeave = () => { hovering.current = false; };
 
     addEventListener("keydown", onKey);
-    stage.addEventListener("wheel", onWheel, { passive: false });
     stage.addEventListener("touchstart", onTouchStart, { passive: true });
     stage.addEventListener("touchend", onTouchEnd);
     stage.addEventListener("pointerenter", onEnter);
@@ -124,14 +108,13 @@ export function RunwayLookbook({ looks }: { looks: RunwayLook[] }) {
     return () => {
       io.disconnect();
       removeEventListener("keydown", onKey);
-      stage.removeEventListener("wheel", onWheel);
       stage.removeEventListener("touchstart", onTouchStart);
       stage.removeEventListener("touchend", onTouchEnd);
       stage.removeEventListener("pointerenter", onEnter);
       stage.removeEventListener("pointerleave", onLeave);
       clearInterval(timer);
     };
-  }, [go, n]);
+  }, [go]);
 
   const look = looks[cur];
   const slots = narrow ? NARROW : WIDE;
@@ -261,7 +244,7 @@ export function RunwayLookbook({ looks }: { looks: RunwayLook[] }) {
             />
           ))}
         </div>
-        <div className={css.hint}>Lăn chuột, vuốt hoặc bấm ← → để đổi look</div>
+        <div className={css.hint}>Vuốt hoặc bấm ← → để đổi look</div>
       </section>
 
       <aside className={css.rail} aria-label="Sản phẩm trong look">
@@ -279,9 +262,9 @@ export function RunwayLookbook({ looks }: { looks: RunwayLook[] }) {
             return (
               <article key={keyOf(item)} className={`${css.item} ${missing.has(keyOf(item)) ? css.missing : ""}`}>
                 <Link className={css.itemImg} href={href} tabIndex={-1} aria-hidden>
-                  {imageUrl && <ThumbImage src={imageUrl} thumb={600} alt="" width={600} height={600} sizes="(max-width: 900px) 64vw, 312px" />}
+                  {imageUrl && <ThumbImage src={imageUrl} thumb={600} alt="" width={600} height={600} sizes="(max-width: 900px) 64vw, 128px" />}
+                  {off > 0 && <span className={css.off}>-{off}%</span>}
                 </Link>
-                {off > 0 && <span className={css.off}>-{off}%</span>}
                 <WishlistButton productId={item.productId} className={css.heart} />
                 <div className={css.itemInfo}>
                   <Link className={css.itemName} href={href}>{item.name}</Link>
