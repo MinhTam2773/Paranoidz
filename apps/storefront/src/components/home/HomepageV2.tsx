@@ -1,31 +1,8 @@
 import Image from "next/image";
 import { InViewVideo } from "./InViewVideo";
 
-// Homepage v2 2026-10-16: big marquee band (Hydra-style) + lookbook grid
-// with the shop's real-life photos from Drive.
-
-const MARQUEE_ITEMS = ["Paranoidz", "Streetwear Việt Nam", "BST 2026", "Back to Basicz"];
-
-export function Marquee() {
-  const row = [...MARQUEE_ITEMS, ...MARQUEE_ITEMS, ...MARQUEE_ITEMS];
-  return (
-    // Slim band (owner 2026-10-20): 34px tall, matching the top announcement ticker.
-    <div className="flex h-[34px] items-center overflow-hidden border-y border-border bg-bg-dark text-text-on-dark" aria-hidden>
-      <div className="flex w-max animate-ticker items-center">
-        {[0, 1].map((half) => (
-          <div key={half} className="flex w-max items-center">
-            {row.map((item, i) => (
-              <span key={`${half}-${i}`} className="flex items-center">
-                <span className="px-6 font-logo text-[15px] uppercase italic leading-none">{item}</span>
-                <span className="text-[13px] text-accent">✦</span>
-              </span>
-            ))}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
+// Homepage v2 2026-10-16: lookbook grid with the shop's real-life photos from
+// Drive. (The marquee band was removed 2026-11-05 at the owner's request.)
 
 const LOOKS = [
   { src: "/home/look-1.jpg", alt: "Áo thun Paranoidz màu be phối quần jeans" },
