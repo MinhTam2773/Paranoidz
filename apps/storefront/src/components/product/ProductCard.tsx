@@ -69,7 +69,7 @@ export function ProductCard({ product, eager = false }: { product: ProductCardDa
               key={src}
               src={src}
               thumb={600}
-              alt=""
+              alt={name}
               fill
               loading={eager || warm ? "eager" : undefined}
               sizes="(min-width: 1280px) 411px, (min-width: 1024px) 33vw, 50vw"
@@ -128,7 +128,7 @@ export function ProductCard({ product, eager = false }: { product: ProductCardDa
                         c.name === color ? "border-transparent ring-2 ring-text-primary ring-offset-2" : "border-border"
                       }`}
                     >
-                      <ThumbImage src={c.imageUrl} thumb={120} alt="" width={36} height={36} className="size-full object-cover" />
+                      <ThumbImage src={c.imageUrl} thumb={120} alt={`${name} ${c.name}`} width={36} height={36} className="size-full object-cover" />
                     </span>
                   </button>
                   <span className="pointer-events-none absolute -top-1 left-1/2 z-20 -translate-x-1/2 -translate-y-full whitespace-nowrap rounded-sm border border-border bg-bg-primary px-2 py-1 text-caption opacity-0 shadow-1 transition-opacity peer-hover:opacity-100">

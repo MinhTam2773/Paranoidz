@@ -8,7 +8,7 @@ import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
 import { GoogleTag } from "@/components/tracking/GoogleTag";
 import { MetaPixel } from "@/components/tracking/MetaPixel";
-import { SITE_URL } from "@/lib/site";
+import { DEFAULT_OG_IMAGE, SITE_URL } from "@/lib/site";
 import "./globals.css";
 
 const inter = Inter({
@@ -44,6 +44,7 @@ export const metadata: Metadata = {
     siteName: "Paranoidz",
     locale: "vi_VN",
     type: "website",
+    images: [DEFAULT_OG_IMAGE],
   },
 };
 

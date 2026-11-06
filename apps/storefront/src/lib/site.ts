@@ -8,6 +8,10 @@ export const HOTLINE = "0345 267 709";
 // otherwise every preview would compete with paranoidz.vn in search results.
 export const SITE_URL = "https://paranoidz.vn";
 
+// Share preview for pages without their own photo (home, listing, collections; SEO audit 2026-11-06).
+// Product pages set their own og:image.
+export const DEFAULT_OG_IMAGE = { url: "/og-default.jpg", width: 1200, height: 630, alt: "Paranoidz — streetwear Việt Nam" };
+
 // DESIGN.md §4, Row 2 — order matters.
 export const NAV_LINKS = [
   { label: "Trang chủ", href: "/" },
