@@ -15,7 +15,7 @@ import { RunwayLookbook } from "@/components/home/RunwayLookbook";
 import { ProductCard, type ProductCardData } from "@/components/product/ProductCard";
 import { productCardQuery, toProductCard } from "@/lib/catalog";
 import { runwayLooks } from "@/lib/runway-lookbook";
-import { HOTLINE, SITE_URL } from "@/lib/site";
+import { DEFAULT_OG_IMAGE, HOTLINE, SITE_URL } from "@/lib/site";
 
 // Homepage (DESIGN.md §5 page structure, items 5–10). ISR like /products: rebuilt at most once a
 // minute. Homepage v2 2026-10-16: video hero (shop's own TikTok clip) + marquee band +
@@ -36,6 +36,7 @@ export const metadata: Metadata = {
     description:
       "Streetwear Việt Nam — thiết kế táo bạo, chất liệu nghiêm túc, giá không trên trời. Thanh toán khi nhận hàng (COD).",
     url: "/",
+    images: [DEFAULT_OG_IMAGE],
   },
 };
 

@@ -246,7 +246,7 @@ export function ProductView({
                   <ThumbImage
                     src={item.kind === "video" ? (item.poster ?? gallery[0]?.url ?? "") : item.url}
                     thumb={120}
-                    alt=""
+                    alt={item.kind === "video" ? `Video ${name}` : `${name} ${i}`}
                     fill
                     sizes="120px"
                     className="object-cover"
