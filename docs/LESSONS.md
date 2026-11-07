@@ -105,6 +105,8 @@ Sections: Workflow · Windows & shell · Supabase · Next.js / React / Tailwind 
 - **Browser pane `ref` clicks can land on an element's bottom edge** (y = bottom) and silently miss. For repeated form submits, `form.requestSubmit()` via `javascript_tool` goes through the real React submit handler; confirm with DB state, not just on-screen text (an old error message stays visible between submits).
 - **Browser pane: `<dialog>` `close` events wait for a painted frame while the pane is hidden** (`visibilityState: "hidden"`): `dialog.close()` returns but React's `onClose` runs only after a screenshot. Also the pane's screenshots don't draw `::backdrop`; check it with `getComputedStyle(dialog, "::backdrop")`.
 - **Browser pane: clicks right after `navigate` can land before hydration** and do nothing (no error). Wait ~2s or check a React-driven change before trusting a click.
+- **Facebook pages are behind a login wall in the browser pane; read them in Claude in Chrome** (the owner's signed-in Chrome). Expand "Xem thêm" buttons by JS, then pull `[data-ad-rendering-role="story_message"]` texts (each post appears twice).
+- **Shopee reviews: call `/api/v2/item/get_ratings?itemid=…&shopid=…&limit=50&offset=…&type=0&filter=1` with `fetch` from a shopee.vn tab in Claude in Chrome** (shop / item ids are in product links `-i.<shopid>.<itemid>`; `/api/v4/search/search_items?…&match_id=<shopid>&page_type=shop` finds an item by model code). Claude in Chrome blocks tool output that looks like cookies / query strings: strip `/ = & ? % :` from returned text, and return < ~1.5k chars per call (longer output is truncated).
 - **`innerText` follows CSS `text-transform`** ("Ảnh bìa" reads as "ẢNH BÌA"); use `textContent` in browser checks.
 
 ## Local dev servers
