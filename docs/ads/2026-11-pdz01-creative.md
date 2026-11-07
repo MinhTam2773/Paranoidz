@@ -114,4 +114,18 @@ Ad: headline "pdz06 · polo vải gân".
 
 Ad: headline "Balo 9726 · vừa laptop 16 inch".
 
-Every caption ends with the footer from "Voice" (for the shirts add "· tặng 1 đôi tất"; hashtag the product code instead of `#pdz01`, `#balo9726` for the backpack).
+### Túi 1325 · túi phụ kiện camera mini (folder "Túi đựng phụ kiện camera mini pocket3", added 2026-11-07)
+
+₫345.000 (was ₫555.000) · Đen / Kaki / Xám / Xanh Đen · 24 × 10 × 15 cm, nylon chống nước, 1 ngăn chính + 2 ngăn phụ, bảo hành 6 tháng (product page). The category ad "Túi" uses this video.
+
+- `1325.mp4`: 26.8 s, 720×960 (3:4). For the ad use 0–12 s (worn crossbody and on the chest, three colours); 13–27 s (packing sunglasses, power bank, card, keys) suits an organic post. Kaki isn't in the video.
+- Photos 9 → 7 → 6 → 8 as a carousel (worn, packed flat-lay, opens 180°, pockets).
+- "pocket3" in the name points at a camera brand's product: don't name that brand in the caption.
+
+> Ra đường mang theo cả một "hệ sinh thái": máy ảnh nhỏ, sạc dự phòng, tai nghe, cáp, ví, chìa khoá.
+> Túi 1325 không làm chúng ít đi, chỉ cho mỗi thứ một chỗ riêng.
+> /Nylon chống nước/, 24 × 10 × 15 cm. Nhỏ gọn (cố ý), nên đừng định nhét laptop vào.
+
+Ad: headline "Túi 1325 · mỗi thứ một chỗ".
+
+Every caption ends with the footer from "Voice" (for the shirts add "· tặng 1 đôi tất"; hashtag the product code instead of `#pdz01`, `#balo9726` for the backpack, `#tui1325` for the bag).
