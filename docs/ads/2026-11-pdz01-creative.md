@@ -159,3 +159,21 @@ Owner: "Cho lên ads theo danh mục hết đi. Có vấn đề bản quyền g�
 - Meta warns they won't run in 6 placements (WhatsApp Status, Instagram profile feed / Stories with product video, Facebook Stories, Threads, in-stream reels): same limits as the original catalog ad.
 - Next: after 5–7 days compare cost per AddToCart per ad (the original sat at ₫8.117 for 40 AddToCart over 30 days on 2026-11-07), turn off the weakest only with the owner's yes.
 
+## Codex review and fixes (2026-11-07)
+
+Codex CLI (`codex exec -s read-only`) graded the work at the owner's request: overall 5,5/10 (copy 6, campaign structure 4, pixel fix 6,5, add-to-cart prompt 7,5). Fixed the same day:
+
+- **Live ad copy corrected in Ads Manager** (all 3 category ads re-published, structure / budget / optimisation untouched):
+  - Áo: headline "Áo thêu không lo bong · từ 119k" was wrong (the ₫119.000 tees are embossed, not embroidered) → "Áo thêu đôi mắt · 165k"; line 1 no longer claims every printed tee cracks → "Áo anime in hình hay nứt sau vài lần giặt? Áo này thêu, không phải in. 165k."
+  - Túi: "ô riêng cho từng món" → "chia nhiều ngăn bên trong"; headline "Túi hộp mini nhiều ngăn · 345k".
+  - All three: footer now states the real conditions: "Đổi trả trong 7 ngày nếu hàng còn tem, chưa dùng. Free ship giao thường cho đơn từ 199k (sau giảm giá)", and "mỗi mẫu một giá riêng" for the product strip.
+- **Add-to-cart prompt** (PR #91): buttons also shown when the item was already in the cart; link hover fixed.
+
+Not done, for the owner to decide:
+- **Policy page:** "no unboxing video → no complaint" (`app/policy/page.tsx`) may conflict with the 2023 Consumer Protection Law (Codex cites Art. 25); get it checked before quoting returns in ads.
+- **pdz07 video** still opens on 0–6 s of anime artwork (owner accepted the risk); a cut from 6 s lowers it.
+- **Per-ad tracking:** add `utm_content=ao|balo|tui` (Ads Manager → ad → Theo dõi → Thông số URL, collapsed) so PostHog can tell the ads apart.
+- **One real test order** in the Facebook in-app browser (Events Manager → Test events): AddToCart → checkout → Purchase browser + server deduplicated, then cancel it. Needs the owner's OK (real order on prod).
+- **Optimisation:** Codex suggests trying Purchase on a capped budget once that test passes, instead of waiting for 20–30 orders; judge ads by checkouts / orders, not cheap AddToCart.
+- Pixel scope as built: PageView and the server-side Purchase still go to Meta from anywhere; only ViewContent / AddToCart / InitiateCheckout / browser Purchase are VN-only.
+
