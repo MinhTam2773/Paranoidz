@@ -60,3 +60,58 @@ Each caption ends with the footer above. For an ad, put the first line in Meta's
 ## Media
 
 The owner sends the photos / videos (2026-11-07); captions are matched to each piece then. Rules for video ads: emotion or motion in the first 3 seconds, never open on the logo; subtitles on (most Reels play muted); little text on the image. Shot ideas if he wants them: morning routine with the shirt (slow, soft music); the same pdz01 styled three ways cut on the beat; packing an order with the gift socks.
+
+## Owner's media (2026-11-07)
+
+The owner put photos / videos for four products in `assets/` (local only, 261 MB, not in git). Facts below come from the live product pages and `/meta-feed.xml` that day; re-check prices before publishing. Shirts (pdz06 / pdz07 / pdz08) get 1 pair of gift socks per order; backpacks don't (ARCHITECTURE.md §5).
+
+### pdz08 · Áo thun nhung thêu pdz+ (folder "Ao thun nhung mịn oversize")
+
+₫145.000 (was ₫235.000) · Cream Orb / Gray Orb / Mint Blue Orb · M 40–55 kg, L 55–70 kg, XL 70–85 kg.
+
+- Photos 1, 3–8: usable (product banners with Vietnamese text + model shots). Carousel order: 1 → 6 → 4 → 3 → 5 → 7 → 8.
+- **`vid1.mp4` is not pdz08**: the shirt has a large tonal "ADAMP WRNNUP" print, not the small pdz+ logo, and vodka bottles sit in the background (Meta restricts alcohol in ads). Don't use it for pdz08; ask the owner where it comes from.
+
+> Không in chữ to. Chỉ một logo /pdz+/ thêu nổi nhỏ trên ngực, đứng gần mới đọc được.
+> Người cần biết thì sẽ biết.
+> /Vải nhung/ mịn, form boxy rộng sẵn (cố ý). Thích rộng nữa thì lên một size.
+
+Ad: primary text = first two lines; headline "pdz08 · áo nhung thêu pdz+".
+
+### pdz06 · Polo vải gân (folder "Áo thun gun ôm body nam")
+
+₫165.000 (was ₫235.000) · Trắng kem / Nâu · slimfit, size M under 1m70 / 60 kg, L under 1m75 / 73 kg.
+
+- Photos z (3), z (4), a (20), a (8): all usable. Lead with z (3) (brown) or z (4) (white).
+
+> Có những buổi hẹn mà áo thun thì hơi xuề xoà, sơ mi lại hơi "cố gắng".
+> Polo /vải gân/, một chú chim thêu nhỏ trên ngực. Vừa đủ chỉn chu.
+> Form ôm (ôm thật). Muốn thoải mái thì lên một size.
+
+Ad: headline "pdz06 · polo vải gân".
+
+### pdz07 · Áo thun thêu sharingan (folder "Áo oversize thêu sharingan")
+
+₫165.000 (was ₫245.000) · Đen / Trắng.
+
+- **Never advertised:** `/meta-feed.xml` marks it `khong-chay` ("the licensed-look design is never advertised"), so organic posts only, no paid ad unless the owner reverses that.
+- `hero1.cleaned.mp4` 0–6 s is anime character artwork, not our product; that part can draw a copyright takedown even on an organic post. Safer: use 6–13.7 s (embroidery close-ups, shoulder katakana, 3D turn). Don't name the character or the series in the caption.
+
+> Mặt trước: một ánh mắt, thêu từng mũi.
+> Trên vai: パラノイズ, tức là Paranoidz viết bằng katakana.
+> Cotton dày, form rộng. Cho những đêm "thêm một tập nữa thôi".
+
+### Balo 9726 (folder "Balo bánh mì cute")
+
+₫399.000 (was ₫555.000) · chống nước, vừa laptop 16 inch · 7 colours (Nâu Kem, Tím Pastel, Xanh Ngọc, Xanh Đen, Xám Hồng, Đen Basic, Đỏ Đô).
+
+- `9726-merged.cleaned.mp4`: 46 s, 2880×3840 (3:4). For a Reels / feed ad trim to ~15 s: 0–15 s (three colours worn) is the hook; the close-ups and packing scene (20–45 s) suit an organic post.
+- The bag shows a supplier "ZRY" badge, and a bread keychain hangs on it. **Ask the owner whether the keychain comes with the bag** before mentioning it (CLAUDE.md: show an included gift only where the offer includes it).
+
+> Sáng nào cũng nhét vào: laptop, sạc, sổ, chai nước, và một nửa sự tỉnh táo.
+> Balo 9726 gánh phần đồ. Phần tỉnh táo thì bạn tự lo nhé.
+> Chống nước, vừa laptop 16 inch, bảy màu.
+
+Ad: headline "Balo 9726 · vừa laptop 16 inch".
+
+Every caption ends with the footer from "Voice" (for the shirts add "· tặng 1 đôi tất"; hashtag the product code instead of `#pdz01`, `#balo9726` for the backpack).
