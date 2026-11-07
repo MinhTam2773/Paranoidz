@@ -15,7 +15,7 @@ Read ~13 distinct posts on the Ananas page (2024-10 → 2025-09, plus the pinned
 3. **Honest about trade-offs.** They openly name a downside (heavier, not "too soft") and why they chose it. That honesty is the emotion: trust. For pdz01 the honest facts are: boxy form runs wide on purpose (size by weight: M 40–55 kg, L 55–65 kg, XL 65–80 kg), the embroidery is small on purpose.
 4. **Dry, self-aware humour.** A wry twist instead of hype ("price didn't get time to change" kind of line). One per post at most.
 5. **Typography tics.** `/slashes/` around the key idea or material (`/vải nhung/`, `/minimalism/`); "quotes" around a playful word; (parentheses) for a candid aside.
-6. **Brand voice = "chúng tôi" / "Paranoidz", reader = "bạn".** In comment replies the page uses a short nickname and "Dạ…" (polite, warm). Paranoidz needs its own nickname: ask the owner (don't invent one).
+6. **Brand voice = "chúng tôi" / "Paranoidz", reader = "bạn".** In comment replies the page uses a short nickname and "Dạ…" (polite, warm). Paranoidz calls itself "Paranoidz" (owner, 2026-11-07), e.g. "Dạ bạn kiểm tra tin nhắn giúp Paranoidz nha".
 7. **Scene captions for photo series.** A short title + place + time, like a diary entry, then the product line. Use our own pattern ("pdz01 · nhật ký"), not theirs.
 8. **Fixed footer.** A `——` separator, one link line, one short line of real terms, then the same 3–4 hashtags every time.
 9. **Pain first (owner, 2026-11-07).** Ananas' quiet tone alone didn't hit the customer's pain. Every caption now opens on one concrete, everyday pain (a moment the reader has lived), then says plainly how the product fixes it (only facts from the product page), then removes the fear of buying online: check the parcel before paying, size by weight, 7-day returns. Keep the honesty: say who pays the exchange shipping.
@@ -153,7 +153,7 @@ Owner: "Cho lên ads theo danh mục hết đi. Có vấn đề bản quyền g�
 - **Commerce Manager, catalog `1133479502706422`:** product sets **Áo** (custom_label_0 = `ao` OR item group = pdz07 `5c211c6c-…`, 8 products / 63 variants), **Balo** (`balo`, 23 / 131), **Túi** (`tui`, 38 / 160). They follow the feed, so new products land in the right set by name.
 - **Ads in "Nhóm quảng cáo Doanh số mới"** (duplicated from the original, so same tracking, UTM and Advantage+ settings), each limited to its set ("Thêm các sản phẩm khác" off), cover video + the caption above + a footer with PDZWELCOME:
   - `PDZ | Áo | video thêu | 11-2026`: pdz07 video (13.7 s), headline "Áo thêu không lo bong · từ 119k".
-  - `PDZ | Balo | video balo | 11-2026`: backpack 9726 video (0–15 s), "Balo vừa laptop 16 inch · 399k". Caption says "em balo này", not "balo bánh mì", until the keychain question is answered.
+  - `PDZ | Balo | video balo | 11-2026`: backpack 9726 video (0–15 s), "Balo vừa laptop 16 inch · 399k". Owner 2026-11-07: the bread keychain comes with the backpack, so the live caption now says "Balo bánh mì" and "Có kèm móc khoá bánh mì treo trước balo".
   - `PDZ | Túi | video túi | 11-2026`: bag 1325 video (0–15 s), "Túi hộp mini, mỗi món một ô · 345k".
 - Videos: 1080×1350, hook on screen 0–3 s and the fix + price 3–6.5 s (PIL text over CapCut's bundled ffmpeg, `h264_nvenc`); copies in `assets/_video-quang-cao-2026-11-07/` (not in git).
 - Meta warns they won't run in 6 placements (WhatsApp Status, Instagram profile feed / Stories with product video, Facebook Stories, Threads, in-stream reels): same limits as the original catalog ad.
