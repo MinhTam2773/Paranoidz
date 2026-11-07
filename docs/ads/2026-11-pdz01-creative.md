@@ -19,12 +19,21 @@ Read ~13 distinct posts on the Ananas page (2024-10 → 2025-09, plus the pinned
 7. **Scene captions for photo series.** A short title + place + time, like a diary entry, then the product line. Use our own pattern ("pdz01 · nhật ký"), not theirs.
 8. **Fixed footer.** A `——` separator, one link line, one short line of real terms, then the same 3–4 hashtags every time.
 9. **Pain first (owner, 2026-11-07).** Ananas' quiet tone alone didn't hit the customer's pain. Every caption now opens on one concrete, everyday pain (a moment the reader has lived), then says plainly how the product fixes it (only facts from the product page), then removes the fear of buying online: check the parcel before paying, size by weight, 7-day returns. Keep the honesty: say who pays the exchange shipping.
+10. **Talk like a person, not a machine (owner, 2026-11-07).** Write the way the shop's own Shopee buyers write: "cầm nặng tay", "mặc không bí", "khui ra là ưng", "nha", "luôn", prices as "399k". No `/slashes/`, no neat three-part sentences, no repeated stock phrases. Quote a real review when it says it better (short, no names).
+
+### What the shop's Shopee buyers say (read 2026-11-07)
+
+Shirt shop shopee.vn/paranoidz.studio (pdz01 41 ratings, pdz05 59, pdz06 11, pdz07 9, pdz08 2 without text); bag shop shopee.vn/cocashop001 (backpack 9726: 1.855 ratings, Shopee shows ~7k sold; bag 1325: 188 ratings, ~1k sold).
+
+- **Shirts, praise:** thick and heavy in the hand yet not hot ("dày dặn, cầm nặng tay mà mặc không nóng bí"); soft fabric "sờ thích"; "khui hàng ra là ưng luôn"; collar not stretched after 3–4 washes (pdz01); embroidery, so no peeling (pdz07: "các chi tiết đều được thêu nên không sợ bong tróc"); "mặc lên nhìn to con" (pdz07); pdz06 "dày dặn, lịch sự", "đi chơi, đi hẹn hò". Buyers give height / weight → size, and praise the shop's size advice.
+- **Shirts, complaints:** colour less bright than the photo (pdz01, 4★); loose threads after the first wash, shirt a bit short, a yellow stain (pdz05, 4★); pdz06 stretches less than expected.
+- **Backpack 9726:** big and roomy, many pockets, fits a lot ("đựng được rất nhiều thứ"), thick and sturdy, "nhìn mà muốn đi học lại luôn"; parents buy it for daughters in high school. On Shopee it came with gifts (tote, charm): don't promise those on paranoidz.vn.
+- **Bag 1325:** "nhỏ gọn mà đựng được nhiều đồ", smooth zips, rain resistance fine for light rain ("che mưa nhỏ thì ổn"); one 1★: strap came loose after 2 weeks, so lean on the 6-month warranty.
 
 Paranoidz footer (all facts checked on the live site 2026-11-07: COD lets the customer check the parcel before paying; returns within 7 days, unused with tags; a size / style exchange is shipped at the customer's cost, a faulty or wrong item at the shop's; complaints need an unboxing video; pdz01 ₫145.000 (was ₫235.000), Cream / Mint Blue / Basic Gray, M–XL; COD; 7-day returns; free standard shipping from ₫199.000 after vouchers; PDZWELCOME 10 % for first orders):
 
-> ——
-> Link: paranoidz.vn
-> Nhận hàng, kiểm tra rồi mới trả tiền · đổi trả trong 7 ngày · miễn phí giao từ ₫199.000
+> Nhận hàng, mở ra xem rồi mới trả tiền. Đổi trả trong 7 ngày. Đơn từ 199k miễn phí ship.
+> 👉 [link sản phẩm]
 > #paranoidz #backtobasicz #pdz01
 
 Re-check the price before publishing: the sale price may change.
@@ -73,11 +82,11 @@ The owner put photos / videos for four products in `assets/` (local only, 261 MB
 - Photos 1, 3–8: usable (product banners with Vietnamese text + model shots). Carousel order: 1 → 6 → 4 → 3 → 5 → 7 → 8.
 - **`vid1.mp4` is not pdz08**: the shirt has a large tonal "ADAMP WRNNUP" print, not the small pdz+ logo, and vodka bottles sit in the background (Meta restricts alcohol in ads). Don't use it for pdz08; ask the owner where it comes from.
 
-> Áo thun mặc vài lần đã xù lông, giặt mấy lượt là chữ in nứt, bong?
-> pdz08 đi đường khác: /vải nhung/ mịn, không xù lông, ít nhăn, giữ form sau nhiều lần giặt. Logo pdz+ là /thêu nổi/, không phải in, nên không có lớp in nào để nứt.
-> Sợ sai size? Chọn theo cân nặng: M 40–55 kg · L 55–70 kg · XL 70–85 kg. Vẫn không vừa thì đổi trong 7 ngày (phí ship đổi bạn chịu, nói trước cho rõ).
+> Áo thun mặc vài lần là xù lông, giặt mấy lần là cổ bai, chữ in thì nứt. Tủ ai chắc cũng có một cái như vậy.
+> pdz08 là vải nhung, sờ mịn tay, cầm nặng tay mà mặc không bí. Logo pdz nhỏ trên ngực là thêu chứ không phải in, nên chẳng có gì để bong.
+> Form rộng sẵn rồi nha. 40–55kg mặc M, 55–70kg mặc L, 70–85kg mặc XL. Phân vân thì nhắn shop, tụi mình tư vấn size cho.
 
-Ad: primary text = the first line + "Vải nhung không xù lông, logo thêu không bong."; headline "pdz08 · áo nhung thêu pdz+ · ₫145.000".
+Ad: primary text = the first two sentences; headline "pdz08 · áo nhung thêu · 145k".
 
 ### pdz06 · Polo vải gân (folder "Áo thun gun ôm body nam")
 
@@ -85,11 +94,11 @@ Ad: primary text = the first line + "Vải nhung không xù lông, logo thêu kh
 
 - Photos z (3), z (4), a (20), a (8): all usable. Lead with z (3) (brown) or z (4) (white).
 
-> Đi làm, đi hẹn: áo thun thì xuề xoà, sơ mi thì nóng và cứng, polo thường mặc vào lại thùng thình, cổ mềm oặt.
-> pdz06 nằm giữa: /vải gân/ co giãn nhẹ nên mặc dễ chịu cả ngày, cổ đứng form, tay bo gọn, form ôm tôn dáng.
-> Form ôm thật, nên chọn đúng size: M dưới 1m70 / 60 kg · L dưới 1m75 / 73 kg. Thích thoải mái thì lên một size.
+> Đi làm mặc áo thun thì hơi xuề xoà, mặc sơ mi thì nóng. Còn polo thường mặc vào cứ thùng thình.
+> pdz06 là polo vải gân, ôm người vừa phải, cổ đứng, tay bo gọn. Khách mua rồi khen "dày dặn, lịch sự", mặc đi làm hay đi hẹn hò đều ổn.
+> Áo ôm thật nên đừng chọn nhỏ quá: dưới 1m70, 60kg mặc M. Dưới 1m75, 73kg mặc L. Thích rộng thì lên một size nha.
 
-Ad: headline "pdz06 · polo vải gân · ₫165.000".
+Ad: headline "pdz06 · polo vải gân · 165k".
 
 ### pdz07 · Áo thun thêu sharingan (folder "Áo oversize thêu sharingan")
 
@@ -98,9 +107,9 @@ Ad: headline "pdz06 · polo vải gân · ₫165.000".
 - **Never advertised:** `/meta-feed.xml` marks it `khong-chay` ("the licensed-look design is never advertised"), so organic posts only, no paid ad unless the owner reverses that.
 - `hero1.cleaned.mp4` 0–6 s is anime character artwork, not our product; that part can draw a copyright takedown even on an organic post. Safer: use 6–13.7 s (embroidery close-ups, shoulder katakana, 3D turn). Don't name the character or the series in the caption.
 
-> Áo anime ngoài kia phần lớn là hình in: mặc vài lần là nứt, giặt vài lượt là phai.
-> pdz07 /thêu/ từng mũi ở ngực, chữ パラノイズ (Paranoidz viết bằng katakana) thêu dọc vai. Thêu thì không nứt như hình in.
-> Cotton dày, form rộng: M dưới 1m70 / 60 kg · L dưới 1m75 / 73 kg · XL dưới 1m85 / 95 kg.
+> Áo in hình anime thì đẹp lúc mới mua, giặt vài lần là nứt, là phai.
+> pdz07 thêu hết: đôi mắt trước ngực, chữ パラノイズ chạy dọc vai. Có bạn mua rồi viết "các chi tiết đều được thêu nên không sợ bong tróc", đúng cái tụi mình muốn luôn.
+> Cotton dày, form rộng, mặc lên nhìn vai to hẳn ra.
 
 ### Balo 9726 (folder "Balo bánh mì cute")
 
@@ -109,11 +118,11 @@ Ad: headline "pdz06 · polo vải gân · ₫165.000".
 - `9726-merged.cleaned.mp4`: 46 s, 2880×3840 (3:4). For a Reels / feed ad trim to ~15 s: 0–15 s (three colours worn) is the hook; the close-ups and packing scene (20–45 s) suit an organic post.
 - The bag shows a supplier "ZRY" badge, and a bread keychain hangs on it. **Ask the owner whether the keychain comes with the bag** before mentioning it (CLAUDE.md: show an included gift only where the offer includes it).
 
-> Đang đi thì trời đổ mưa, việc đầu tiên nghĩ tới là cái laptop trong balo.
-> Balo 9726 làm bằng /vải chống nước/, vừa laptop 16 inch, nhiều ngăn cho sạc, sổ, chai nước, không phải nhét chung một chỗ.
-> Chống nước mưa thường thôi nhé, đừng ngâm (nói trước cho rõ). Bảy màu, giờ còn ₫399.000.
+> Balo bé quá thì laptop nhét không vừa, sạc với chai nước phải cầm tay. Gặp hôm mưa lại lo cho cái máy.
+> Balo 9726 rộng, vừa laptop 16 inch, nhiều ngăn, vải chống nước. Trên Shopee có hơn 1.800 đánh giá, có bạn còn bảo "nhìn mà muốn đi học lại luôn".
+> Mưa nhỏ thì yên tâm, mưa to vẫn nên trùm áo mưa nha. Có 7 màu, giờ còn 399k.
 
-Ad: headline "Balo 9726 · chống nước, vừa laptop 16 inch".
+Ad: headline "Balo 9726 · vừa laptop 16 inch · 399k".
 
 ### Túi 1325 · túi phụ kiện camera mini (folder "Túi đựng phụ kiện camera mini pocket3", added 2026-11-07)
 
@@ -123,10 +132,10 @@ Ad: headline "Balo 9726 · chống nước, vừa laptop 16 inch".
 - Photos 9 → 7 → 6 → 8 as a carousel (worn, packed flat-lay, opens 180°, pockets).
 - "pocket3" in the name points at a camera brand's product: don't name that brand in the caption.
 
-> Túi một ngăn: chìa khoá chìm dưới đáy, cáp sạc rối vào tai nghe, mò cả phút mới thấy thẻ xe.
-> Túi 1325 mở rộng 180° như một chiếc hộp, có ô riêng cho máy ảnh nhỏ, sạc dự phòng, cáp, thẻ. Mở ra là thấy ngay.
-> /Nylon chống nước/, 24 × 10 × 15 cm, đeo chéo hay đeo trước ngực đều được. Bảo hành 6 tháng.
+> Túi đeo chéo một ngăn: bỏ gì vào cũng rớt xuống đáy, chìa khoá lẫn với tai nghe, cần cái thẻ xe là lục cả buổi.
+> Túi 1325 nhìn nhỏ vậy chứ đựng được nhiều đồ lắm. Mở ra rộng hẳn, có ô riêng cho máy ảnh nhỏ, sạc dự phòng, cáp, thẻ.
+> Vải nylon chống nước, che mưa nhỏ ổn. Bảo hành 6 tháng, có gì cứ nhắn shop.
 
-Ad: headline "Túi 1325 · mỗi thứ một chỗ".
+Ad: headline "Túi 1325 · nhỏ mà đựng nhiều · 345k".
 
-Every caption ends with the footer from "Voice" (for the shirts add "· tặng 1 đôi tất"; hashtag the product code instead of `#pdz01`, `#balo9726` for the backpack, `#tui1325` for the bag).
+Every caption ends with the footer from "Voice" (for the shirts add "Mua áo được tặng 1 đôi tất."; hashtag the product code instead of `#pdz01`, `#balo9726` for the backpack, `#tui1325` for the bag).
