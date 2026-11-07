@@ -40,7 +40,7 @@ export function PurchaseActions({
   // Both reset when the selected variant changes (derived, no effect needed).
   const [qtyState, setQtyState] = useState<{ id?: string; qty: number }>({ qty: 1 });
   const qty = variant && qtyState.id === variant.id ? qtyState.qty : 1;
-  const [notice, setNotice] = useState<{ id: string; text: string; added: boolean } | null>(null);
+  const [notice, setNotice] = useState<{ id: string; text: string } | null>(null);
   const message = variant && notice?.id === variant.id ? notice : null;
 
   const inlineRef = useRef<HTMLDivElement>(null);
@@ -65,7 +65,6 @@ export function PurchaseActions({
     if (added > 0) trackMeta("AddToCart", [{ id: variant.id, quantity: added, item_price: variant.price }]);
     setNotice({
       id: variant.id,
-      added: added > 0,
       text:
         added === qty
           ? "Đã thêm vào giỏ"
@@ -79,18 +78,27 @@ export function PurchaseActions({
     if (variant) router.push(`/checkout?variant=${variant.id}&qty=${qty}`);
   }
 
+  // After an add, the next step is two full-size buttons, not a small text link: from 2026-11-05 only
+  // 9 of 19 Vietnamese shoppers who added to cart ever opened it (PostHog, TODO.md Now #8). Shown
+  // even when nothing more fit (the item is already in the cart then).
   const status = message && (
-    <p role="status" className="text-caption text-text-secondary">
-      {message.text}
-      {message.added && (
-        <>
-          {" · "}
-          <Link href="/cart" className="text-text-primary underline">
-            Xem giỏ hàng
-          </Link>
-        </>
-      )}
-    </p>
+    <div role="status" className="flex flex-col gap-2">
+      <p className="text-caption text-text-secondary">{message.text}</p>
+      <div className="grid grid-cols-2 gap-3">
+        <Link
+          href="/cart"
+          className="flex h-12 items-center justify-center rounded-sm border border-text-primary text-button uppercase text-text-primary transition-colors duration-200 hover:bg-text-primary hover:text-text-on-dark"
+        >
+          Xem giỏ hàng
+        </Link>
+        <Link
+          href="/checkout"
+          className="flex h-12 items-center justify-center rounded-sm bg-accent px-4 text-button uppercase text-text-on-dark transition-all duration-200 hover:-translate-y-px hover:bg-accent-hover hover:shadow-accent"
+        >
+          Thanh toán
+        </Link>
+      </div>
+    </div>
   );
 
   if (soldOut) {
