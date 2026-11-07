@@ -145,3 +145,17 @@ Ad: headline "Áo polo gân · 165k".
 Ad: headline "Túi hộp mini · 345k". Text on the video, 0–3 s: "Lục túi cả buổi không ra thẻ xe?" then "Mỗi món một ô · 345k".
 
 Every caption ends with the footer from "Voice" (for the shirts add "Mua áo được tặng 1 đôi tất."; no product-code hashtags).
+
+## Live: category ads (2026-11-07)
+
+Owner: "Cho lên ads theo danh mục hết đi. Có vấn đề bản quyền gì tôi chịu hết" (all categories, pdz07 included; he takes the copyright risk). Done the same day, campaign / ad set / budget untouched, the original ad "Quảng cáo Doanh số mới" keeps running next to them:
+
+- **Commerce Manager, catalog `1133479502706422`:** product sets **Áo** (custom_label_0 = `ao` OR item group = pdz07 `5c211c6c-…`, 8 products / 63 variants), **Balo** (`balo`, 23 / 131), **Túi** (`tui`, 38 / 160). They follow the feed, so new products land in the right set by name.
+- **Ads in "Nhóm quảng cáo Doanh số mới"** (duplicated from the original, so same tracking, UTM and Advantage+ settings), each limited to its set ("Thêm các sản phẩm khác" off), cover video + the caption above + a footer with PDZWELCOME:
+  - `PDZ | Áo | video thêu | 11-2026`: pdz07 video (13.7 s), headline "Áo thêu không lo bong · từ 119k".
+  - `PDZ | Balo | video balo | 11-2026`: backpack 9726 video (0–15 s), "Balo vừa laptop 16 inch · 399k". Caption says "em balo này", not "balo bánh mì", until the keychain question is answered.
+  - `PDZ | Túi | video túi | 11-2026`: bag 1325 video (0–15 s), "Túi hộp mini, mỗi món một ô · 345k".
+- Videos: 1080×1350, hook on screen 0–3 s and the fix + price 3–6.5 s (PIL text over CapCut's bundled ffmpeg, `h264_nvenc`); copies in `assets/_video-quang-cao-2026-11-07/` (not in git).
+- Meta warns they won't run in 6 placements (WhatsApp Status, Instagram profile feed / Stories with product video, Facebook Stories, Threads, in-stream reels): same limits as the original catalog ad.
+- Next: after 5–7 days compare cost per AddToCart per ad (the original sat at ₫8.117 for 40 AddToCart over 30 days on 2026-11-07), turn off the weakest only with the owner's yes.
+
