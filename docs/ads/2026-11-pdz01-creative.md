@@ -1,63 +1,161 @@
-# Meta ads creative draft: pdz01 (2026-11-06)
+# Meta ads creative draft: pdz01 (2026-11-06, voice reworked 2026-11-07)
 
-For the campaign "PDZ | Doanh số | Thêm vào giỏ | 11-2026" (TODO Now #8). The owner left the two pdz01 draft ads unpublished because their images and captions weren't what he wanted, and asked for captions and video "with more emotion". Nothing below is live; Ads Manager wasn't changed.
+For the campaign "PDZ | Doanh số | Thêm vào giỏ | 11-2026" (TODO Now #8). The owner left the two pdz01 draft ads unpublished because their images and captions weren't what he wanted, and asked for captions and video "with more emotion". On 2026-11-07 he asked for the copy to follow the way the Ananas fanpage (facebook.com/Ananas.vietnam) writes, and said he will send the photos / videos himself; captions are then fitted to each piece. Nothing below is live; Ads Manager wasn't changed.
 
 ## Plan
 
-Three ads in the **existing** ad set "Nhóm quảng cáo Doanh số mới" (not a new campaign: ₫200.000/day is too little to split), each a clearly different video + caption pair. After 5–7 days keep the lowest cost per AddToCart, turn off the weakest, replace it with a new one in the winner's direction.
+Three ads in the **existing** ad set "Nhóm quảng cáo Doanh số mới" (not a new campaign: ₫200.000/day is too little to split), each a clearly different media + caption pair. After 5–7 days keep the lowest cost per AddToCart, turn off the weakest, replace it with a new one in the winner's direction. Which caption goes with which ad is decided once the owner's media arrives.
 
-| Ad | Creative | Caption |
-|---|---|---|
-| 1 | Video A "Sáng chậm" | 1 "Ngày thứ Hai" |
-| 2 | Video B "Một áo, ba ngày" | 2 "Ít mà chất" |
-| 3 | Lookbook photo (look-10 or look-2; the two drafts can be reworked into this one) | 3 "Gửi người hay overthinking" |
+## Voice (learned from Ananas, 2026-11-07)
 
-Caption 4 is for text on the video, not its own ad. Videos A and B don't exist yet: the owner shoots them, or a first cut is made from the lookbook photos and the videos already on the site.
+Read ~13 distinct posts on the Ananas page (2024-10 → 2025-09, plus the pinned ones). What makes it work, adapted to Paranoidz. Learn the techniques; never reuse their lines, campaign names or hashtags.
 
-## Captions
+1. **Say little, let the photo talk.** Most product posts are 1–3 short lines: a thought or a fact, no list of features, no "SALE SỐC", no emoji.
+2. **A small life thought, tied to the product.** A one-line observation about ordinary days or habits, then the product as the quiet answer. Warm, a little philosophical, never preachy.
+3. **Honest about trade-offs.** They openly name a downside (heavier, not "too soft") and why they chose it. That honesty is the emotion: trust. For pdz01 the honest facts are: boxy form runs wide on purpose (size by weight: M 40–55 kg, L 55–65 kg, XL 65–80 kg), the embroidery is small on purpose.
+4. **Dry, self-aware humour.** A wry twist instead of hype ("price didn't get time to change" kind of line). One per post at most.
+5. **Typography tics.** `/slashes/` around the key idea or material (`/vải nhung/`, `/minimalism/`); "quotes" around a playful word; (parentheses) for a candid aside.
+6. **Brand voice = "chúng tôi" / "Paranoidz", reader = "bạn".** In comment replies the page uses a short nickname and "Dạ…" (polite, warm). Paranoidz needs its own nickname: ask the owner (don't invent one).
+7. **Scene captions for photo series.** A short title + place + time, like a diary entry, then the product line. Use our own pattern ("pdz01 · nhật ký"), not theirs.
+8. **Fixed footer.** A `——` separator, one link line, one short line of real terms, then the same 3–4 hashtags every time.
+9. **Pain first (owner, 2026-11-07).** Ananas' quiet tone alone didn't hit the customer's pain. Every caption now opens on one concrete, everyday pain (a moment the reader has lived), then says plainly how the product fixes it (only facts from the product page), then removes the fear of buying online: check the parcel before paying, size by weight, 7-day returns. Keep the honesty: say who pays the exchange shipping.
+10. **Talk like a person, not a machine (owner, 2026-11-07).** Write the way the shop's own Shopee buyers write: "cầm nặng tay", "mặc không bí", "khui ra là ưng", "nha", "luôn", prices as "399k". No `/slashes/`, no neat three-part sentences, no repeated stock phrases. Quote a real review when it says it better (short, no names).
+11. **Nicknames, never codes (owner, 2026-11-07: "pdz08", "balo 9726" sound like a machine).** In captions and headlines a product is what a person would call it: "em áo nhung", "áo polo gân", "áo thêu đôi mắt", "balo bánh mì", "em túi hộp nhỏ". Codes stay in these docs and on the site only. No product-code hashtags.
+12. **The first line is the whole ad (owner, 2026-11-07).** Facebook / Instagram show about the first 125 characters before "Xem thêm" (less on Reels), and few people expand. Line 1 must stand alone and stay under ~80 characters: the pain + the product by its nickname + the fix or the price. Everything after it is a bonus for the few who tap. On video ads the same hook goes on the video in the first 3 seconds, because Reels show barely one line of caption.
 
-**1. Ngày thứ Hai**
-> Có những ngày chẳng muốn chứng minh gì với ai.
-> Không logo to, không màu chói. Chỉ một chiếc áo trơn, một dòng thêu nhỏ: *minimalism*.
-> Mặc vào, ra đường, sống chậm lại một chút.
->
-> pdz01 — cho những ngày bạn chỉ cần là chính mình.
-> 🤍 Nhận hàng mới trả tiền · đổi trả 7 ngày
+### What the shop's Shopee buyers say (read 2026-11-07)
 
-**2. Ít mà chất**
-> Tủ đồ đầy nhưng sáng nào cũng "không có gì để mặc"?
-> Có lẽ bạn không thiếu áo, bạn thiếu một chiếc mặc gì cũng hợp.
-> Form boxy, vải nhung mịn, đường thêu tỉ mỉ đến từng mũi.
-> Phối quần jean, short hay kaki đều ổn. Đơn giản vậy thôi.
->
-> pdz01 · Paranoidz — Back to Basicz.
+Shirt shop shopee.vn/paranoidz.studio (pdz01 41 ratings, pdz05 59, pdz06 11, pdz07 9, pdz08 2 without text); bag shop shopee.vn/cocashop001 (backpack 9726: 1.855 ratings, Shopee shows ~7k sold; bag 1325: 188 ratings, ~1k sold).
 
-**3. Gửi người hay overthinking**
-> Đầu óc lúc nào cũng ồn ào, thì quần áo hãy yên lặng giùm mình.
-> Một chiếc áo không cần giải thích, mặc lên là thấy nhẹ người.
->
-> Paranoidz — làm cho những người nghĩ hơi nhiều 🖤
-> pdz01 · thêu minimalism
+- **Shirts, praise:** thick and heavy in the hand yet not hot ("dày dặn, cầm nặng tay mà mặc không nóng bí"); soft fabric "sờ thích"; "khui hàng ra là ưng luôn"; collar not stretched after 3–4 washes (pdz01); embroidery, so no peeling (pdz07: "các chi tiết đều được thêu nên không sợ bong tróc"); "mặc lên nhìn to con" (pdz07); pdz06 "dày dặn, lịch sự", "đi chơi, đi hẹn hò". Buyers give height / weight → size, and praise the shop's size advice.
+- **Shirts, complaints:** colour less bright than the photo (pdz01, 4★); loose threads after the first wash, shirt a bit short, a yellow stain (pdz05, 4★); pdz06 stretches less than expected.
+- **Backpack 9726:** big and roomy, many pockets, fits a lot ("đựng được rất nhiều thứ"), thick and sturdy, "nhìn mà muốn đi học lại luôn"; parents buy it for daughters in high school. On Shopee it came with gifts (tote, charm): don't promise those on paranoidz.vn.
+- **Bag 1325:** "nhỏ gọn mà đựng được nhiều đồ", smooth zips, rain resistance fine for light rain ("che mưa nhỏ thì ổn"); one 1★: strap came loose after 2 weeks, so lean on the 6-month warranty.
 
-**4. Ngắn (text on video)**
-> Không cần nổi bật. Chỉ cần đúng là mình.
-> pdz01 · minimalism 🤍
+Paranoidz footer (all facts checked on the live site 2026-11-07: COD lets the customer check the parcel before paying; returns within 7 days, unused with tags; a size / style exchange is shipped at the customer's cost, a faulty or wrong item at the shop's; complaints need an unboxing video; pdz01 ₫145.000 (was ₫235.000), Cream / Mint Blue / Basic Gray, M–XL; COD; 7-day returns; free standard shipping from ₫199.000 after vouchers; PDZWELCOME 10 % for first orders):
 
-## Videos (9:16, 10–15 s)
+> Nhận hàng mở ra xem thoải mái rồi mới trả tiền. Không ưng thì đổi trả trong 7 ngày. Đơn từ 199k là free ship luôn.
+> 👉 [link sản phẩm]
+> #paranoidz #backtobasicz
 
-**A. Sáng chậm** — lo-fi / soft acoustic
-1. 0–2 s: hand lifts the shirt off the bed, morning light through the curtain.
-2. 2–5 s: macro of the *minimalism* embroidery, slow pan.
-3. 5–10 s: puts it on, headphones, opens the door.
-4. 10–13 s: walks slowly, back to camera, backlit.
-5. End card: "Ngày nào cũng có thể nhẹ nhàng." + pdz logo.
+A size / style exchange ships at the customer's cost (policy page): say so when someone asks in the comments, not in the footer.
 
-**B. Một áo, ba ngày** — beat-cut music
-- The same pdz01 styled three ways: school, café, night out; each outfit change lands on a beat.
-- End card: "Một chiếc áo. Nhiều câu chuyện."
+Re-check the price before publishing: the sale price may change.
 
-**C. Hậu trường** (spare) — real, unpolished
-- Folding a shirt, bagging it with the gift sock, labelling the parcel.
-- Text: "Gói từng đơn, gửi tới bạn."
+## Captions (pdz01)
 
-Rules: emotion or motion in the first 3 seconds, never open on the logo; subtitles on (most Reels play muted); little text on the image.
+First drafts, superseded by rules 9–12 above (they still use codes and bury the hook); kept for reference, don't publish as they are.
+
+**1. Ngày thường** (life thought → product)
+> Ngày nào cũng na ná nhau. Cùng một con đường, cùng một ly cà phê, cùng một câu "hôm nay mặc gì".
+> Chúng tôi không đổi được ngày của bạn, chỉ làm cho câu hỏi cuối dễ hơn một chút.
+> pdz01 — áo trơn, một dòng thêu nhỏ: /minimalism/.
+
+**2. Cố ý** (honest trade-offs)
+> Form rộng (cố ý). Dòng thêu nhỏ xíu (cũng cố ý).
+> Vì chúng tôi nghĩ một chiếc áo mặc mỗi ngày thì nên nhường phần nổi bật cho người mặc.
+> Thích ôm hơn thì lùi một size: M 40–55 kg · L 55–65 kg · XL 65–80 kg.
+
+**3. Gửi người nghĩ nhiều** (brand character)
+> Đầu đã đủ "ồn" rồi, quần áo thì nên yên lặng.
+> Paranoidz làm đồ cho những người nghĩ hơi nhiều, và muốn mặc thì đơn giản thôi.
+> pdz01 · /vải nhung/ mềm, thêu nổi /minimalism/.
+
+**4. Dry humour** (for a restock or price post, not an ad)
+> Ba màu Cream, Mint Blue, Basic Gray đã đủ size.
+> Giá vẫn ₫145.000, chúng tôi chưa kịp nghĩ lại.
+
+**5. Nhật ký** (template for a photo series from the owner; fill from the photo)
+> pdz01 · nhật ký
+> [Việc trong ngày, ví dụ "Buổi học cuối tuần"]
+> [Nơi chụp]
+> [Giờ, ví dụ "16:30 chiều"]
+
+Each caption ends with the footer above. For an ad, put the first line in Meta's primary text (it's what shows before "Xem thêm") and use "pdz01 · thêu minimalism" or "Áo trơn cho mọi ngày" as the headline.
+
+## Media
+
+The owner sends the photos / videos (2026-11-07); captions are matched to each piece then. Rules for video ads: emotion or motion in the first 3 seconds, never open on the logo; subtitles on (most Reels play muted); little text on the image. Shot ideas if he wants them: morning routine with the shirt (slow, soft music); the same pdz01 styled three ways cut on the beat; packing an order with the gift socks.
+
+## Owner's media (2026-11-07)
+
+The owner put photos / videos for four products in `assets/` (local only, 261 MB, not in git). Facts below come from the live product pages and `/meta-feed.xml` that day; re-check prices before publishing. Shirts (pdz06 / pdz07 / pdz08) get 1 pair of gift socks per order; backpacks don't (ARCHITECTURE.md §5).
+
+### pdz08 · Áo thun nhung thêu pdz+ (folder "Ao thun nhung mịn oversize")
+
+₫145.000 (was ₫235.000) · Cream Orb / Gray Orb / Mint Blue Orb · M 40–55 kg, L 55–70 kg, XL 70–85 kg.
+
+- Photos 1, 3–8: usable (product banners with Vietnamese text + model shots). Carousel order: 1 → 6 → 4 → 3 → 5 → 7 → 8.
+- **`vid1.mp4` is not pdz08**: the shirt has a large tonal "ADAMP WRNNUP" print, not the small pdz+ logo, and vodka bottles sit in the background (Meta restricts alcohol in ads). Don't use it for pdz08; ask the owner where it comes from.
+
+> Áo thun mặc vài bữa đã xù lông? Em áo nhung này thì không, mà chỉ 145k.
+> Sờ vào mịn mịn, cầm lên nặng tay, mà mặc cả ngày không thấy bí. Cái logo tròn nhỏ xíu trên ngực là thêu chứ không phải in, giặt hoài cũng không lo bong.
+> Form rộng sẵn nha. 40–55kg lấy M, 55–70kg lấy L, 70–85kg lấy XL. Vẫn phân vân thì nhắn shop một câu, tụi mình chọn size giùm.
+
+Ad: headline "Áo nhung mịn · 145k".
+
+### pdz06 · Polo vải gân (folder "Áo thun gun ôm body nam")
+
+₫165.000 (was ₫235.000) · Trắng kem / Nâu · slimfit, size M under 1m70 / 60 kg, L under 1m75 / 73 kg.
+
+- Photos z (3), z (4), a (20), a (8): all usable. Lead with z (3) (brown) or z (4) (white).
+
+> Áo thun đi làm thì xuề xoà, sơ mi thì nóng. Polo gân 165k là vừa đẹp.
+> Vải gân nhìn có chiều sâu, cổ đứng, tay ôm gọn bắp tay. Có anh mua rồi khen đúng một câu: "dày dặn, lịch sự".
+> Áo ôm người thật đó nha, đừng chọn nhỏ. Cao dưới 1m70, nặng dưới 60kg lấy M. Dưới 1m75, dưới 73kg lấy L. Thích mặc thoải mái thì lên thêm một size.
+
+Ad: headline "Áo polo gân · 165k".
+
+### pdz07 · Áo thun thêu sharingan (folder "Áo oversize thêu sharingan")
+
+₫165.000 (was ₫245.000) · Đen / Trắng.
+
+- **Never advertised:** `/meta-feed.xml` marks it `khong-chay` ("the licensed-look design is never advertised"), so organic posts only, no paid ad unless the owner reverses that.
+- `hero1.cleaned.mp4` 0–6 s is anime character artwork, not our product; that part can draw a copyright takedown even on an organic post. Safer: use 6–13.7 s (embroidery close-ups, shoulder katakana, 3D turn). Don't name the character or the series in the caption.
+
+> Áo anime in hình giặt vài lần là nứt. Áo này thêu hết, khỏi lo bong.
+> Đôi mắt trước ngực thêu, dòng chữ chạy dọc vai cũng thêu. Có bạn mua rồi để lại đánh giá: "chi tiết nào cũng thêu nên không sợ bong tróc".
+> Vải cotton dày, form rộng, mặc vào nhìn vai to hẳn ra.
+
+### Balo 9726 (folder "Balo bánh mì cute")
+
+₫399.000 (was ₫555.000) · chống nước, vừa laptop 16 inch · 7 colours (Nâu Kem, Tím Pastel, Xanh Ngọc, Xanh Đen, Xám Hồng, Đen Basic, Đỏ Đô).
+
+- `9726-merged.cleaned.mp4`: 46 s, 2880×3840 (3:4). For a Reels / feed ad trim to ~15 s: 0–15 s (three colours worn) is the hook; the close-ups and packing scene (20–45 s) suit an organic post.
+- The bag shows a supplier "ZRY" badge, and a bread keychain hangs on it. **Ask the owner whether the keychain comes with the bag** before mentioning it (CLAUDE.md: show an included gift only where the offer includes it).
+
+> Balo nhỏ nhét laptop không vô? Balo bánh mì vừa laptop 16 inch, có 399k.
+> Rộng rãi lắm, cục sạc với chai nước cũng có chỗ, ngăn nào ra ngăn đó, vải lại chống nước. Hơn 1.800 bạn đã đánh giá trên Shopee, có bạn còn nói "nhìn mà muốn đi học lại luôn" 😆
+> Mưa lất phất thì yên tâm, mưa to thì vẫn trùm áo mưa cho chắc nha. Có 7 màu.
+
+"Balo bánh mì" is the owner's own folder name; keep it only if the bread keychain comes with the bag, otherwise call it "em balo đi học". Ad: headline "Balo bánh mì · 399k". Text on the video, 0–3 s: "Balo nhỏ nhét laptop không vô?" then "Vừa laptop 16 inch · 399k".
+
+### Túi 1325 · túi phụ kiện camera mini (folder "Túi đựng phụ kiện camera mini pocket3", added 2026-11-07)
+
+₫345.000 (was ₫555.000) · Đen / Kaki / Xám / Xanh Đen · 24 × 10 × 15 cm, nylon chống nước, 1 ngăn chính + 2 ngăn phụ, bảo hành 6 tháng (product page). The category ad "Túi" uses this video.
+
+- `1325.mp4`: 26.8 s, 720×960 (3:4). For the ad use 0–12 s (worn crossbody and on the chest, three colours); 13–27 s (packing sunglasses, power bank, card, keys) suits an organic post. Kaki isn't in the video.
+- Photos 9 → 7 → 6 → 8 as a carousel (worn, packed flat-lay, opens 180°, pockets).
+- "pocket3" in the name points at a camera brand's product: don't name that brand in the caption.
+
+> Lục túi cả buổi không ra cái thẻ xe? Túi hộp nhỏ này có ô riêng cho từng món.
+> Mở ra như một cái hộp: chỗ cho máy ảnh, sạc dự phòng, dây sạc, thẻ xe. Chìa khoá hết lẫn với tai nghe. Nhìn nhỏ vậy chứ đựng được nhiều lắm.
+> Vải chống nước, gặp mưa nhỏ thì không sao. Bảo hành 6 tháng, giá 345k, có gì nhắn shop liền.
+
+Ad: headline "Túi hộp mini · 345k". Text on the video, 0–3 s: "Lục túi cả buổi không ra thẻ xe?" then "Mỗi món một ô · 345k".
+
+Every caption ends with the footer from "Voice" (for the shirts add "Mua áo được tặng 1 đôi tất."; no product-code hashtags).
+
+## Live: category ads (2026-11-07)
+
+Owner: "Cho lên ads theo danh mục hết đi. Có vấn đề bản quyền gì tôi chịu hết" (all categories, pdz07 included; he takes the copyright risk). Done the same day, campaign / ad set / budget untouched, the original ad "Quảng cáo Doanh số mới" keeps running next to them:
+
+- **Commerce Manager, catalog `1133479502706422`:** product sets **Áo** (custom_label_0 = `ao` OR item group = pdz07 `5c211c6c-…`, 8 products / 63 variants), **Balo** (`balo`, 23 / 131), **Túi** (`tui`, 38 / 160). They follow the feed, so new products land in the right set by name.
+- **Ads in "Nhóm quảng cáo Doanh số mới"** (duplicated from the original, so same tracking, UTM and Advantage+ settings), each limited to its set ("Thêm các sản phẩm khác" off), cover video + the caption above + a footer with PDZWELCOME:
+  - `PDZ | Áo | video thêu | 11-2026`: pdz07 video (13.7 s), headline "Áo thêu không lo bong · từ 119k".
+  - `PDZ | Balo | video balo | 11-2026`: backpack 9726 video (0–15 s), "Balo vừa laptop 16 inch · 399k". Caption says "em balo này", not "balo bánh mì", until the keychain question is answered.
+  - `PDZ | Túi | video túi | 11-2026`: bag 1325 video (0–15 s), "Túi hộp mini, mỗi món một ô · 345k".
+- Videos: 1080×1350, hook on screen 0–3 s and the fix + price 3–6.5 s (PIL text over CapCut's bundled ffmpeg, `h264_nvenc`); copies in `assets/_video-quang-cao-2026-11-07/` (not in git).
+- Meta warns they won't run in 6 placements (WhatsApp Status, Instagram profile feed / Stories with product video, Facebook Stories, Threads, in-stream reels): same limits as the original catalog ad.
+- Next: after 5–7 days compare cost per AddToCart per ad (the original sat at ₫8.117 for 40 AddToCart over 30 days on 2026-11-07), turn off the weakest only with the owner's yes.
+
