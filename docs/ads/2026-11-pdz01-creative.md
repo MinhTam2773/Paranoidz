@@ -1,63 +1,62 @@
-# Meta ads creative draft: pdz01 (2026-11-06)
+# Meta ads creative draft: pdz01 (2026-11-06, voice reworked 2026-11-07)
 
-For the campaign "PDZ | Doanh số | Thêm vào giỏ | 11-2026" (TODO Now #8). The owner left the two pdz01 draft ads unpublished because their images and captions weren't what he wanted, and asked for captions and video "with more emotion". Nothing below is live; Ads Manager wasn't changed.
+For the campaign "PDZ | Doanh số | Thêm vào giỏ | 11-2026" (TODO Now #8). The owner left the two pdz01 draft ads unpublished because their images and captions weren't what he wanted, and asked for captions and video "with more emotion". On 2026-11-07 he asked for the copy to follow the way the Ananas fanpage (facebook.com/Ananas.vietnam) writes, and said he will send the photos / videos himself; captions are then fitted to each piece. Nothing below is live; Ads Manager wasn't changed.
 
 ## Plan
 
-Three ads in the **existing** ad set "Nhóm quảng cáo Doanh số mới" (not a new campaign: ₫200.000/day is too little to split), each a clearly different video + caption pair. After 5–7 days keep the lowest cost per AddToCart, turn off the weakest, replace it with a new one in the winner's direction.
+Three ads in the **existing** ad set "Nhóm quảng cáo Doanh số mới" (not a new campaign: ₫200.000/day is too little to split), each a clearly different media + caption pair. After 5–7 days keep the lowest cost per AddToCart, turn off the weakest, replace it with a new one in the winner's direction. Which caption goes with which ad is decided once the owner's media arrives.
 
-| Ad | Creative | Caption |
-|---|---|---|
-| 1 | Video A "Sáng chậm" | 1 "Ngày thứ Hai" |
-| 2 | Video B "Một áo, ba ngày" | 2 "Ít mà chất" |
-| 3 | Lookbook photo (look-10 or look-2; the two drafts can be reworked into this one) | 3 "Gửi người hay overthinking" |
+## Voice (learned from Ananas, 2026-11-07)
 
-Caption 4 is for text on the video, not its own ad. Videos A and B don't exist yet: the owner shoots them, or a first cut is made from the lookbook photos and the videos already on the site.
+Read ~13 distinct posts on the Ananas page (2024-10 → 2025-09, plus the pinned ones). What makes it work, adapted to Paranoidz. Learn the techniques; never reuse their lines, campaign names or hashtags.
 
-## Captions
+1. **Say little, let the photo talk.** Most product posts are 1–3 short lines: a thought or a fact, no list of features, no "SALE SỐC", no emoji.
+2. **A small life thought, tied to the product.** A one-line observation about ordinary days or habits, then the product as the quiet answer. Warm, a little philosophical, never preachy.
+3. **Honest about trade-offs.** They openly name a downside (heavier, not "too soft") and why they chose it. That honesty is the emotion: trust. For pdz01 the honest facts are: boxy form runs wide on purpose (size by weight: M 40–55 kg, L 55–65 kg, XL 65–80 kg), the embroidery is small on purpose.
+4. **Dry, self-aware humour.** A wry twist instead of hype ("price didn't get time to change" kind of line). One per post at most.
+5. **Typography tics.** `/slashes/` around the key idea or material (`/vải nhung/`, `/minimalism/`); "quotes" around a playful word; (parentheses) for a candid aside.
+6. **Brand voice = "chúng tôi" / "Paranoidz", reader = "bạn".** In comment replies the page uses a short nickname and "Dạ…" (polite, warm). Paranoidz needs its own nickname: ask the owner (don't invent one).
+7. **Scene captions for photo series.** A short title + place + time, like a diary entry, then the product line. Use our own pattern ("pdz01 · nhật ký"), not theirs.
+8. **Fixed footer.** A `——` separator, one link line, one short line of real terms, then the same 3–4 hashtags every time.
 
-**1. Ngày thứ Hai**
-> Có những ngày chẳng muốn chứng minh gì với ai.
-> Không logo to, không màu chói. Chỉ một chiếc áo trơn, một dòng thêu nhỏ: *minimalism*.
-> Mặc vào, ra đường, sống chậm lại một chút.
->
-> pdz01 — cho những ngày bạn chỉ cần là chính mình.
-> 🤍 Nhận hàng mới trả tiền · đổi trả 7 ngày
+Paranoidz footer (all facts checked on the live site 2026-11-07: pdz01 ₫145.000 (was ₫235.000), Cream / Mint Blue / Basic Gray, M–XL; COD; 7-day returns; free standard shipping from ₫199.000 after vouchers; PDZWELCOME 10 % for first orders):
 
-**2. Ít mà chất**
-> Tủ đồ đầy nhưng sáng nào cũng "không có gì để mặc"?
-> Có lẽ bạn không thiếu áo, bạn thiếu một chiếc mặc gì cũng hợp.
-> Form boxy, vải nhung mịn, đường thêu tỉ mỉ đến từng mũi.
-> Phối quần jean, short hay kaki đều ổn. Đơn giản vậy thôi.
->
-> pdz01 · Paranoidz — Back to Basicz.
+> ——
+> Link: paranoidz.vn
+> Nhận hàng mới trả tiền · đổi trả 7 ngày · miễn phí giao từ ₫199.000
+> #paranoidz #backtobasicz #pdz01
 
-**3. Gửi người hay overthinking**
-> Đầu óc lúc nào cũng ồn ào, thì quần áo hãy yên lặng giùm mình.
-> Một chiếc áo không cần giải thích, mặc lên là thấy nhẹ người.
->
-> Paranoidz — làm cho những người nghĩ hơi nhiều 🖤
-> pdz01 · thêu minimalism
+Re-check the price before publishing: the sale price may change.
 
-**4. Ngắn (text on video)**
-> Không cần nổi bật. Chỉ cần đúng là mình.
-> pdz01 · minimalism 🤍
+## Captions (pdz01)
 
-## Videos (9:16, 10–15 s)
+**1. Ngày thường** (life thought → product)
+> Ngày nào cũng na ná nhau. Cùng một con đường, cùng một ly cà phê, cùng một câu "hôm nay mặc gì".
+> Chúng tôi không đổi được ngày của bạn, chỉ làm cho câu hỏi cuối dễ hơn một chút.
+> pdz01 — áo trơn, một dòng thêu nhỏ: /minimalism/.
 
-**A. Sáng chậm** — lo-fi / soft acoustic
-1. 0–2 s: hand lifts the shirt off the bed, morning light through the curtain.
-2. 2–5 s: macro of the *minimalism* embroidery, slow pan.
-3. 5–10 s: puts it on, headphones, opens the door.
-4. 10–13 s: walks slowly, back to camera, backlit.
-5. End card: "Ngày nào cũng có thể nhẹ nhàng." + pdz logo.
+**2. Cố ý** (honest trade-offs)
+> Form rộng (cố ý). Dòng thêu nhỏ xíu (cũng cố ý).
+> Vì chúng tôi nghĩ một chiếc áo mặc mỗi ngày thì nên nhường phần nổi bật cho người mặc.
+> Thích ôm hơn thì lùi một size: M 40–55 kg · L 55–65 kg · XL 65–80 kg.
 
-**B. Một áo, ba ngày** — beat-cut music
-- The same pdz01 styled three ways: school, café, night out; each outfit change lands on a beat.
-- End card: "Một chiếc áo. Nhiều câu chuyện."
+**3. Gửi người nghĩ nhiều** (brand character)
+> Đầu đã đủ "ồn" rồi, quần áo thì nên yên lặng.
+> Paranoidz làm đồ cho những người nghĩ hơi nhiều, và muốn mặc thì đơn giản thôi.
+> pdz01 · /vải nhung/ mềm, thêu nổi /minimalism/.
 
-**C. Hậu trường** (spare) — real, unpolished
-- Folding a shirt, bagging it with the gift sock, labelling the parcel.
-- Text: "Gói từng đơn, gửi tới bạn."
+**4. Dry humour** (for a restock or price post, not an ad)
+> Ba màu Cream, Mint Blue, Basic Gray đã đủ size.
+> Giá vẫn ₫145.000, chúng tôi chưa kịp nghĩ lại.
 
-Rules: emotion or motion in the first 3 seconds, never open on the logo; subtitles on (most Reels play muted); little text on the image.
+**5. Nhật ký** (template for a photo series from the owner; fill from the photo)
+> pdz01 · nhật ký
+> [Việc trong ngày, ví dụ "Buổi học cuối tuần"]
+> [Nơi chụp]
+> [Giờ, ví dụ "16:30 chiều"]
+
+Each caption ends with the footer above. For an ad, put the first line in Meta's primary text (it's what shows before "Xem thêm") and use "pdz01 · thêu minimalism" or "Áo trơn cho mọi ngày" as the headline.
+
+## Media
+
+The owner sends the photos / videos (2026-11-07); captions are matched to each piece then. Rules for video ads: emotion or motion in the first 3 seconds, never open on the logo; subtitles on (most Reels play muted); little text on the image. Shot ideas if he wants them: morning routine with the shirt (slow, soft music); the same pdz01 styled three ways cut on the beat; packing an order with the gift socks.
