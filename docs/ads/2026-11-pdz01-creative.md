@@ -21,6 +21,7 @@ Read ~13 distinct posts on the Ananas page (2024-10 → 2025-09, plus the pinned
 9. **Pain first (owner, 2026-11-07).** Ananas' quiet tone alone didn't hit the customer's pain. Every caption now opens on one concrete, everyday pain (a moment the reader has lived), then says plainly how the product fixes it (only facts from the product page), then removes the fear of buying online: check the parcel before paying, size by weight, 7-day returns. Keep the honesty: say who pays the exchange shipping.
 10. **Talk like a person, not a machine (owner, 2026-11-07).** Write the way the shop's own Shopee buyers write: "cầm nặng tay", "mặc không bí", "khui ra là ưng", "nha", "luôn", prices as "399k". No `/slashes/`, no neat three-part sentences, no repeated stock phrases. Quote a real review when it says it better (short, no names).
 11. **Nicknames, never codes (owner, 2026-11-07: "pdz08", "balo 9726" sound like a machine).** In captions and headlines a product is what a person would call it: "em áo nhung", "áo polo gân", "áo thêu đôi mắt", "balo bánh mì", "em túi hộp nhỏ". Codes stay in these docs and on the site only. No product-code hashtags.
+12. **The first line is the whole ad (owner, 2026-11-07).** Facebook / Instagram show about the first 125 characters before "Xem thêm" (less on Reels), and few people expand. Line 1 must stand alone and stay under ~80 characters: the pain + the product by its nickname + the fix or the price. Everything after it is a bonus for the few who tap. On video ads the same hook goes on the video in the first 3 seconds, because Reels show barely one line of caption.
 
 ### What the shop's Shopee buyers say (read 2026-11-07)
 
@@ -42,6 +43,8 @@ A size / style exchange ships at the customer's cost (policy page): say so when 
 Re-check the price before publishing: the sale price may change.
 
 ## Captions (pdz01)
+
+First drafts, superseded by rules 9–12 above (they still use codes and bury the hook); kept for reference, don't publish as they are.
 
 **1. Ngày thường** (life thought → product)
 > Ngày nào cũng na ná nhau. Cùng một con đường, cùng một ly cà phê, cùng một câu "hôm nay mặc gì".
@@ -85,8 +88,8 @@ The owner put photos / videos for four products in `assets/` (local only, 261 MB
 - Photos 1, 3–8: usable (product banners with Vietnamese text + model shots). Carousel order: 1 → 6 → 4 → 3 → 5 → 7 → 8.
 - **`vid1.mp4` is not pdz08**: the shirt has a large tonal "ADAMP WRNNUP" print, not the small pdz+ logo, and vodka bottles sit in the background (Meta restricts alcohol in ads). Don't use it for pdz08; ask the owner where it comes from.
 
-> Có cái áo thun nào mặc vài lần là xù lông, giặt mấy bận là cổ bai nhão không? Chắc ai cũng có một cái nằm im trong tủ.
-> Em áo nhung này thì khác. Sờ vào mịn mịn, cầm lên nặng tay, mà mặc cả ngày không thấy bí. Cái logo tròn nhỏ xíu trên ngực là thêu chứ không phải in, giặt hoài cũng không lo bong.
+> Áo thun mặc vài bữa đã xù lông? Em áo nhung này thì không, mà chỉ 145k.
+> Sờ vào mịn mịn, cầm lên nặng tay, mà mặc cả ngày không thấy bí. Cái logo tròn nhỏ xíu trên ngực là thêu chứ không phải in, giặt hoài cũng không lo bong.
 > Form rộng sẵn nha. 40–55kg lấy M, 55–70kg lấy L, 70–85kg lấy XL. Vẫn phân vân thì nhắn shop một câu, tụi mình chọn size giùm.
 
 Ad: headline "Áo nhung mịn · 145k".
@@ -97,8 +100,8 @@ Ad: headline "Áo nhung mịn · 145k".
 
 - Photos z (3), z (4), a (20), a (8): all usable. Lead with z (3) (brown) or z (4) (white).
 
-> Đi làm mà mặc áo thun thì sợ bị chê xuề xoà, mặc sơ mi thì tới trưa là nóng muốn xỉu.
-> Áo polo gân này nằm ngay giữa. Vải gân nhìn có chiều sâu, cổ đứng, tay ôm gọn bắp tay. Có anh mua rồi khen đúng một câu: "dày dặn, lịch sự".
+> Áo thun đi làm thì xuề xoà, sơ mi thì nóng. Polo gân 165k là vừa đẹp.
+> Vải gân nhìn có chiều sâu, cổ đứng, tay ôm gọn bắp tay. Có anh mua rồi khen đúng một câu: "dày dặn, lịch sự".
 > Áo ôm người thật đó nha, đừng chọn nhỏ. Cao dưới 1m70, nặng dưới 60kg lấy M. Dưới 1m75, dưới 73kg lấy L. Thích mặc thoải mái thì lên thêm một size.
 
 Ad: headline "Áo polo gân · 165k".
@@ -110,8 +113,8 @@ Ad: headline "Áo polo gân · 165k".
 - **Never advertised:** `/meta-feed.xml` marks it `khong-chay` ("the licensed-look design is never advertised"), so organic posts only, no paid ad unless the owner reverses that.
 - `hero1.cleaned.mp4` 0–6 s is anime character artwork, not our product; that part can draw a copyright takedown even on an organic post. Safer: use 6–13.7 s (embroidery close-ups, shoulder katakana, 3D turn). Don't name the character or the series in the caption.
 
-> Áo in hình anime mới mua thì đẹp thật, giặt vài lần là nứt, là phai, tiếc đứt ruột.
-> Nên áo này tụi mình thêu hết. Đôi mắt trước ngực thêu, dòng chữ chạy dọc vai cũng thêu. Có bạn mua rồi để lại đánh giá: "chi tiết nào cũng thêu nên không sợ bong tróc".
+> Áo anime in hình giặt vài lần là nứt. Áo này thêu hết, khỏi lo bong.
+> Đôi mắt trước ngực thêu, dòng chữ chạy dọc vai cũng thêu. Có bạn mua rồi để lại đánh giá: "chi tiết nào cũng thêu nên không sợ bong tróc".
 > Vải cotton dày, form rộng, mặc vào nhìn vai to hẳn ra.
 
 ### Balo 9726 (folder "Balo bánh mì cute")
@@ -121,11 +124,11 @@ Ad: headline "Áo polo gân · 165k".
 - `9726-merged.cleaned.mp4`: 46 s, 2880×3840 (3:4). For a Reels / feed ad trim to ~15 s: 0–15 s (three colours worn) is the hook; the close-ups and packing scene (20–45 s) suit an organic post.
 - The bag shows a supplier "ZRY" badge, and a bread keychain hangs on it. **Ask the owner whether the keychain comes with the bag** before mentioning it (CLAUDE.md: show an included gift only where the offer includes it).
 
-> Balo nhỏ quá thì nhét laptop không vô, cục sạc với chai nước lại phải cầm tay. Hôm nào trời mưa là cứ thấp thỏm lo cho cái máy.
-> Em balo bánh mì này rộng rãi lắm, laptop 16 inch bỏ vừa, ngăn nào ra ngăn đó, vải lại chống nước. Hơn 1.800 bạn đã đánh giá trên Shopee, có bạn còn nói "nhìn mà muốn đi học lại luôn" 😆
-> Mưa lất phất thì yên tâm, mưa to thì vẫn trùm áo mưa cho chắc nha. Có 7 màu, giờ chỉ còn 399k.
+> Balo nhỏ nhét laptop không vô? Balo bánh mì vừa laptop 16 inch, có 399k.
+> Rộng rãi lắm, cục sạc với chai nước cũng có chỗ, ngăn nào ra ngăn đó, vải lại chống nước. Hơn 1.800 bạn đã đánh giá trên Shopee, có bạn còn nói "nhìn mà muốn đi học lại luôn" 😆
+> Mưa lất phất thì yên tâm, mưa to thì vẫn trùm áo mưa cho chắc nha. Có 7 màu.
 
-"Balo bánh mì" is the owner's own folder name; keep it only if the bread keychain comes with the bag, otherwise call it "em balo đi học". Ad: headline "Balo bánh mì · 399k".
+"Balo bánh mì" is the owner's own folder name; keep it only if the bread keychain comes with the bag, otherwise call it "em balo đi học". Ad: headline "Balo bánh mì · 399k". Text on the video, 0–3 s: "Balo nhỏ nhét laptop không vô?" then "Vừa laptop 16 inch · 399k".
 
 ### Túi 1325 · túi phụ kiện camera mini (folder "Túi đựng phụ kiện camera mini pocket3", added 2026-11-07)
 
@@ -135,10 +138,10 @@ Ad: headline "Áo polo gân · 165k".
 - Photos 9 → 7 → 6 → 8 as a carousel (worn, packed flat-lay, opens 180°, pockets).
 - "pocket3" in the name points at a camera brand's product: don't name that brand in the caption.
 
-> Xài túi đeo chéo một ngăn là kiểu gì cũng có lúc đứng giữa bãi xe lục mãi không ra cái thẻ. Chìa khoá lẫn với tai nghe, dây sạc rối thành một cục.
-> Em túi hộp nhỏ này mở ra như một cái hộp, có chỗ riêng cho máy ảnh, sạc dự phòng, dây sạc, thẻ xe. Nhìn nhỏ vậy chứ đựng được nhiều lắm.
-> Vải chống nước, gặp mưa nhỏ thì không sao. Bảo hành 6 tháng, có gì nhắn shop liền.
+> Lục túi cả buổi không ra cái thẻ xe? Túi hộp nhỏ này có ô riêng cho từng món.
+> Mở ra như một cái hộp: chỗ cho máy ảnh, sạc dự phòng, dây sạc, thẻ xe. Chìa khoá hết lẫn với tai nghe. Nhìn nhỏ vậy chứ đựng được nhiều lắm.
+> Vải chống nước, gặp mưa nhỏ thì không sao. Bảo hành 6 tháng, giá 345k, có gì nhắn shop liền.
 
-Ad: headline "Túi hộp mini · 345k".
+Ad: headline "Túi hộp mini · 345k". Text on the video, 0–3 s: "Lục túi cả buổi không ra thẻ xe?" then "Mỗi món một ô · 345k".
 
 Every caption ends with the footer from "Voice" (for the shirts add "Mua áo được tặng 1 đôi tất."; no product-code hashtags).
