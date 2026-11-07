@@ -15,7 +15,7 @@ Read ~13 distinct posts on the Ananas page (2024-10 → 2025-09, plus the pinned
 3. **Honest about trade-offs.** They openly name a downside (heavier, not "too soft") and why they chose it. That honesty is the emotion: trust. For pdz01 the honest facts are: boxy form runs wide on purpose (size by weight: M 40–55 kg, L 55–65 kg, XL 65–80 kg), the embroidery is small on purpose.
 4. **Dry, self-aware humour.** A wry twist instead of hype ("price didn't get time to change" kind of line). One per post at most.
 5. **Typography tics.** `/slashes/` around the key idea or material (`/vải nhung/`, `/minimalism/`); "quotes" around a playful word; (parentheses) for a candid aside.
-6. **Brand voice = "chúng tôi" / "Paranoidz", reader = "bạn".** In comment replies the page uses a short nickname and "Dạ…" (polite, warm). Paranoidz needs its own nickname: ask the owner (don't invent one).
+6. **Brand voice = "chúng tôi" / "Paranoidz", reader = "bạn".** In comment replies the page uses a short nickname and "Dạ…" (polite, warm). Paranoidz calls itself "Paranoidz" (owner, 2026-11-07), e.g. "Dạ bạn kiểm tra tin nhắn giúp Paranoidz nha".
 7. **Scene captions for photo series.** A short title + place + time, like a diary entry, then the product line. Use our own pattern ("pdz01 · nhật ký"), not theirs.
 8. **Fixed footer.** A `——` separator, one link line, one short line of real terms, then the same 3–4 hashtags every time.
 9. **Pain first (owner, 2026-11-07).** Ananas' quiet tone alone didn't hit the customer's pain. Every caption now opens on one concrete, everyday pain (a moment the reader has lived), then says plainly how the product fixes it (only facts from the product page), then removes the fear of buying online: check the parcel before paying, size by weight, 7-day returns. Keep the honesty: say who pays the exchange shipping.
@@ -153,9 +153,27 @@ Owner: "Cho lên ads theo danh mục hết đi. Có vấn đề bản quyền g�
 - **Commerce Manager, catalog `1133479502706422`:** product sets **Áo** (custom_label_0 = `ao` OR item group = pdz07 `5c211c6c-…`, 8 products / 63 variants), **Balo** (`balo`, 23 / 131), **Túi** (`tui`, 38 / 160). They follow the feed, so new products land in the right set by name.
 - **Ads in "Nhóm quảng cáo Doanh số mới"** (duplicated from the original, so same tracking, UTM and Advantage+ settings), each limited to its set ("Thêm các sản phẩm khác" off), cover video + the caption above + a footer with PDZWELCOME:
   - `PDZ | Áo | video thêu | 11-2026`: pdz07 video (13.7 s), headline "Áo thêu không lo bong · từ 119k".
-  - `PDZ | Balo | video balo | 11-2026`: backpack 9726 video (0–15 s), "Balo vừa laptop 16 inch · 399k". Caption says "em balo này", not "balo bánh mì", until the keychain question is answered.
+  - `PDZ | Balo | video balo | 11-2026`: backpack 9726 video (0–15 s), "Balo vừa laptop 16 inch · 399k". Owner 2026-11-07: the bread keychain comes with the backpack, so the live caption now says "Balo bánh mì" and "Có kèm móc khoá bánh mì treo trước balo".
   - `PDZ | Túi | video túi | 11-2026`: bag 1325 video (0–15 s), "Túi hộp mini, mỗi món một ô · 345k".
 - Videos: 1080×1350, hook on screen 0–3 s and the fix + price 3–6.5 s (PIL text over CapCut's bundled ffmpeg, `h264_nvenc`); copies in `assets/_video-quang-cao-2026-11-07/` (not in git).
 - Meta warns they won't run in 6 placements (WhatsApp Status, Instagram profile feed / Stories with product video, Facebook Stories, Threads, in-stream reels): same limits as the original catalog ad.
 - Next: after 5–7 days compare cost per AddToCart per ad (the original sat at ₫8.117 for 40 AddToCart over 30 days on 2026-11-07), turn off the weakest only with the owner's yes.
+
+## Codex review and fixes (2026-11-07)
+
+Codex CLI (`codex exec -s read-only`) graded the work at the owner's request: overall 5,5/10 (copy 6, campaign structure 4, pixel fix 6,5, add-to-cart prompt 7,5). Fixed the same day:
+
+- **Live ad copy corrected in Ads Manager** (all 3 category ads re-published, structure / budget / optimisation untouched):
+  - Áo: headline "Áo thêu không lo bong · từ 119k" was wrong (the ₫119.000 tees are embossed, not embroidered) → "Áo thêu đôi mắt · 165k"; line 1 no longer claims every printed tee cracks → "Áo anime in hình hay nứt sau vài lần giặt? Áo này thêu, không phải in. 165k."
+  - Túi: "ô riêng cho từng món" → "chia nhiều ngăn bên trong"; headline "Túi hộp mini nhiều ngăn · 345k".
+  - All three: footer now states the real conditions: "Đổi trả trong 7 ngày nếu hàng còn tem, chưa dùng. Free ship giao thường cho đơn từ 199k (sau giảm giá)", and "mỗi mẫu một giá riêng" for the product strip.
+- **Add-to-cart prompt** (PR #91): buttons also shown when the item was already in the cart; link hover fixed.
+
+Not done, for the owner to decide:
+- **Policy page:** "no unboxing video → no complaint" (`app/policy/page.tsx`) may conflict with the 2023 Consumer Protection Law (Codex cites Art. 25); get it checked before quoting returns in ads.
+- **pdz07 video** still opens on 0–6 s of anime artwork (owner accepted the risk); a cut from 6 s lowers it.
+- **Per-ad tracking:** add `utm_content=ao|balo|tui` (Ads Manager → ad → Theo dõi → Thông số URL, collapsed) so PostHog can tell the ads apart.
+- **One real test order** in the Facebook in-app browser (Events Manager → Test events): AddToCart → checkout → Purchase browser + server deduplicated, then cancel it. Needs the owner's OK (real order on prod).
+- **Optimisation:** Codex suggests trying Purchase on a capped budget once that test passes, instead of waiting for 20–30 orders; judge ads by checkouts / orders, not cheap AddToCart.
+- Pixel scope as built: PageView and the server-side Purchase still go to Meta from anywhere; only ViewContent / AddToCart / InitiateCheckout / browser Purchase are VN-only.
 
