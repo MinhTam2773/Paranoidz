@@ -177,3 +177,21 @@ Not done, for the owner to decide:
 - **Optimisation:** Codex suggests trying Purchase on a capped budget once that test passes, instead of waiting for 20–30 orders; judge ads by checkouts / orders, not cheap AddToCart.
 - Pixel scope as built: PageView and the server-side Purchase still go to Meta from anywhere; only ViewContent / AddToCart / InitiateCheckout / browser Purchase are VN-only.
 
+
+## Status check (2026-11-07, 14:30 VN)
+
+All 4 ads "Đang hoạt động" (the Balo re-review is done). Ads Manager, attribution 7-day click / 1-day view / 1-day engagement:
+
+| Ad | Spend 05–07/11 | Reach | AddToCart (cost) | Link clicks (CTR) | Landing page views | Today: spend / AddToCart |
+| -- | -- | -- | -- | -- | -- | -- |
+| Quảng cáo Doanh số mới (original) | ₫382.164 | 5.679 | 55 (₫6.948) | 386 (4,96 %) | 235 | ₫57.348 / 15 (₫3.823) |
+| PDZ \| Áo \| video thêu | ₫8.526 | 34 | 0 | 6 (10,71 %) | 5 | launched today |
+| PDZ \| Balo \| video balo | ₫6.013 | 134 | 2 (₫3.007) | 2 (1,30 %) | 0 | launched today |
+| PDZ \| Túi \| video túi | ₫3.273 | 77 | 0 | 3 (3,16 %) | 2 | launched today |
+| Total | ₫399.800 | 5.840 | 57 (₫7.014) | 397 | 242 | ₫75.160 / 17 |
+
+- The 3 category ads share the ad set's budget, and Meta gives almost all of it to the original (76 % of today's spend), so they can't be judged yet.
+- PostHog, visitors in Vietnam since 2026-11-05: 160 people viewed a product, 20 added to cart, 6 reached checkout (2 of them the shop's own desktop tests), **0 real orders**. The 2 real mobile checkouts were the backpack (₫399.000) and the bag (₫345.000).
+- **pdz06 (polo gân) got 1 product view from Vietnam since 2026-11-05:** the catalog ads hardly ever show it (Meta favours bags: top add-to-carts are 36026, 1099, h03, 0908). The owner's photos folder "Áo thun gun ôm body nam" wasn't on this machine; the photo notes above are from the session that saw them.
+- **Links to share:** catalog (Advantage+) ads have no Facebook post permalink, only Ads Manager preview links (`fb.me/adspreview/facebook/<code>`; the viewer must log in, it shows the ad in their placements for 24 h and doesn't count as an impression): original `1Uo3U7tmVhH5N7p`, Áo `1TK3KqSQGvORAK6`, Balo `25KIXP2VDuZCRqu`, Túi `1XWCoUu6q7gUz0a`. Friends' likes there are unlikely to stick to the ad; for social proof post the videos as normal Page posts and, if wanted, advertise those posts.
+- Nothing changed in Ads Manager (budget, ads, status). Decision on pdz06 / budget left to the owner.
