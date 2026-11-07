@@ -8,9 +8,9 @@ import { ProductGrid } from "@/components/product/ProductGrid";
 import { productCardQuery, toProductCard } from "@/lib/catalog";
 
 // A collection set up in the admin (/collections there). ISR like product pages:
-// prebuilt at deploy, rebuilt at most once a minute; new slugs render on first visit.
+// prebuilt at deploy, rebuilt on demand or at most once a day; new slugs render on first visit.
 // UI in Vietnamese (CLAUDE.md §5) though older storefront pages are still English.
-export const revalidate = 60;
+export const revalidate = 86400;
 
 export async function generateStaticParams() {
   const { data, error } = await createPublicClient().from("collections").select("slug");

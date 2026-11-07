@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@paranoidz/db/admin";
 import { createClient } from "@paranoidz/db/server";
 import { requireAdmin } from "@/lib/auth";
+import { revalidateStorefront } from "@/lib/storefront";
 import { validateProduct, type FieldErrors, type ProductInput } from "@/lib/product";
 
 export type SaveResult = { errors?: FieldErrors; id?: string };
@@ -49,6 +50,7 @@ export async function saveProduct(input: ProductInput): Promise<SaveResult> {
       return { errors: { form: "Không thể lưu biến thể. Vui lòng thử lại." } };
     }
     revalidatePath("/", "layout");
+    revalidateStorefront();
     return { id: created.id };
   }
 
@@ -89,6 +91,7 @@ export async function saveProduct(input: ProductInput): Promise<SaveResult> {
     );
     if (error) {
       revalidatePath("/", "layout");
+      revalidateStorefront();
       return { errors: { form: "Đã lưu thông tin, nhưng không thể thêm biến thể mới. Vui lòng thử lại." } };
     }
   }
@@ -97,6 +100,7 @@ export async function saveProduct(input: ProductInput): Promise<SaveResult> {
     .filter((v) => v.id && v.expectedStock !== undefined && v.stock !== v.expectedStock)
     .map((v) => ({ variant_id: v.id!, expected: v.expectedStock!, stock: v.stock }));
   revalidatePath("/", "layout");
+  revalidateStorefront();
   if (stockChanges.length) {
     const supabase = await createClient();
     const { error } = await supabase.rpc("set_variant_stocks", { p_changes: stockChanges });
@@ -128,6 +132,7 @@ export async function renameColor(productId: string, from: string, to: string): 
   const { error } = await supabase.rpc("rename_product_color", { p_product_id: productId, p_from: from, p_to: to.trim() });
   if (error) return { error: COLOR_ERRORS[error.message] ?? "Không thể đổi tên màu. Vui lòng thử lại." };
   revalidatePath("/", "layout");
+  revalidateStorefront();
   return {};
 }
 
@@ -141,6 +146,7 @@ export async function setColorHex(productId: string, color: string, hex: string 
   if (error) return { error: "Không thể lưu màu. Vui lòng thử lại." };
   if (!data.length) return { error: COLOR_ERRORS.COLOR_NOT_FOUND };
   revalidatePath("/", "layout");
+  revalidateStorefront();
   return {};
 }
 
@@ -163,6 +169,7 @@ export async function setOrderGift(productId: string, variantId: string | null):
     if (error) return { error: "Không thể lưu. Vui lòng thử lại." };
   }
   revalidatePath("/", "layout");
+  revalidateStorefront();
   return {};
 }
 
@@ -171,5 +178,6 @@ export async function setProductActive(id: string, isActive: boolean): Promise<{
   const { error } = await createAdminClient().from("products").update({ is_active: isActive }).eq("id", id);
   if (error) return { error: "Không thể cập nhật. Vui lòng thử lại." };
   revalidatePath("/", "layout");
+  revalidateStorefront();
   return {};
 }

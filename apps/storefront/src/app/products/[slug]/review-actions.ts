@@ -40,6 +40,7 @@ async function session() {
 
 function done(slug: string): ReviewResult {
   if (SLUG.test(slug)) revalidatePath(`/products/${slug}`);
+  revalidatePath("/feedback");
   return { ok: true };
 }
 

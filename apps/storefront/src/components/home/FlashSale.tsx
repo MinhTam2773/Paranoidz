@@ -1,7 +1,8 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ProductCard, type ProductCardData } from "@/components/product/ProductCard";
 import { ProductRow } from "@/components/home/ProductRow";
 import type { FlashSaleState } from "@/lib/flash-sale";
@@ -45,6 +46,19 @@ function CountdownBoxes({ targetMs }: { targetMs: number }) {
 // Flash sale section (2026-10-16): replaces the old "Đang khuyến mãi" row.
 // Server computes the state + flash prices; this only renders + counts down.
 export function FlashSale({ state, cards }: { state: FlashSaleState; cards: ProductCardData[] }) {
+  const target = state.active ? state.endsAt : state.nextStartsAt;
+  // The homepage is cached for up to an hour: once this window's start or end has passed, the
+  // section above is stale. Ask for a rebuild (api/flash-sale/refresh), then load the new page.
+  const passed = useSyncExternalStore(subscribeSeconds, () => Date.now() >= target, () => false);
+  const router = useRouter();
+  useEffect(() => {
+    if (!passed) return;
+    fetch("/api/flash-sale/refresh", { method: "POST", body: JSON.stringify({ at: target }) }).then(
+      () => router.refresh(),
+      () => {},
+    );
+  }, [passed, target, router]);
+
   if (!cards.length) return null;
   return (
     <section aria-label="Flash sale">
@@ -60,7 +74,7 @@ export function FlashSale({ state, cards }: { state: FlashSaleState; cards: Prod
           <span className="text-nav uppercase text-text-secondary">
             {state.active ? "Kết thúc trong" : `Bắt đầu lúc ${pad(state.nextHour)}:00`}
           </span>
-          <CountdownBoxes targetMs={state.active ? state.endsAt : state.nextStartsAt} />
+          <CountdownBoxes targetMs={target} />
         </div>
       </div>
       <ProductRow label="Sản phẩm flash sale">

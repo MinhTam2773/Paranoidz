@@ -7,6 +7,7 @@ import { mediaUrl, type UploadTicket } from "@paranoidz/db/media";
 import { createUploadTicket, listMedia, mediaExists, removeMedia } from "@paranoidz/db/media-server";
 import { THUMB_WIDTHS, thumbPath } from "@paranoidz/db/thumbs";
 import { requireAdmin } from "@/lib/auth";
+import { revalidateStorefront } from "@/lib/storefront";
 
 // Product photos (DASHBOARD_DESIGN.md §5 Image uploader). Bytes go browser →
 // Storage (R2 in production, @paranoidz/db/media) through an upload ticket issued here; the bucket enforces type and
@@ -34,6 +35,7 @@ async function loadProduct(productId: string) {
 const done = (productId: string): Result => {
   revalidatePath(`/products/${productId}`);
   revalidatePath("/products");
+  revalidateStorefront();
   return {};
 };
 
