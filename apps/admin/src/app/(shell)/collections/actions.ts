@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@paranoidz/db/admin";
 import { requireAdmin } from "@/lib/auth";
+import { revalidateStorefront } from "@/lib/storefront";
 
 // Collections (DASHBOARD_DESIGN.md §6.6). The storefront shows an active
 // collection at /collections/<slug> (ISR, so changes appear within 60s).
@@ -12,7 +13,10 @@ export type CollectionResult = { errors?: Record<string, string>; id?: string };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-const done = () => revalidatePath("/collections", "layout");
+const done = () => {
+  revalidatePath("/collections", "layout");
+  revalidateStorefront();
+};
 
 export async function saveCollection(input: CollectionInput): Promise<CollectionResult> {
   await requireAdmin();

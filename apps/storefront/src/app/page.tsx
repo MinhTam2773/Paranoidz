@@ -17,11 +17,11 @@ import { productCardQuery, toProductCard } from "@/lib/catalog";
 import { runwayLooks } from "@/lib/runway-lookbook";
 import { DEFAULT_OG_IMAGE, HOTLINE, SITE_URL } from "@/lib/site";
 
-// Homepage (DESIGN.md §5 page structure, items 5–10). ISR like /products: rebuilt at most once a
-// minute. Homepage v2 2026-10-16: video hero (shop's own TikTok clip) + marquee band +
+// Homepage (DESIGN.md §5 page structure, items 5–10). ISR: rebuilt at most once an hour, at once
+// after admin changes (api/revalidate) and at each flash sale boundary (api/flash-sale/refresh). Homepage v2 2026-10-16: video hero (shop's own TikTok clip) + marquee band +
 // lookbook with real-life photos — inspired by hydrashop.vn / chuottrang.vn.
 // No newsletter block — out of scope per ARCHITECTURE.md §9.
-export const revalidate = 60;
+export const revalidate = 3600;
 
 // SEO (audit 2026-10-21 #2): the homepage previously had no H1 and a 9-character title.
 // Title targets "áo thun local brand" + "streetwear Việt Nam"; the manifesto tagline below

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@paranoidz/db/server";
 import { requireAdmin } from "@/lib/auth";
+import { revalidateStorefront } from "@/lib/storefront";
 import { ADJUST_REASONS } from "@/lib/inventory";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -26,5 +27,6 @@ export async function adjustStock(variantId: string, delta: number, reason: stri
   const { data, error } = await supabase.rpc("adjust_variant_stock", { p_variant_id: variantId, p_delta: delta, p_reason: why ?? undefined });
   if (error) return { error: ERRORS[error.message] ?? "Không thể cập nhật tồn kho. Vui lòng thử lại." };
   revalidatePath("/", "layout");
+  revalidateStorefront();
   return { stock: data };
 }

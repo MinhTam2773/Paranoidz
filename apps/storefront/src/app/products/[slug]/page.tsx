@@ -17,9 +17,10 @@ import { SizeGuide, isSizeGuide } from "@/components/product/SizeGuide";
 import { renderDescription } from "@/lib/sanitize-description";
 import { SITE_URL } from "@/lib/site";
 
-// ISR (ARCHITECTURE.md §2.2): every active product is prebuilt at deploy, then rebuilt at most once a
-// minute; slugs added later render on first visit. Shown stock is display only — place_order() re-checks.
-export const revalidate = 60;
+// ISR (ARCHITECTURE.md §2.2): every active product is prebuilt at deploy, then rebuilt on demand
+// after orders and admin changes (api/revalidate), else at most once a day; slugs added later render
+// on first visit. Shown stock is display only — place_order() re-checks.
+export const revalidate = 86400;
 
 export async function generateStaticParams() {
   const { data, error } = await createPublicClient().from("products").select("slug");

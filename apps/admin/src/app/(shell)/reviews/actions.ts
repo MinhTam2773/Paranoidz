@@ -3,11 +3,15 @@
 import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@paranoidz/db/admin";
 import { requireAdmin } from "@/lib/auth";
+import { revalidateStorefront } from "@/lib/storefront";
 
 // Reviews moderation (DASHBOARD_DESIGN.md §6.9): hide/show only, no deletes.
-// The storefront's product pages pick changes up on their next ISR regeneration (≤ 60s).
+// The storefront's product and feedback pages are told to re-render (revalidateStorefront).
 
-const done = () => revalidatePath("/reviews");
+const done = () => {
+  revalidatePath("/reviews");
+  revalidateStorefront();
+};
 const failed = { error: "Không thể cập nhật. Vui lòng thử lại." };
 
 export async function setReviewVisible(id: string, isVisible: boolean): Promise<{ error?: string }> {

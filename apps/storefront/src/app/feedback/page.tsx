@@ -13,9 +13,10 @@ export const metadata: Metadata = {
   alternates: { canonical: "/feedback" },
 };
 
-// Every visible review in the store (RLS: visible reviews and photos only). ISR like the catalog;
+// Every visible review in the store (RLS: visible reviews and photos only). ISR like the catalog
+// (on demand, else daily);
 // the whole list is fetched and tabbed client-side (spec 2026-10-11, approach A).
-export const revalidate = 60;
+export const revalidate = 86400;
 
 async function getReviews(): Promise<FeedbackReview[]> {
   const supabase = createPublicClient();

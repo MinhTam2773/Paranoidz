@@ -7,6 +7,7 @@ import { createAdminClient } from "@paranoidz/db/admin";
 import { putMedia, removeMedia } from "@paranoidz/db/media-server";
 import { createClient } from "@paranoidz/db/server";
 import { requireAdmin } from "@/lib/auth";
+import { revalidateStorefront } from "@/lib/storefront";
 import { formatDateTime } from "@/lib/format";
 import { parseMoney } from "@/lib/product";
 import { fileTimestamp, parseInventorySheet, type InventoryRow } from "@/lib/bigseller/inventory-file";
@@ -252,6 +253,7 @@ export async function applyImport(form: FormData): Promise<ApplyResult> {
     } else result.updated = updates.length;
   }
   revalidatePath("/", "layout");
+  revalidateStorefront();
   return result;
 }
 

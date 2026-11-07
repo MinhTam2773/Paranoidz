@@ -222,10 +222,12 @@ export async function placeOrder(input: CheckoutInput): Promise<CheckoutResult> 
     }
   }
 
-  // Stock changed: refresh the ISR catalog + the ordered products now rather than within 60s.
+  // Stock changed: refresh the ISR pages that show it (cached up to a day) + the ordered products.
   const { data: variants } = await admin
     .from("product_variants").select("products(slug)").in("id", items.map((i) => i.variantId));
+  revalidatePath("/");
   revalidatePath("/products");
+  revalidatePath("/collections/[slug]", "page");
   for (const slug of new Set((variants ?? []).map((v) => v.products.slug))) revalidatePath(`/products/${slug}`);
   // Confirmation + shop alerts (email, Zalo) after the response is sent; never affects the order.
   after(() => sendOrderEmails(order.order_id));

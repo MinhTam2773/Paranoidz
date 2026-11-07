@@ -3,12 +3,16 @@
 import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@paranoidz/db/admin";
 import { requireAdmin } from "@/lib/auth";
+import { revalidateStorefront } from "@/lib/storefront";
 import { slugify } from "@/lib/product";
 
 // Categories (DASHBOARD_DESIGN.md §6.3). sort_order = order of the storefront
 // homepage category rows (ISR, so changes appear within 60s there).
 
-const done = () => revalidatePath("/products", "layout");
+const done = () => {
+  revalidatePath("/products", "layout");
+  revalidateStorefront();
+};
 
 function checkName(raw: string) {
   const name = raw.trim();

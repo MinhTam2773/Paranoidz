@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@paranoidz/db/admin";
 import { requireAdmin } from "@/lib/auth";
+import { revalidateStorefront } from "@/lib/storefront";
 
 // Bundles (DASHBOARD_DESIGN.md §6.5). place_order() prices them (ARCHITECTURE.md §5):
 // flat ₫ off per complete set, better of bundle vs voucher. Orders snapshot what was
@@ -14,7 +15,10 @@ export type BundleResult = { errors?: Record<string, string>; id?: string };
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const FAILED = { errors: { form: "Không thể lưu. Vui lòng thử lại." } };
 
-const done = () => revalidatePath("/bundles", "layout");
+const done = () => {
+  revalidatePath("/bundles", "layout");
+  revalidateStorefront();
+};
 
 export async function saveBundle(input: BundleInput): Promise<BundleResult> {
   await requireAdmin();

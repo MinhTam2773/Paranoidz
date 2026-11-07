@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@paranoidz/db/admin";
 import { createClient } from "@paranoidz/db/server";
 import { requireAdmin } from "@/lib/auth";
+import { revalidateStorefront } from "@/lib/storefront";
 import { isOrderStatus, SPX_STATUS_LABEL, type OrderStatus } from "@/lib/order-status";
 import { BULK_LIMIT, planShipments, spxProvince, type BulkFailure } from "@/lib/spx-bulk";
 import { env, spxUserCall } from "@paranoidz/db/spx";
@@ -63,6 +64,8 @@ export async function transitionOrder(orderId: string, to: string): Promise<{ er
   // Whole shell: the detail page, the list and the sidebar's pending count. Also
   // when the status was changed elsewhere, so the page shows the real one.
   revalidatePath("/", "layout");
+  // Cancelled / Giao thất bại put the stock back, which the storefront shows.
+  if (!error && (to === "cancelled" || to === "delivery_failed")) revalidateStorefront();
   return stale ? { error: "Trạng thái đơn đã được thay đổi ở nơi khác. Trang đã được cập nhật." } : {};
 }
 

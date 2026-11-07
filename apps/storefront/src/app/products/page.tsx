@@ -12,9 +12,9 @@ export const metadata: Metadata = {
   alternates: { canonical: "/products" },
 };
 
-// ISR (ARCHITECTURE.md §2.2): rebuilt at most once a minute. Shown stock may lag by that much —
-// display only; place_order() re-checks stock atomically.
-export const revalidate = 60;
+// ISR (ARCHITECTURE.md §2.2): rebuilt on demand after orders and admin changes (api/revalidate),
+// else at most once a day. Shown stock is display only; place_order() re-checks stock atomically.
+export const revalidate = 86400;
 
 export default async function ProductsPage() {
   const supabase = createPublicClient();
