@@ -43,6 +43,15 @@ export function MetaPixel() {
 // (content_type "product_group", ViewContent only), so Advantage+ catalog ads can show what was seen.
 export type MetaContent = { id: string; quantity: number; item_price: number };
 
+// Country cookie set by proxy.ts from Vercel's geo header. The campaign optimises on these events,
+// and from 2026-11-05 most AddToCarts came from US-IP Facebook webviews that never opened the cart
+// (TODO.md Now #8), so only visitors in Vietnam reach the pixel; PostHog still gets everyone. No
+// cookie (local dev, a blocked cookie): send as before.
+function outsideVietnam() {
+  const country = document.cookie.match(/(?:^|; )pz-cc=([A-Z]{2})/)?.[1];
+  return country !== undefined && country !== "VN";
+}
+
 // Standard event with the catalog fields. The base code runs afterInteractive, so an event raised
 // before it (first page view) waits up to ~3s; never fires where the base code is off.
 export function trackMeta(
@@ -61,6 +70,7 @@ export function trackMeta(
       order_number: options.eventID,
     });
   }
+  if (outsideVietnam()) return;
   if (typeof window.fbq !== "function") {
     if (process.env.NODE_ENV === "production" && attempt < 10) setTimeout(() => trackMeta(event, contents, options, attempt + 1), 300);
     return;
