@@ -17,23 +17,27 @@
 | Deploy command | `npx opennextjs-cloudflare deploy` |
 | Production branch | `claude/lucid-meitner-m4bzh1` (đổi sang `master` sau khi merge PR #96) |
 | Build nhánh khác (preview) | không có — bản preview sẽ dùng chung secret của Worker |
-| Build variables đã nhập | `NEXT_PUBLIC_DEPLOY_ENV=preview`, `NEXT_PUBLIC_SUPABASE_URL` (database **test**) |
+| Build variables đã nhập | `NEXT_PUBLIC_DEPLOY_ENV=preview`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `NEXT_PUBLIC_SENTRY_DSN` (database **test**) |
+| Secrets lúc chạy đã nhập | 3 biến `NEXT_PUBLIC_*` trên, `TEST_LABEL`, `SITE_URL`, `ADMIN_URL`, `ORDER_ALERT_EMAIL` (chép từ bộ Preview của Vercel) |
+
+**Đã deploy bản chạy thử** (2026-11-10): `https://paranoidz-storefront.tamnguyen277353.workers.dev`, dùng database test.
+Xem trang, sản phẩm, bộ sưu tập, cache đều chạy. **Đặt hàng, giỏ hàng, tra cứu đơn chưa chạy được** vì thiếu
+`SUPABASE_SERVICE_ROLE_KEY` (Vercel đánh dấu Sensitive nên không đọc lại được).
 
 Không cần `SKIP_DEPENDENCY_INSTALL` hay lệnh `pnpm install`: Workers Builds tự cài cả workspace bằng pnpm.
 
-## Bước 1 — Chạy thử bằng database test (chủ tài khoản nhập biến)
+## Bước 1 — Hoàn tất bản chạy thử (database test)
 
-Giá trị lấy từ `apps/storefront/.env.local` trên máy. **Không dán secret vào chat.**
+Còn thiếu các secret Vercel không cho đọc lại. **Không dán secret vào chat.** Hai cách nhập:
 
-1. Worker → Settings → Builds → Variables and secrets, thêm:
-   `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`.
-2. Worker → Settings → Variables and Secrets, thêm loại **Secret**:
-   `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SERVICE_ROLE_KEY`,
-   `TEST_LABEL` (= `TEST`), `SPX_API_HOST`, `SPX_APP_ID`, `SPX_APP_SECRET`, `SPX_USER_ID`,
-   `SPX_USER_SECRET`, `SPX_SENDER_WARD`, `SPX_SENDER_PROVINCE`.
-   Chưa nhập `RESEND_API_KEY`, `ZALO_*`, `META_CAPI_TOKEN`, `REVALIDATE_SECRET`, `R2_*`, `NEXT_PUBLIC_MEDIA_URL`.
-3. Deployments → build gần nhất → **Retry build**.
-4. Mở `https://paranoidz-storefront.tamnguyen277353.workers.dev` và kiểm tra:
+- Từ máy có `apps/storefront/.env.local`, trong thư mục `apps/storefront`:
+  `npx wrangler@4.158.0 secret bulk .env.local --name paranoidz-storefront` (đẩy cả file lên làm secret).
+- Hoặc nhập tay ở Worker → Settings → Variables and Secrets, loại **Secret**:
+  `SUPABASE_SERVICE_ROLE_KEY` (Supabase → project `paranoidz-test` → Settings → API Keys → secret),
+  rồi `SPX_API_HOST`, `SPX_APP_ID`, `SPX_APP_SECRET`, `SPX_USER_ID`, `SPX_USER_SECRET`,
+  `SPX_SENDER_WARD`, `SPX_SENDER_PROVINCE` (thiếu `SPX_*` thì phí ship lấy theo bảng giá chuẩn).
+
+Sau đó kiểm tra trên bản chạy thử:
    - Trang chủ, `/products`, một trang sản phẩm, một bộ sưu tập: có ảnh, giá, tồn kho (dữ liệu test).
    - Tải lại trang chủ: header phản hồi có `x-opennext-cache: HIT`.
    - Giỏ hàng → thanh toán: nhập địa chỉ, có phí ship; đặt một đơn (vào database test).
@@ -63,8 +67,8 @@ Giá trị lấy từ Vercel → project storefront → Environment Variables �
 1. DNS → Records của `paranoidz.vn`: **chụp lại** bản ghi `paranoidz.vn` (và `www` nếu có) đang trỏ về
    Vercel để có thể quay lại. Không đụng tới MX / TXT (email) và `admin`, `media`.
 2. Xoá bản ghi `paranoidz.vn` (và `www`) trỏ về Vercel.
-3. Worker `paranoidz-storefront` → Settings → Domains & Routes → Add → Custom Domain → `paranoidz.vn`
-   (thêm `www.paranoidz.vn` nếu trước đây có).
+3. Worker `paranoidz-storefront` → Settings → Domains & Routes → Add → Custom Domain → `paranoidz.vn`,
+   rồi thêm `www.paranoidz.vn` (Vercel đang phục vụ cả hai).
 
 ## Bước 4 — Kiểm tra sau khi đổi
 
