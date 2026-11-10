@@ -2,7 +2,7 @@
 
 Tool quirks, environment traps and non-obvious behaviour found in past sessions. Read the section for what you're about to touch. **Add a lesson whenever something cost you time** (CLAUDE.md §7 step 7). Product gaps and debt go to `docs/BACKLOG.md`, not here.
 
-Sections: Workflow · Windows & shell · Supabase · Next.js / React / Tailwind · Built-in browser pane & Claude in Chrome · Local dev servers · Testing (smoke, e2e, test data) · SPX · Vercel, DNS, email, Zalo · BigSeller · Design sources & content · How things work
+Sections: Workflow · Windows & shell · Supabase · Next.js / React / Tailwind · Built-in browser pane & Claude in Chrome · Local dev servers · Testing (smoke, e2e, test data) · SPX · Vercel, DNS, email, Zalo · Cloudflare Workers (OpenNext) · BigSeller · Design sources & content · How things work
 
 ---
 
@@ -173,18 +173,6 @@ Decisions are in ARCHITECTURE.md §5 "SPX Open API"; the build log is in `docs/D
 
 ## Vercel, DNS, email, Zalo
 
-- **Cloudflare / OpenNext (2026-11-10):**
-  - `@opennextjs/cloudflare` pins a minimum Next patch in its peer range (1.20.16: `>=16.4.5`) and raises it often; check `npm view @opennextjs/cloudflare peerDependencies` before bumping either.
-  - OpenNext takes the nearest folder with a lockfile as the monorepo root. A stray `pnpm-lock.yaml` inside an app makes `opennextjs-cloudflare build` fail with "Could not find the Next.js package". `apps/admin/pnpm-lock.yaml` is the same kind of stray file.
-  - Keep `src/middleware.ts` in the storefront; don't run the `middleware-to-proxy` codemod. `proxy.ts` is Node.js middleware, which the adapter only bundles as "experimental, not maintained".
-  - OpenNext copies Cloudflare's `request.cf.country` into `x-vercel-ip-country`, so the geo code needs no Cloudflare branch. The client IP is `cf-connecting-ip`.
-  - `opennextjs-cloudflare build` bakes `.env`, `.env.production` and `.env.local` into the Worker. Build for production only where those files don't exist (Workers Builds), never from a laptop with `.env.local` pointing at test.
-  - `wrangler deploy` deletes dashboard variables unless `keep_vars` is true (it is). Secrets survive either way.
-  - `cf:preview` warns that the two Durable Objects "will not work in local development": that is the cache-population step; the dev server itself runs them (revalidation worked).
-  - pnpm 11 refuses packages younger than a day and silently adds them to `minimumReleaseAgeExclude` in `pnpm-workspace.yaml`. Pin a slightly older version instead of committing that list. An optional peer (`wrangler` under `@sentry/nextjs`) is resolved to the newest version unless the lockfile already has one: reset the lockfile and reinstall rather than `pnpm dedupe`.
-- **Next 16.4 type-checks with `tsc`, tests included** (2026-11-10): `next build` fails on type errors in `tests/*.ts` that 16.2 let through.
-- **Cloud sessions can't download `ascii-reveal`** (GitHub tarball of a repo outside the session, 403), so `pnpm install` fails there. Don't swap the dependency; say so and let CI install it.
-
 - **`NODE_ENV` doesn't mean production on Vercel or in e2e** (2026-11-02): previews and `next start` are `production` too. To target the live site use `NEXT_PUBLIC_VERCEL_ENV === "production"`.
 - **Timing from this dev machine misleads for region work** (2026-10-16) — it reaches Vercel through `pdx1` (US West), so moving functions to `sin1` makes no-query pages look *slower* from here (0.31s → 0.60s) while customers in Vietnam get faster. Compare server time (page TTFB minus a no-DB page's TTFB), not raw TTFB.
 - **P.A Việt Nam DNS panel (access.pavietnam.vn/dns) quirks:** "Thêm bản ghi" inserts the blank row at the TOP and pushes the button down (clicking a fixed coordinate repeatedly adds rows elsewhere); the Ưu tiên (priority) box only matters for MX; blank rows must be removed (trash icon, no dialog for unsaved rows) before "Lưu cấu hình", which opens an in-page "Đồng ý" confirm. Edits are batched — nothing is live until that save.
@@ -193,7 +181,28 @@ Decisions are in ARCHITECTURE.md §5 "SPX Open API"; the build log is in `docs/D
 - **Zalo bot: a message sent while a webhook is saved is lost to `getUpdates`.** The client's first "hi" (webhook URL had been touched in the bot settings) never showed up; after the webhook was cleared, a second message did. To read a chat id: keep `getUpdates` long-polling, then have the person message the bot.
 - **Vercel missed a GitHub push once (2026-10-12):** `6ae111d` never deployed (no Vercel or GitHub deployment record) and a dashboard Redeploy didn't register either; an empty commit (`ce9fd9a`) deployed normally. After a push, confirm a new deployment exists (`list_deployments`) before testing production.
 - **Vercel installs with pnpm 10 and ignores `devEngines.packageManager`**, and pnpm 10 can't read pnpm 11's two-document `pnpm-lock.yaml` ("Ignoring broken lockfile") — it then resolves unpinned versions. Both projects' install command is overridden to `npx -y pnpm@11.13.0 install --frozen-lockfile`. npm flags `pnpm@11.13.0` as "a broken version" (install ≥ 11.13.1); bump the root `devEngines` and both install commands together.
+- **pnpm pins itself in `pnpm-lock.yaml` (`packageManagerDependencies`)** and switches to that version before running anything (2026-11-10). It was 11.13.0, which can no longer be downloaded ("pnpm v11.13.0 is a broken release"): the admin's Vercel build failed at `pnpm run build` once the stray `apps/admin/pnpm-lock.yaml` (which had hidden the root one) was removed. Now `devEngines` is exactly `11.13.1` (a caret range makes pnpm pick the newest match) and CI uses 11.13.1; the Vercel install override `npx -y pnpm@11.13.0 …` still works because it switches to 11.13.1. To change it: edit `devEngines`, then `pnpm install` rewrites the lockfile pin.
 - **Vercel deployment protection is on for every non-custom-domain URL** (`all_except_custom_domains`): `*.vercel.app` asks for a Vercel login, so only the owner can see preview deploys (the custom domains are public). The MCP `web_fetch_vercel_url` tool bypasses it for checks.
+
+## Cloudflare Workers (OpenNext)
+
+- **`@opennextjs/cloudflare` pins a minimum Next version** (2026-11-10): 1.20.16 needs `next >=16.4.5`; no release accepts 16.2.x, and the ones before 1.20.3 reject `proxy.ts`. Check `npm view @opennextjs/cloudflare@<v> peerDependencies` before bumping either. Next must be the same version in both apps and `packages/db` (it imports `next/server`; two copies break `after()`).
+- **pnpm 11 refuses packages published in the last day** (`minimumReleaseAge`) and quietly adds them to `minimumReleaseAgeExclude` in `pnpm-workspace.yaml`. Pin the previous patch instead of committing those exclusions.
+- **The adapter build fails on Windows**: esbuild gets "Access is denied" on pnpm's symlinked folders under `.open-next/server-functions`. Build on Linux. Locally: Docker Desktop + a throwaway `node:24` container that copies the worktree without `node_modules` / `.next` / `.open-next`, runs `pnpm install --frozen-lockfile`, `opennextjs-cloudflare build`, then `wrangler dev --ip 0.0.0.0 --port 8787` (published on 127.0.0.1:8787). WSL Ubuntu has no Node.
+- **A stray `pnpm-lock.yaml` inside an app breaks the Workers build.** Turbopack ("Could not find the Next.js package") and OpenNext (copies traced files to `.next/standalone/.next/…` instead of `…/apps/admin/.next/…`) both take the nearest lockfile as the monorepo root. The admin's scaffold leftover is removed; `apps/storefront/pnpm-lock.yaml` must go too before its port.
+- **Local workerd checks** (2026-11-10): `curl` the signed-out redirects first; a throwaway admin on **test** (like e2e's `createUser({ admin: true })`) signs in through the browser pane at `127.0.0.1:8787`. With the pane hidden, Suspense content arrives but is never swapped in (React waits on `requestAnimationFrame`): check with `fetch(url).then(r => r.text())` from the page instead. The auto mode refuses clicks that call SPX (label, pickup) as real-world transactions; leave those for a deployed preview with the owner.
+- **Sentry warns once at Worker start** ("Failed to register diagnostics-channel injection hooks"): only span integrations are lost; errors still report (tracing is off anyway).
+- **Cloudflare dashboard "Connect GitHub" can't be driven from Claude in Chrome** (2026-11-10): it opens a GitHub popup window outside the tab group (the owner uses Brave), so the click looks like it does nothing. The owner installs "Cloudflare Workers and Pages" on `MinhTam2773` himself; if the popup keeps showing "Install…", **MinhTam2773 → Configure → Save** sends it back to Cloudflare. After that the create form works from Chrome (repo list → settings).
+- **The create form builds the repo's default branch (`master`) first**; there is no branch field. Change Settings → Builds → Production branch afterwards (combobox: type to filter, pick, then the floating "Save").
+- **Typing into the Cloudflare create form can drop the first character** (`EXT_PUBLIC_…`): after filling, read every value back (`document.querySelectorAll('input, textarea')` → `name = value`) and retype with ctrl+a.
+
+- **Storefront keeps `src/middleware.ts`** (2026-11-10); don't run the `middleware-to-proxy` codemod there. `proxy.ts` is Node.js middleware, which the adapter only bundles as "experimental, not maintained". The admin's `proxy.ts` ran in workerd during its trial.
+- **OpenNext copies `request.cf.country` into `x-vercel-ip-country`**, so geo code needs no Cloudflare branch. The client IP is `cf-connecting-ip` (`x-real-ip` / `x-forwarded-for` are client-controlled behind Cloudflare).
+- **`opennextjs-cloudflare build` bakes `.env`, `.env.production` and `.env.local` into the Worker.** Deploy only from Workers Builds (no such files there), never from a folder whose `.env.local` points at test.
+- **`cf:preview` warns that the Durable Objects "will not work in local development"**: that is its cache-population step. The dev server runs them; revalidation worked.
+- **Workers Builds, read from real build logs (2026-11-10):** with the root directory set to the app folder it detects pnpm, installs the whole workspace (`pnpm install --frozen-lockfile`, pnpm version from `devEngines` through Corepack) and then runs the build command there; `npx opennextjs-cloudflare build` works. `npx -y pnpm@… ` from the repo root fails with npm's `EBADDEVENGINES` (npm reads the root `devEngines`). The `paranoidz-admin` preview trigger builds **every** branch from `apps/admin`, so a branch without the admin's Workers config shows a red "Workers Builds: paranoidz-admin" check.
+- **Cloudflare from a cloud session:** no Claude in Chrome there. With an API token on `api.cloudflare.com` (Workers Builds Configuration, Workers Scripts, R2), `GET /accounts/{id}/builds/builds/{build_uuid}/logs` returns the build log, `…/builds/workers/{script tag}/triggers` the build settings, `PATCH …/builds/triggers/{uuid}` and `…/environment_variables` change them.
+- **Cloud sessions can't download `ascii-reveal`** (GitHub tarball of a repo outside the session: 403), so `pnpm install` fails there. Don't swap the dependency; build with a local stand-in outside git and let CI install the real one.
 
 ## BigSeller
 
