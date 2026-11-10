@@ -20,6 +20,12 @@
 | Build variables đã nhập | `NEXT_PUBLIC_DEPLOY_ENV=preview`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `NEXT_PUBLIC_SENTRY_DSN` (database **test**) |
 | Secrets lúc chạy đã nhập | 3 biến `NEXT_PUBLIC_*` trên, `TEST_LABEL`, `SITE_URL`, `ADMIN_URL`, `ORDER_ALERT_EMAIL` (chép từ bộ Preview của Vercel) |
 
+**Cập nhật cuối ngày 2026-11-10:** Worker đã chuyển sang giá trị production cho mọi biến đọc được
+(bước 2 mục 1 và một phần mục 2 đã xong); `https://paranoidz-storefront.tamnguyen277353.workers.dev` đang chạy
+trên database thật — **đừng đặt đơn thử ở đó**. Còn thiếu: `SPX_*` (7), `RESEND_API_KEY`, `ZALO_BOT_TOKEN`,
+`ZALO_OWNER_CHAT_ID`, `META_CAPI_TOKEN`, `REVALIDATE_SECRET`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`.
+Phần dưới mô tả bản chạy thử trước đó.
+
 **Đã deploy bản chạy thử** (2026-11-10): `https://paranoidz-storefront.tamnguyen277353.workers.dev`, dùng database test.
 Xem trang, sản phẩm, bộ sưu tập, cache, tra cứu đơn và đặt hàng đều chạy (đơn thử PZ-2026-0069 trong database test).
 Phí ship đang theo bảng giá chuẩn, chưa có email / Zalo: thiếu `SPX_*`, `RESEND_API_KEY`, `ZALO_*`
