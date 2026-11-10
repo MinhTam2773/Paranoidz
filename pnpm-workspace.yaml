@@ -7,3 +7,7 @@ allowBuilds:
   unrs-resolver: true
   # posthog-js dependency; its postinstall only prints a funding banner.
   core-js: false
+  # wrangler / OpenNext (storefront on Cloudflare): both run from their platform packages; the
+  # postinstall only re-checks the binary.
+  esbuild: false
+  workerd: false

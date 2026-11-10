@@ -1,0 +1,24 @@
+// Cloudflare Workers config for the storefront (OpenNext build, docs/CLOUDFLARE_SETUP.md).
+// Variables and secrets are set in the Cloudflare dashboard, not here (keep_vars).
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "paranoidz-storefront",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-11-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
+  // Run close to the database (Supabase, Singapore) instead of close to the visitor.
+  "placement": { "mode": "smart" },
+  "keep_vars": true,
+  "observability": { "enabled": true },
+  // ISR (open-next.config.ts): pages in R2, re-renders and revalidatePath() through Durable Objects.
+  "services": [{ "binding": "WORKER_SELF_REFERENCE", "service": "paranoidz-storefront" }],
+  "r2_buckets": [{ "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "paranoidz-storefront-cache" }],
+  "durable_objects": {
+    "bindings": [
+      { "name": "NEXT_CACHE_DO_QUEUE", "class_name": "DOQueueHandler" },
+      { "name": "NEXT_TAG_CACHE_DO_SHARDED", "class_name": "DOShardedTagCache" }
+    ]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["DOQueueHandler", "DOShardedTagCache"] }]
+}
