@@ -1,7 +1,7 @@
 # Handoff: finish the storefront's move to Cloudflare (for a session on the dev machine)
 
-Written 2026-11-10 by the cloud session that built PR #96. That session has no access to the dev
-machine's files or to Chrome, and Vercel never returns Sensitive variables, so the last secrets
+Written 2026-11-10 by the cloud session that built PR #96 (run from the client's side). That
+session has no access to the dev machine's files or to Chrome, and Vercel never returns Sensitive variables, so the last secrets
 have to be uploaded from here. **Delete this file once `paranoidz.vn` is served by Cloudflare.**
 
 Read first: `TODO.md` Now #13, `docs/CLOUDFLARE_SETUP.md`, `docs/LESSONS.md` → "Cloudflare Workers (OpenNext)".
@@ -18,9 +18,9 @@ Read first: `TODO.md` Now #13, `docs/CLOUDFLARE_SETUP.md`, `docs/LESSONS.md` →
 
 ## Rules
 
-- The owner allowed Claude to enter keys and secrets for this move (2026-11-10, in the cloud
-  session). Confirm with him once before starting; it replaces the older "Claude must not type
-  keys" note in `TODO.md` for this task only.
+- The cloud session was run from the client's side (GitHub `tuanthanh971`); its user allowed
+  Claude to enter keys and secrets there. On the dev machine that is Minh Tâm's call: ask him once
+  before starting (`TODO.md` still says "Claude must not type keys" for the admin).
 - Never print a secret value, paste one into chat, or write one into a file inside the repo.
   Report **names only**.
 
@@ -81,7 +81,7 @@ Secrets take effect at once; no rebuild.
 
 ## Task 2 — tell the cloud session
 
-Give the owner this to paste into the cloud session (names only):
+Write this into `TODO.md` Now #13, or give it to whoever continues in the cloud session (names only):
 
 ```
 Uploaded to paranoidz-storefront: <names>
@@ -89,11 +89,11 @@ Still missing: <names, or "none">
 REVALIDATE_SECRET: <same as the admin's / new value set on both / not done>
 ```
 
-The cloud session then checks the Worker, and with the owner's go merges PR #96 and switches the
-Worker's production branch to `master`.
+Then, with Minh Tâm's go: merge PR #96 and switch the Worker's production branch to `master`
+(`TODO.md` Now #13, steps 2–4).
 
-## Task 3 — only on the owner's explicit go: move the domain
+## Task 3 — only on Minh Tâm's explicit go: move the domain
 
 `docs/CLOUDFLARE_SETUP.md` steps 3 and 4, through Claude in Chrome: note the current
 `paranoidz.vn` and `www` records, delete them, add both as Custom Domains on the Worker, then run
-the checks (one real order, cancelled afterwards, with the owner watching).
+the checks (one real order, cancelled afterwards, with him watching).
