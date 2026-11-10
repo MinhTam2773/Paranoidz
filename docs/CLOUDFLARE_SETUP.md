@@ -21,8 +21,9 @@
 | Secrets lúc chạy đã nhập | 3 biến `NEXT_PUBLIC_*` trên, `TEST_LABEL`, `SITE_URL`, `ADMIN_URL`, `ORDER_ALERT_EMAIL` (chép từ bộ Preview của Vercel) |
 
 **Đã deploy bản chạy thử** (2026-11-10): `https://paranoidz-storefront.tamnguyen277353.workers.dev`, dùng database test.
-Xem trang, sản phẩm, bộ sưu tập, cache đều chạy. **Đặt hàng, giỏ hàng, tra cứu đơn chưa chạy được** vì thiếu
-`SUPABASE_SERVICE_ROLE_KEY` (Vercel đánh dấu Sensitive nên không đọc lại được).
+Xem trang, sản phẩm, bộ sưu tập, cache, tra cứu đơn và đặt hàng đều chạy (đơn thử PZ-2026-0069 trong database test).
+Phí ship đang theo bảng giá chuẩn, chưa có email / Zalo: thiếu `SPX_*`, `RESEND_API_KEY`, `ZALO_*`
+(Vercel đánh dấu Sensitive nên không đọc lại được).
 
 Không cần `SKIP_DEPENDENCY_INSTALL` hay lệnh `pnpm install`: Workers Builds tự cài cả workspace bằng pnpm.
 
@@ -33,8 +34,7 @@ Còn thiếu các secret Vercel không cho đọc lại. **Không dán secret v�
 - Từ máy có `apps/storefront/.env.local`, trong thư mục `apps/storefront`:
   `npx wrangler@4.158.0 secret bulk .env.local --name paranoidz-storefront` (đẩy cả file lên làm secret).
 - Hoặc nhập tay ở Worker → Settings → Variables and Secrets, loại **Secret**:
-  `SUPABASE_SERVICE_ROLE_KEY` (Supabase → project `paranoidz-test` → Settings → API Keys → secret),
-  rồi `SPX_API_HOST`, `SPX_APP_ID`, `SPX_APP_SECRET`, `SPX_USER_ID`, `SPX_USER_SECRET`,
+  `SPX_API_HOST`, `SPX_APP_ID`, `SPX_APP_SECRET`, `SPX_USER_ID`, `SPX_USER_SECRET`,
   `SPX_SENDER_WARD`, `SPX_SENDER_PROVINCE` (thiếu `SPX_*` thì phí ship lấy theo bảng giá chuẩn).
 
 Sau đó kiểm tra trên bản chạy thử:
