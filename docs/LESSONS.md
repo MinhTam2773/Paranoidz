@@ -2,7 +2,7 @@
 
 Tool quirks, environment traps and non-obvious behaviour found in past sessions. Read the section for what you're about to touch. **Add a lesson whenever something cost you time** (CLAUDE.md §7 step 7). Product gaps and debt go to `docs/BACKLOG.md`, not here.
 
-Sections: Workflow · Windows & shell · Supabase · Next.js / React / Tailwind · Built-in browser pane & Claude in Chrome · Local dev servers · Testing (smoke, e2e, test data) · SPX · Vercel, DNS, email, Zalo · BigSeller · Design sources & content · How things work
+Sections: Workflow · Windows & shell · Supabase · Next.js / React / Tailwind · Built-in browser pane & Claude in Chrome · Local dev servers · Testing (smoke, e2e, test data) · SPX · Vercel, DNS, email, Zalo · Cloudflare Workers (OpenNext) · BigSeller · Design sources & content · How things work
 
 ---
 
@@ -182,6 +182,15 @@ Decisions are in ARCHITECTURE.md §5 "SPX Open API"; the build log is in `docs/D
 - **Vercel missed a GitHub push once (2026-10-12):** `6ae111d` never deployed (no Vercel or GitHub deployment record) and a dashboard Redeploy didn't register either; an empty commit (`ce9fd9a`) deployed normally. After a push, confirm a new deployment exists (`list_deployments`) before testing production.
 - **Vercel installs with pnpm 10 and ignores `devEngines.packageManager`**, and pnpm 10 can't read pnpm 11's two-document `pnpm-lock.yaml` ("Ignoring broken lockfile") — it then resolves unpinned versions. Both projects' install command is overridden to `npx -y pnpm@11.13.0 install --frozen-lockfile`. npm flags `pnpm@11.13.0` as "a broken version" (install ≥ 11.13.1); bump the root `devEngines` and both install commands together.
 - **Vercel deployment protection is on for every non-custom-domain URL** (`all_except_custom_domains`): `*.vercel.app` asks for a Vercel login, so only the owner can see preview deploys (the custom domains are public). The MCP `web_fetch_vercel_url` tool bypasses it for checks.
+
+## Cloudflare Workers (OpenNext)
+
+- **`@opennextjs/cloudflare` pins a minimum Next version** (2026-11-10): 1.20.16 needs `next >=16.4.5`; no release accepts 16.2.x, and the ones before 1.20.3 reject `proxy.ts`. Check `npm view @opennextjs/cloudflare@<v> peerDependencies` before bumping either. Next must be the same version in both apps and `packages/db` (it imports `next/server`; two copies break `after()`).
+- **pnpm 11 refuses packages published in the last day** (`minimumReleaseAge`) and quietly adds them to `minimumReleaseAgeExclude` in `pnpm-workspace.yaml`. Pin the previous patch instead of committing those exclusions.
+- **The adapter build fails on Windows**: esbuild gets "Access is denied" on pnpm's symlinked folders under `.open-next/server-functions`. Build on Linux. Locally: Docker Desktop + a throwaway `node:24` container that copies the worktree without `node_modules` / `.next` / `.open-next`, runs `pnpm install --frozen-lockfile`, `opennextjs-cloudflare build`, then `wrangler dev --ip 0.0.0.0 --port 8787` (published on 127.0.0.1:8787). WSL Ubuntu has no Node.
+- **A stray `pnpm-lock.yaml` inside an app breaks the Workers build.** Turbopack ("Could not find the Next.js package") and OpenNext (copies traced files to `.next/standalone/.next/…` instead of `…/apps/admin/.next/…`) both take the nearest lockfile as the monorepo root. The admin's scaffold leftover is removed; `apps/storefront/pnpm-lock.yaml` must go too before its port.
+- **Local workerd checks** (2026-11-10): `curl` the signed-out redirects first; a throwaway admin on **test** (like e2e's `createUser({ admin: true })`) signs in through the browser pane at `127.0.0.1:8787`. With the pane hidden, Suspense content arrives but is never swapped in (React waits on `requestAnimationFrame`): check with `fetch(url).then(r => r.text())` from the page instead. The auto mode refuses clicks that call SPX (label, pickup) as real-world transactions; leave those for a deployed preview with the owner.
+- **Sentry warns once at Worker start** ("Failed to register diagnostics-channel injection hooks"): only span integrations are lost; errors still report (tracing is off anyway).
 
 ## BigSeller
 
