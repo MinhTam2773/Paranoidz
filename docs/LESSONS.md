@@ -173,6 +173,18 @@ Decisions are in ARCHITECTURE.md §5 "SPX Open API"; the build log is in `docs/D
 
 ## Vercel, DNS, email, Zalo
 
+- **Cloudflare / OpenNext (2026-11-10):**
+  - `@opennextjs/cloudflare` pins a minimum Next patch in its peer range (1.20.16: `>=16.4.5`) and raises it often; check `npm view @opennextjs/cloudflare peerDependencies` before bumping either.
+  - OpenNext takes the nearest folder with a lockfile as the monorepo root. A stray `pnpm-lock.yaml` inside an app makes `opennextjs-cloudflare build` fail with "Could not find the Next.js package". `apps/admin/pnpm-lock.yaml` is the same kind of stray file.
+  - Keep `src/middleware.ts` in the storefront; don't run the `middleware-to-proxy` codemod. `proxy.ts` is Node.js middleware, which the adapter only bundles as "experimental, not maintained".
+  - OpenNext copies Cloudflare's `request.cf.country` into `x-vercel-ip-country`, so the geo code needs no Cloudflare branch. The client IP is `cf-connecting-ip`.
+  - `opennextjs-cloudflare build` bakes `.env`, `.env.production` and `.env.local` into the Worker. Build for production only where those files don't exist (Workers Builds), never from a laptop with `.env.local` pointing at test.
+  - `wrangler deploy` deletes dashboard variables unless `keep_vars` is true (it is). Secrets survive either way.
+  - `cf:preview` warns that the two Durable Objects "will not work in local development": that is the cache-population step; the dev server itself runs them (revalidation worked).
+  - pnpm 11 refuses packages younger than a day and silently adds them to `minimumReleaseAgeExclude` in `pnpm-workspace.yaml`. Pin a slightly older version instead of committing that list. An optional peer (`wrangler` under `@sentry/nextjs`) is resolved to the newest version unless the lockfile already has one: reset the lockfile and reinstall rather than `pnpm dedupe`.
+- **Next 16.4 type-checks with `tsc`, tests included** (2026-11-10): `next build` fails on type errors in `tests/*.ts` that 16.2 let through.
+- **Cloud sessions can't download `ascii-reveal`** (GitHub tarball of a repo outside the session, 403), so `pnpm install` fails there. Don't swap the dependency; say so and let CI install it.
+
 - **`NODE_ENV` doesn't mean production on Vercel or in e2e** (2026-11-02): previews and `next start` are `production` too. To target the live site use `NEXT_PUBLIC_VERCEL_ENV === "production"`.
 - **Timing from this dev machine misleads for region work** (2026-10-16) — it reaches Vercel through `pdx1` (US West), so moving functions to `sin1` makes no-query pages look *slower* from here (0.31s → 0.60s) while customers in Vietnam get faster. Compare server time (page TTFB minus a no-DB page's TTFB), not raw TTFB.
 - **P.A Việt Nam DNS panel (access.pavietnam.vn/dns) quirks:** "Thêm bản ghi" inserts the blank row at the TOP and pushes the button down (clicking a fixed coordinate repeatedly adds rows elsewhere); the Ưu tiên (priority) box only matters for MX; blank rows must be removed (trash icon, no dialog for unsaved rows) before "Lưu cấu hình", which opens an in-page "Đồng ý" confirm. Edits are batched — nothing is live until that save.
