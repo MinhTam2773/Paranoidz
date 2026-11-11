@@ -15,4 +15,10 @@
   // Run next to Supabase (Singapore) instead of the visitor's edge: each page makes several queries.
   "placement": { "mode": "smart" },
   "observability": { "enabled": true },
+  // Worker Previews (one per git branch, Workers Builds): test database, values in the dashboard's
+  // "Previews Base". No WORKER_SELF_REFERENCE — it resolves to the production Worker, and nothing
+  // here needs it (open-next.config.ts configures no cache, queue or tag cache).
+  "previews": {
+    "services": [],
+  },
 }
