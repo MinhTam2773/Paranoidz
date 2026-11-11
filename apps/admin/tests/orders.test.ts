@@ -9,7 +9,7 @@ test("a pending order can only be cancelled: creating the SPX shipment confirms 
 });
 
 const order = (n: number, over: Partial<BulkOrder> = {}): BulkOrder =>
-  ({ id: `id${n}`, order_number: `PZ-2026-000${n}`, status: "pending", spx_tracking_no: null, city: "TP. Hồ Chí Minh", ward: "Phường Phú Thạnh", ...over });
+  ({ id: `id${n}`, order_number: `PZ-2026-000${n}`, status: "pending", spx_tracking_no: null, city: "TP. Hồ Chí Minh", ward: "Phường Phú Thạnh", payment_method: null, payment_confirmed_at: null, ...over });
 
 test("planShipments matches wards and skips what can't be created in bulk", () => {
   const wards = new Map([["Thành phố Hồ Chí Minh", ["Phường Phú Thạnh", "Phường Tân Phú"]]]);

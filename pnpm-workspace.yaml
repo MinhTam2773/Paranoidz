@@ -7,3 +7,6 @@ allowBuilds:
   unrs-resolver: true
   # posthog-js dependency; its postinstall only prints a funding banner.
   core-js: false
+  # wrangler / @opennextjs/cloudflare: both postinstalls fetch their native binary.
+  esbuild: true
+  workerd: true
