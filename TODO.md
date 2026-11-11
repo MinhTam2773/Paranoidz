@@ -72,6 +72,22 @@ ARCHITECTURE.md §8.4 / §8.5 (loyalty): waits on the proposal in Now #5. §8.3 
 
 ## Last session
 
+- 2026-11-11 (ads + tracking):
+  - **Meta Ads:** campaign "PDZ | Doanh số | Bắt đầu thanh toán | 11-2026" đang ON ₫150k/ngày, tối ưu Initiate Checkout, gồm 4 quảng cáo dẫn về collection Balo/Áo/Túi + trang chủ; campaign "PDZ | Retargeting giỏ hàng | 11-2026" đang ON ₫50k/ngày (tệp giỏ hàng & checkout 30 ngày, đã trừ người mua); campaign ATC cũ đã **TẮT**. Kết quả từ 10/11: ~169k₫ chi tiêu, 83 click, 9 thêm giỏ, 3 bắt đầu thanh toán, 0 đơn.
+  - **Google Ads:** campaign "PDZ | Search | Sản phẩm | 11-2026" đang ON ₫70k/ngày, Max clicks, CPC tối đa ₫3k, có các nhóm Balo/Túi/Áo thun; campaign thương hiệu do lượng tìm thấp nên gần như không chạy; số dư trả trước còn ~₫463k.
+  - **Tracking:** PR này sửa luồng Purchase Google Ads cho "Đơn hàng web" để bắn ổn định theo từng đơn (giữ `value`, `currency = VND`, `transaction_id = mã đơn`).
+  - Checklist:
+    - [ ] merge & deploy PR
+    - [ ] đặt đơn test với Tag Assistant rồi huỷ đơn
+    - [ ] kiểm tra "Đơn hàng web" ghi nhận chuyển đổi
+  - Kế hoạch:
+    - [ ] nếu 0 đơn tới 15/11 thì giảm 1/2 ngân sách Meta
+    - [ ] từ 15/11 dừng các từ khoá Google đã tốn >50k mà không có kết quả
+  - CRO ideas:
+    - [ ] tối ưu tốc độ trang checkout
+    - [ ] hiển thị phí ship/freeship rõ ràng hơn
+    - [ ] thêm đánh giá/ảnh khách hàng
+    - [ ] làm nút COD nổi bật hơn
 - 2026-11-07 (ISR writes): Vercel emailed that ISR writes hit 200K / 200K. Branch `perf/isr-on-demand-revalidate` (worktree `../Paranoidz-isr`): catalog pages 1 day, home 1 h + flash sale boundary refresh, storefront `/api/revalidate` called by the admin after saves. Builds and local cache checks green (`docs/DONE.md`). `REVALIDATE_SECRET` set in both projects' Production.
 - 2026-11-07 (ads status): owner set `META_CAPI_TOKEN`; test order PZ-2026-0699 placed and cancelled, server Purchase arrives in Events Manager (dedup panel still empty, Now #8 (c)). Ads status, pdz06 numbers and the share links in `docs/ads/2026-11-pdz01-creative.md` "Status check": ₫399.800 spent since 2026-11-05, 57 AddToCart, 0 real orders; the 3 category ads get almost no budget; pdz06 had 1 product view from Vietnam. Nothing changed in Ads Manager; budget / pdz06 ad left to the owner.
 - 2026-11-07 (Meta finish): Codex CLI reviewed the ads work (5,5/10); live copy of the 3 category ads corrected; PR #91 (cart buttons) and #90 merged; test order PZ-2026-0698 placed and cancelled: browser Purchase sent, server Purchase impossible because `META_CAPI_TOKEN` isn't set in Vercel (owner to add, Now #8).
