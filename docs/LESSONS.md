@@ -170,6 +170,7 @@ Decisions are in ARCHITECTURE.md §5 "SPX Open API"; the build log is in `docs/D
   - VN rules: `high_value_processing_collection` must be 1, which makes `express_insured_value` mandatory (< ₫20.000.000); `cod_collection` 1 needs `cod_amount` > 0; parcel weight 0–15 kg; phone 10–11 digits from 0.
   - 2.1 returns `estimated_shipping_fee` plus its parts (basic, COD service, high-value, VAT, voucher) and `edt_min/max` — (decided 2026-10-15: checkout asks SPX live, the `shipping_rates` table is the fallback).
   - Order status codes: 1001 pending pickup, 2001 in transit, 2006 delivering, 3001 on hold, 4001 delivered, 5001–5003 pickup failed / damaged / lost, 6001–6003 returning / return failed / returned, 7001 cancelled — map to our `shipped` / `delivered` / `delivery_failed`.
+  - Production host is `https://spx.vn/` (2026-11-11): `open.spx.vn` doesn't exist in DNS, yet it was in both `.env.prod.local` files (from an old example in `docs/SPX_VERCEL_SETUP.md`) and got copied to the Cloudflare Workers. On a Worker an unresolvable host comes back as an HTTP error, not a thrown fetch error, so `spxCall` logs only "SPX HTTP <status>"; checkout silently falls back to the table fee ("Theo bảng giá chuẩn"). Vercel kept working on its own Sensitive copy. Check with a read-only `v1/order/list_voucher` call (`ret_code 0`).
   - Errors: 1001/1005 app-id or secret wrong, 1007 bad check-sign, 1009 timestamp too old, 11001 bad params, 10080 bad pickup slot, 10077/10078 bad lat/long (leave them out).
 
 ## Vercel, DNS, email, Zalo

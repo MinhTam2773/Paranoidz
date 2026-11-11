@@ -11,7 +11,7 @@ Thêm cho cả 3 môi trường (Production, Preview, Development), rồi **Rede
 
 | Biến | Lấy ở đâu |
 | ---- | --------- |
-| `SPX_API_HOST` | Host SPX Open API, ví dụ `https://open.spx.vn` (test: `https://test-stable.spx.vn`) |
+| `SPX_API_HOST` | Host SPX Open API: `https://spx.vn/` (test: `https://test-stable.spx.vn/`) |
 | `SPX_APP_ID` | SPX cấp khi đăng ký integration |
 | `SPX_APP_SECRET` | SPX cấp cùng App ID — **giữ kín** |
 | `SPX_USER_ID` | ID tài khoản người bán SPX của shop (số, 15 chữ số) |
