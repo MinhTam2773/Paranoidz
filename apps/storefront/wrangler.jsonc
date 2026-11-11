@@ -20,5 +20,31 @@
       { "name": "NEXT_TAG_CACHE_DO_SHARDED", "class_name": "DOShardedTagCache" }
     ]
   },
-  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["DOQueueHandler", "DOShardedTagCache"] }]
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["DOQueueHandler", "DOShardedTagCache"] }],
+  // Test copy on the test database: Worker `paranoidz-storefront-test` (`--env test`), its own
+  // cache bucket. `previews` = one Preview per git branch (Workers Builds); their Durable Objects
+  // are isolated by Cloudflare, the cache bucket is shared between Previews.
+  "env": {
+    "test": {
+      "services": [{ "binding": "WORKER_SELF_REFERENCE", "service": "paranoidz-storefront-test" }],
+      "r2_buckets": [{ "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "paranoidz-storefront-test-cache" }],
+      "durable_objects": {
+        "bindings": [
+          { "name": "NEXT_CACHE_DO_QUEUE", "class_name": "DOQueueHandler" },
+          { "name": "NEXT_TAG_CACHE_DO_SHARDED", "class_name": "DOShardedTagCache" }
+        ]
+      },
+      "migrations": [{ "tag": "v1", "new_sqlite_classes": ["DOQueueHandler", "DOShardedTagCache"] }],
+      "previews": {
+        "services": [{ "binding": "WORKER_SELF_REFERENCE", "service": "paranoidz-storefront-test" }],
+        "r2_buckets": [{ "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "paranoidz-storefront-test-cache" }],
+        "durable_objects": {
+          "bindings": [
+            { "name": "NEXT_CACHE_DO_QUEUE", "class_name": "DOQueueHandler" },
+            { "name": "NEXT_TAG_CACHE_DO_SHARDED", "class_name": "DOShardedTagCache" }
+          ]
+        }
+      }
+    }
+  }
 }
