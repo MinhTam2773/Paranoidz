@@ -18,7 +18,7 @@ Self-contained headless e-commerce for a Vietnamese streetwear brand. COD only �
 | Search              | Postgres FTS + `unaccent` (diacritic-insensitive Vietnamese) |
 | Transactional email | Resend (customer confirmations + client alerts) |
 | Notifications       | Zalo Bot Platform (client new-order alerts) |
-| Hosting             | Vercel (sin1), two projects from one monorepo |
+| Hosting             | Storefront: Cloudflare Workers through OpenNext (`apps/storefront/wrangler.jsonc`; ISR pages in R2, revalidation through Durable Objects). Built 2026-11-10, still served by Vercel until the DNS cutover in `docs/CLOUDFLARE_SETUP.md`. Admin: Vercel (sin1) |
 
 UI language: **Vietnamese only**, storefront and admin (decided 2026-10-01; see CLAUDE.md §5).
 
@@ -239,7 +239,7 @@ aT, 2026-10-27: the "Khách mua lần đầu" code is **`PDZWELCOME`**; free shi
 - Abuse limits inside `place_order()`: max 20 units per order, max 3 open `pending` orders per phone (row-locked per phone, so not raceable).
 - No confirmation call since 2026-10-16 (client: don't disturb customers). Accepted trade-off: fake COD orders and addresses SPX doesn't serve are no longer caught by a call; what remains is the rate limits, the blacklist, the 20-unit cap and the client looking at each order before creating its shipment. A refused parcel costs the shop SPX's return fee.
 - `delivery_failed` increments `customers.refusal_count`; client can set `customers.is_blacklisted` (blocks new orders from that phone at `place_order()`, whatever format it's typed in).
-- Order and order-lookup endpoints rate-limited per phone and IP: `apps/storefront/src/lib/rate-limit.ts` → `hit_rate_limit(scope, …)` (service role only), called before any order / lookup work as a separate statement so rejected attempts still count. Every attempt that passes form validation counts; 1-hour fixed windows, separate counters per scope. Orders: 5 per normalized phone, 10 per IP. Lookups: 10 per phone, 20 per IP. Shipping-fee previews (`shipping`, they call SPX): 60 per IP; over it the table fee is shown instead. IPv6 per /64, IPv4-mapped unwrapped. IP = `x-real-ip` / first `x-forwarded-for`, trustworthy only because Vercel overwrites them; no IP → phone limit only. Shared mobile-carrier IPs (CGNAT) are why the IP limits are loose. A residential-proxy botnet is not stopped by this — the client reviewing new orders before creating shipments is the backstop.
+- Order and order-lookup endpoints rate-limited per phone and IP: `apps/storefront/src/lib/rate-limit.ts` → `hit_rate_limit(scope, …)` (service role only), called before any order / lookup work as a separate statement so rejected attempts still count. Every attempt that passes form validation counts; 1-hour fixed windows, separate counters per scope. Orders: 5 per normalized phone, 10 per IP. Lookups: 10 per phone, 20 per IP. Shipping-fee previews (`shipping`, they call SPX): 60 per IP; over it the table fee is shown instead. IPv6 per /64, IPv4-mapped unwrapped. IP = the header the host overwrites (`clientIp()`): `cf-connecting-ip` on Cloudflare, `x-real-ip` / first `x-forwarded-for` on Vercel; no IP → phone limit only. Shared mobile-carrier IPs (CGNAT) are why the IP limits are loose. A residential-proxy botnet is not stopped by this — the client reviewing new orders before creating shipments is the backstop.
 
 ---
 

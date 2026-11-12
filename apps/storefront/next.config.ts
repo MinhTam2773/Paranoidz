@@ -3,6 +3,11 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   // @paranoidz/db ships TypeScript source, not a build.
   transpilePackages: ["@paranoidz/db"],
+  env: {
+    // "production" only on the live site (tracking pixels, Sentry environment). Vercel sets
+    // VERCEL_ENV itself; on Cloudflare it is the NEXT_PUBLIC_DEPLOY_ENV build variable.
+    NEXT_PUBLIC_DEPLOY_ENV: process.env.NEXT_PUBLIC_DEPLOY_ENV ?? process.env.VERCEL_ENV ?? "development",
+  },
   images: {
     // Vercel free team exhausted its 5,000 image transformations (optimised
     // images answer 402 OPTIMIZED_IMAGE_REQUEST_PAYMENT_REQUIRED) — serve the

@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { cookies, headers } from "next/headers";
 import { createAdminClient } from "@paranoidz/db/admin";
+import { clientIp } from "@/lib/rate-limit";
 import { SITE_URL } from "@/lib/site";
 
 // Purchase through Meta's Conversions API, next to the browser pixel's (components/tracking/MetaPixel):
@@ -39,7 +40,7 @@ export async function sendMetaPurchase(orderId: string) {
       ph: [sha256(metaPhone(data.phone))],
       ...(data.email ? { em: [sha256(data.email.trim().toLowerCase())] } : {}),
       country: [sha256("vn")],
-      client_ip_address: h.get("x-forwarded-for")?.split(",")[0].trim(),
+      client_ip_address: clientIp(h) || undefined,
       client_user_agent: h.get("user-agent") ?? undefined,
       fbp: c.get("_fbp")?.value,
       fbc: c.get("_fbc")?.value,

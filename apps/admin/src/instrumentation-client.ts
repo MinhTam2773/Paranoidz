@@ -6,7 +6,7 @@ const SENTRY_DSN = process.env.NEXT_PUBLIC_SENTRY_DSN;
 Sentry.init({
   dsn: SENTRY_DSN,
   enabled: Boolean(SENTRY_DSN),
-  environment: process.env.NEXT_PUBLIC_VERCEL_ENV ?? "development",
+  environment: process.env.NEXT_PUBLIC_DEPLOY_ENV ?? process.env.NEXT_PUBLIC_VERCEL_ENV ?? "development",
   tracesSampleRate: 0, // errors only
 });
 

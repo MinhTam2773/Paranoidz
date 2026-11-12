@@ -30,6 +30,7 @@ Design tokens are law. Never invent colors, fonts, radii, or spacing not defined
 
 - **Next.js 16 + React 19**: `params`, `searchParams`, `cookies()`, `headers()` are async — always `await` them.
 - **Tailwind v4**: tokens live in `@theme` inside `globals.css`. There is NO `tailwind.config` file. Do not create one. Do not use v3 syntax.
+- **Storefront is built for Cloudflare Workers through OpenNext** (`apps/storefront/wrangler.jsonc`, `open-next.config.ts`, `docs/CLOUDFLARE_SETUP.md`): it keeps `src/middleware.ts` (edge) — do not rename it to `proxy.ts` — and its server code must not read the filesystem (`node:fs`). The admin stays on Vercel with `proxy.ts`.
 - **pnpm workspace**: install from repo root. Filter commands: `pnpm --filter storefront dev`, `pnpm --filter admin dev`.
 - Windows dev machine: prefer cross-platform scripts; never hardcode `/` path assumptions in tooling.
 

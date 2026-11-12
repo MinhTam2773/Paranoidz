@@ -3,10 +3,10 @@
 import Script from "next/script";
 
 // Google Ads tag + order conversion "Đơn hàng web" (account 205-602-2319). Public values, kept in one
-// place like META_PIXEL_ID. Vercel Production only, like the Meta pixel: previews and e2e never count.
+// place like META_PIXEL_ID. Production deploy only, like the Meta pixel: previews and e2e never count.
 const GOOGLE_ADS_ID = "AW-18554163640";
 const PURCHASE_LABEL = "05e-COOUtbEdELijqI9F";
-const ENABLED = process.env.NEXT_PUBLIC_VERCEL_ENV === "production";
+const ENABLED = process.env.NEXT_PUBLIC_DEPLOY_ENV === "production";
 
 declare global {
   interface Window {
