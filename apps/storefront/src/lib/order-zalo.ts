@@ -1,5 +1,6 @@
 import { createAdminClient } from "@paranoidz/db/admin";
 import { formatVnd } from "@/lib/format";
+import { RETURN_REASONS } from "@/lib/return-status";
 import { TEST_PREFIX } from "@/lib/test-label";
 
 // New-order alert to the client's Zalo (ARCHITECTURE.md §4 step 4) via the Zalo Bot Platform
@@ -58,5 +59,52 @@ export async function sendZaloAlert(orderId: string) {
     if (!body?.ok) console.error("zalo alert failed", data.order_number, res.status, body);
   } catch (sendError) {
     console.error("zalo alert failed", data.order_number, sendError);
+  }
+}
+
+// New return request (ARCHITECTURE.md §4 "Returns"): same bot, same rules as the order alert.
+type ReturnRequest = {
+  reason: string; note: string | null;
+  orders: { order_number: string; recipient_name: string; phone: string };
+  return_items: { qty: number; order_items: { name_snapshot: string; color_snapshot: string | null; size_snapshot: string | null } }[];
+  return_images: { id: string }[];
+};
+
+export function returnZaloAlertText(r: ReturnRequest) {
+  const items = r.return_items.map((i) => {
+    const variant = [i.order_items.color_snapshot, i.order_items.size_snapshot].filter(Boolean).join(" / ");
+    return `${i.qty} × ${i.order_items.name_snapshot}${variant ? ` (${variant})` : ""}`;
+  });
+  const reason = RETURN_REASONS.find((x) => x.value === r.reason)?.label ?? r.reason;
+  return [
+    `${TEST_PREFIX}↩️ YÊU CẦU TRẢ HÀNG ${r.orders.order_number}`,
+    `${r.orders.recipient_name} · ${r.orders.phone}`,
+    "─────", ...items, "─────",
+    `Lý do: ${reason}${r.note ? ` — ${r.note}` : ""}`,
+    `${r.return_images.length} ảnh · Khách xác nhận chưa giặt, còn tem mác`,
+    `${ADMIN_URL}/orders/${encodeURIComponent(r.orders.order_number)}`,
+  ].join("\n").slice(0, MAX_TEXT);
+}
+
+export async function sendReturnZaloAlert(returnId: string) {
+  const token = process.env.ZALO_BOT_TOKEN;
+  const chatId = process.env.ZALO_OWNER_CHAT_ID;
+  if (!token || !chatId) return console.warn("ZALO_BOT_TOKEN / ZALO_OWNER_CHAT_ID unset: Zalo return alert skipped");
+
+  const { data, error } = await createAdminClient().from("return_requests")
+    .select("reason, note, orders(order_number, recipient_name, phone), return_items(qty, order_items(name_snapshot, color_snapshot, size_snapshot)), return_images(id)")
+    .eq("id", returnId).single();
+  if (error) return console.error("zalo return alert: request not readable", returnId, error);
+
+  try {
+    const res = await fetch(`https://bot-api.zaloplatforms.com/bot${token}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chat_id: chatId, text: returnZaloAlertText(data as ReturnRequest) }),
+    });
+    const body = (await res.json().catch(() => null)) as { ok?: boolean } | null;
+    if (!body?.ok) console.error("zalo return alert failed", data.orders.order_number, res.status, body);
+  } catch (sendError) {
+    console.error("zalo return alert failed", data.orders.order_number, sendError);
   }
 }

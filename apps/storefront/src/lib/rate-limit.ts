@@ -12,7 +12,7 @@ export function clientIp(h: Pick<Headers, "get">) {
 // Per-IP + per-phone attempt counter for public server actions (ARCHITECTURE.md §6), backed by
 // hit_rate_limit(): 1-hour windows, one counter set per scope. true = allowed.
 // No IP → only the phone limit applies.
-export async function hitRateLimit(scope: "order" | "lookup" | "quote" | "shipping" | "gacha", phone: string, limits: { ip: number; phone: number }) {
+export async function hitRateLimit(scope: "order" | "lookup" | "quote" | "shipping" | "gacha" | "return", phone: string, limits: { ip: number; phone: number }) {
   const ip = clientIp(await headers());
   const { data, error } = await createAdminClient().rpc("hit_rate_limit", {
     p_scope: scope,

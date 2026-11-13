@@ -164,8 +164,8 @@ export default async function ProductPage({ params }: PageProps<"/products/[slug
   const inStock = product.product_variants.some((v) => v.stock > 0);
   const productUrl = `${SITE_URL}/products/${slug}`;
   // Audit 2026-10-30: Google only lists a product as a Merchant listing when the offer carries
-  // a return policy. Mirrors /policy#returns: 7 days, by post, the customer pays shipping when
-  // exchanging by choice (defects are on the shop, which Google has no separate field for).
+  // a return policy. Mirrors /policy#returns: 7 days, the shop books and pays the SPX pickup
+  // (returns, 2026-11-13; exchanges stay by hotline and aren't described here).
   // shippingDetails is left out on purpose: the fee is SPX's live quote per address.
   const returnPolicy = {
     "@type": "MerchantReturnPolicy",
@@ -173,7 +173,7 @@ export default async function ProductPage({ params }: PageProps<"/products/[slug
     returnPolicyCategory: "https://schema.org/MerchantReturnFiniteReturnWindow",
     merchantReturnDays: 7,
     returnMethod: "https://schema.org/ReturnByMail",
-    returnFees: "https://schema.org/ReturnShippingFees",
+    returnFees: "https://schema.org/FreeReturn",
   };
   const jsonLd = {
     "@context": "https://schema.org",

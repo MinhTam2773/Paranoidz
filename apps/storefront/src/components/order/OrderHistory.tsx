@@ -94,6 +94,17 @@ export function OrderHistory({ orders }: { orders: AccountOrder[] }) {
                         <span className="text-text-muted">Cần thay đổi thông tin, vui lòng gọi {HOTLINE}.</span>
                       </div>
                     </OrderSummary>
+                    {order.status === "delivered" && (
+                      <p className="text-caption text-text-secondary">
+                        Muốn trả hàng (trong 7 ngày kể từ khi nhận, chưa giặt, còn tem mác)?{" "}
+                        <Link
+                          href={`/order-lookup?order=${encodeURIComponent(order.orderNumber)}`}
+                          className="text-text-primary underline underline-offset-4 hover:text-accent"
+                        >
+                          Tra cứu đơn để yêu cầu trả hàng
+                        </Link>
+                      </p>
+                    )}
                   </div>
                 </details>
               </li>

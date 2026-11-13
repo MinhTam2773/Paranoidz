@@ -5,8 +5,10 @@ import { lookupOrder, type LookedUpOrder } from "@/app/order-lookup/actions";
 import { normalizePhone } from "@/lib/checkout-validation";
 import { parseOrderNumber } from "@/lib/order-number";
 import { placedOn, STATUS } from "@/lib/order-status";
+import { RETURN_STATUS } from "@/lib/return-status";
 import { HOTLINE } from "@/lib/site";
 import { OrderSummary } from "./OrderSummary";
+import { ReturnForm } from "./ReturnForm";
 
 // 16px on mobile so iOS Safari doesn't zoom on focus (same exception as checkout).
 const inputClass =
@@ -18,6 +20,9 @@ type Errors = { orderNumber?: string; phone?: string };
 
 export function OrderLookup({ defaultOrderNumber }: { defaultOrderNumber: string }) {
   const [order, setOrder] = useState<LookedUpOrder | null>(null);
+  // The phone that proved this order: the return form needs it again, and it never goes in the URL.
+  const [phone, setPhone] = useState("");
+  const [returning, setReturning] = useState(false);
   const [errors, setErrors] = useState<Errors>({});
   const [message, setMessage] = useState<string | undefined>();
   const [pending, startTransition] = useTransition();
@@ -38,14 +43,33 @@ export function OrderLookup({ defaultOrderNumber }: { defaultOrderNumber: string
     }
     startTransition(async () => {
       const res = await lookupOrder(input);
-      if (res.ok) return setOrder(res.order);
+      if (res.ok) {
+        setPhone(input.phone);
+        return setOrder(res.order);
+      }
       if (res.field) setErrors({ [res.field]: res.message });
       else setMessage(res.message);
     });
   }
 
+  // Re-reads the order after a return request so the page shows its new status.
+  function refresh() {
+    if (!order) return;
+    setReturning(false);
+    startTransition(async () => {
+      const res = await lookupOrder({ orderNumber: order.orderNumber, phone });
+      if (res.ok) setOrder(res.order);
+    });
+  }
+
+  if (order && returning) {
+    return <ReturnForm order={order} phone={phone} onDone={refresh} onCancel={() => setReturning(false)} />;
+  }
+
   if (order) {
     const status = STATUS[order.status];
+    const latestReturn = order.latestReturn;
+
     return (
       <div role="status" className="flex max-w-xl flex-col gap-6">
         <div className="flex flex-col gap-2">
@@ -79,13 +103,33 @@ export function OrderLookup({ defaultOrderNumber }: { defaultOrderNumber: string
           </div>
         )}
 
+        {latestReturn && (
+          <div className="rounded-sm border border-border bg-bg-secondary p-4">
+            <p className="text-nav uppercase text-text-secondary">Trả hàng · gửi ngày {placedOn.format(new Date(latestReturn.createdAt))}</p>
+            <p className="mt-1 text-h3 uppercase">{RETURN_STATUS[latestReturn.status].label}</p>
+            <p className="mt-1 text-text-secondary">{RETURN_STATUS[latestReturn.status].detail}</p>
+            {latestReturn.status === "rejected" && latestReturn.adminNote && (
+              <p className="mt-2 text-text-primary">Lý do: {latestReturn.adminNote}</p>
+            )}
+          </div>
+        )}
+
+        {order.canReturn && (
+          <div className="flex flex-col gap-2">
+            <button type="button" onClick={() => setReturning(true)} className={`${secondaryClass} max-w-xs`}>
+              Yêu cầu trả hàng
+            </button>
+            <p className="text-caption text-text-secondary">Còn {order.returnDaysLeft} ngày để yêu cầu trả hàng. Sản phẩm phải chưa giặt và còn nguyên tem mác.</p>
+          </div>
+        )}
+
         <OrderSummary items={order.items} subtotal={order.subtotal} discount={order.discount} shippingFee={order.shippingFee} total={order.total}>
           <p className="text-caption text-text-muted">
             Giao đến {[order.ward, order.city].filter(Boolean).join(", ")}. Cần thay đổi thông tin, vui lòng gọi {HOTLINE}.
           </p>
         </OrderSummary>
 
-        <button type="button" onClick={() => setOrder(null)} className={`${secondaryClass} max-w-xs`}>
+        <button type="button" onClick={() => { setOrder(null); setPhone(""); }} className={`${secondaryClass} max-w-xs`}>
           Tra cứu đơn khác
         </button>
       </div>

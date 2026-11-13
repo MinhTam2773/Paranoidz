@@ -1,6 +1,6 @@
 # Customer returns (trả hàng) — design
 
-Status: **approved by the owner 2026-11-13.** PR 1 (schema + functions) built on `claude/lucid-meitner-m4bzh1`.
+Status: **approved by the owner 2026-11-13.** PR 1 (schema + functions): #99 on `claude/lucid-meitner-m4bzh1`. PR 2 (storefront): `feat/returns-storefront`.
 
 ## Decisions (owner, 2026-11-13)
 
@@ -43,7 +43,7 @@ The customer sees the current step on the order lookup page (and in the account'
 - **One open request per order** (`requested`, `approved`, `pickup_booked`). After one closes, another may be sent while the 7 days last, for items not yet returned.
 - **Items:** any non-gift line, qty ≤ ordered qty minus qty already in non-rejected, non-cancelled requests. Gift lines (`is_gift`, the free sock) are not selectable; the customer is asked to send the gift back with the items (text only, not enforced).
 - **Reasons:** `defect` (Lỗi sản phẩm), `wrong_item` (Giao sai mẫu / size), `not_as_described` (Không giống mô tả), `other` (Khác, note required). Note ≤ 500 chars.
-- **Photos:** 1–5, jpg / png / webp, compressed in the browser like review photos, stored in media bucket `return-images` (R2 in production, Supabase Storage locally) under `<order_id>/<uuid>.<ext>`. Public like review photos: the URL is an unguessable uuid, not a secret (R2's public domain has no private reads).
+- **Photos:** 1–5, jpg / png / webp, 5 MB each like review photos (no browser compression on the storefront), stored in media bucket `return-images` (R2 in production, Supabase Storage locally) under `<order_id>/<uuid>.<ext>`. Public like review photos: the URL is an unguessable uuid, not a secret (R2's public domain has no private reads).
 - **Refund amount (suggested, admin can change):** Σ(`price_snapshot` × returned qty) minus the order's code discount split pro rata over the paid lines. Shipping isn't refunded. The admin types the final amount and a note (e.g. bank reference) when marking `refunded`.
 - **Order status doesn't change.** `delivered` stays terminal (ARCHITECTURE.md §4); returns live in their own tables.
 - **Not changed (carried debt):** the per-phone delivered counter / loyalty milestone, Meta / Google conversions, revenue in the admin dashboard and the Excel export still count a returned order as sold.
@@ -114,7 +114,7 @@ No return endpoint in SPX's Open API (25 pages read 2026-10-14). A pickup is an 
 
 Storefront (Vietnamese, DESIGN.md tokens):
 - `/order-lookup` result and `/account` order history: a **YÊU CẦU TRẢ HÀNG** button on eligible orders ("Còn N ngày để yêu cầu trả hàng"), and the current return status when one exists.
-- `/order-lookup/return` (number + phone carried in the form, re-checked on submit; signed-in owners skip the phone): items with qty steppers, reason, note, the two checkboxes, photo picker (1–5), the return policy summary, **GỬI YÊU CẦU**. Rate limit scope `return` (ip 10 / phone 5 per hour).
+- The form opens in place on `/order-lookup` after a successful lookup (number + phone stay in the page's memory, never in a URL; the account's order history links to the lookup with the number filled in): items with qty steppers, reason, note, the two checkboxes, photo picker (1–5), the return policy summary, **GỬI YÊU CẦU**. Rate limit scope `return` (ip 30 / phone 15 per hour: each photo ticket and the submit count).
 - `/policy#returns`: rewritten to match (7 days, conditions, photos, shop books SPX pickup and pays it, refund by transfer within 3–5 working days after the goods arrive, exchanges by hotline).
 
 Admin (DASHBOARD_DESIGN.md):

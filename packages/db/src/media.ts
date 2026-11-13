@@ -5,7 +5,7 @@ import { createClient } from "./client";
 // "{bucket}/{path}", public at NEXT_PUBLIC_MEDIA_URL). Rows keep the same relative storage_path.
 // Without NEXT_PUBLIC_MEDIA_URL (local dev, CI, previews on the test project) everything stays on
 // Supabase Storage as before. Server-side calls are in ./media-server.
-export type MediaBucket = "product-images" | "review-images";
+export type MediaBucket = "product-images" | "review-images" | "return-images";
 
 // What the server hands the browser for one upload: a Supabase signed-upload token, or an R2
 // presigned PUT whose signed headers must be sent unchanged.
