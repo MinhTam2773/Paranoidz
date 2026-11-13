@@ -7,7 +7,7 @@
 // can't do. Every per-customer rule is keyed on the normalized phone; test phones are
 // 0900000001-0900000011. Cleans up after itself; the only permanent trace is order_number_seq gaps.
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import type { Database } from "../src/types.ts";
+import type { Database, Json } from "../src/types.ts";
 
 type Db = SupabaseClient<Database>;
 type Placed = { order_id: string; order_number: string; subtotal: number; discount: number; shipping_fee: number; shipping_discount: number; total: number; gift_qty: number; gift_missing: boolean; gacha_redeemed: boolean };
@@ -31,6 +31,7 @@ const FEE_PHONE = "0900000011"; // case 19: up to 3 pending orders of its own
 const LOST_PHONE = "0900000012"; // case 20: refusal count from this case only
 const DELIVERY_PHONE = "0900000013"; // case 21: up to 2 pending orders of its own
 const V2_PHONE = "0900000014"; // case 23: pricing v2 rules, every order confirmed at once
+const RETURN_PHONE = "0900000015"; // case 24: returns
 const AUTH_EMAILS = [1, 2, 3].map((i) => `smoke-auth-${i}@paranoidz.test`);
 
 let failures = 0;
@@ -919,6 +920,59 @@ async function main() {
   check("pricing v2: cancelling a 2-code order releases both uses and gives the promo its count back",
     released?.length === 2 && released.every((u) => u.released_at !== null) && qvAfter?.used_count === 0,
     `released=${JSON.stringify(released)} used_count=${qvAfter?.used_count}`);
+
+  // 24. Returns: request_return() checks every rule, transition_return() puts stock back once --------
+  const retItems = one();
+  const retStock = (await variant(retItems[0].variant_id)).stock;
+  const ret = await placeOrder(retItems, { phone: RETURN_PHONE });
+  if (!ret.data) throw new Error(`case 24 place_order: ${ret.error?.message}`);
+  const { data: retLines } = await admin.from("order_items").select("id, is_gift").eq("order_id", ret.data.order_id);
+  const retLine = retLines!.find((l) => !l.is_gift)!.id;
+  const giftLine = retLines!.find((l) => l.is_gift)?.id;
+  const photo = (n: number) => `${String(n).repeat(8)}-1111-1111-1111-111111111111.jpg`;
+  const ask = (items: unknown, opts: { phone?: string; photos?: string[]; notWashed?: boolean } = {}) =>
+    admin.rpc("request_return", {
+      p_order_number: ret.data!.order_number, p_phone: opts.phone ?? RETURN_PHONE, p_reason: "defect", p_note: "smoke",
+      p_not_washed: opts.notWashed ?? true, p_tags_attached: true, p_items: items as Json, p_image_paths: opts.photos ?? [photo(1)],
+    });
+  const line = (qty: number, id = retLine) => [{ order_item_id: id, qty }];
+  const notDelivered = await ask(line(1));
+  await transition(ret.data.order_id, "confirmed", "shipped", "delivered");
+  const wrongPhone = await ask(line(1), { phone: PHONES[0] });
+  const washed = await ask(line(1), { notWashed: false });
+  const noPhoto = await ask(line(1), { photos: [] });
+  const tooMany = await ask(line(2));
+  const giftTry: { error: { message: string } | null } = giftLine ? await ask(line(1, giftLine)) : { error: { message: "BAD_ITEMS" } };
+  check("request_return refuses: not delivered, wrong phone, unticked condition, no photo, qty over the order, gift line",
+    notDelivered.error?.message === "NOT_ELIGIBLE" && wrongPhone.error?.message === "ORDER_NOT_FOUND" &&
+      washed.error?.message === "CONDITIONS" && noPhoto.error?.message === "BAD_IMAGES" &&
+      tooMany.error?.message === "BAD_ITEMS" && giftTry.error?.message === "BAD_ITEMS",
+    [notDelivered, wrongPhone, washed, noPhoto, tooMany, giftTry].map((r) => r.error?.message ?? "ok").join(","));
+  const asked = await ask(line(1), { photos: [photo(2), photo(3)] });
+  const second = await ask(line(1), { photos: [photo(4)] });
+  const browser = await createClient<Database>(url, publishable, noPersist).rpc("request_return", {
+    p_order_number: ret.data.order_number, p_phone: RETURN_PHONE, p_reason: "defect", p_note: "smoke",
+    p_not_washed: true, p_tags_attached: true, p_items: line(1), p_image_paths: [photo(5)],
+  });
+  const retAnonRead = await createClient<Database>(url, publishable, noPersist).from("return_requests").select("id");
+  check("request_return: request saved, second open one refused, closed to browsers",
+    !asked.error && second.error?.message === "OPEN_REQUEST" && !!browser.error && (retAnonRead.data ?? []).length === 0,
+    `${asked.error?.message ?? "ok"} ${second.error?.message} ${browser.error?.message ?? "browser allowed"}`);
+  const move = (status: Database["public"]["Enums"]["return_status"], extra: { note?: string; tracking?: string; amount?: number } = {}) =>
+    admin.rpc("transition_return", { p_return_id: asked.data!, p_new_status: status, p_note: extra.note, p_spx_tracking_no: extra.tracking, p_refund_amount: extra.amount });
+  const retEarly = await move("received");
+  await move("approved");
+  await move("pickup_booked", { tracking: `SPXSMOKERET${Date.now()}` });
+  const retStockBefore = (await variant(retItems[0].variant_id)).stock;
+  const received = await move("received");
+  const retTwice = await move("received");
+  const retStockAfter = (await variant(retItems[0].variant_id)).stock;
+  const refunded = await move("refunded", { amount: 100000, note: "smoke" });
+  const { data: retRow } = await admin.from("return_requests").select("status, refund_amount").eq("id", asked.data!).single();
+  check("transition_return: no skipping steps, received puts the unit back once, refund recorded",
+    retEarly.error?.message.startsWith("INVALID_TRANSITION") === true && !received.error && retTwice.error?.message.startsWith("INVALID_TRANSITION") === true &&
+      retStockAfter === retStockBefore + 1 && retStockAfter === retStock && !refunded.error && retRow?.status === "refunded" && retRow.refund_amount === 100000,
+    `stock ${retStock}→${retStockBefore}→${retStockAfter} ${received.error?.message ?? ""} ${refunded.error?.message ?? ""}`);
 }
 
 // Case 23 changes a flash window, the gift flag and PDZWELCOME's counter; put them back.
@@ -943,10 +997,12 @@ async function cleanup() {
     const { stock } = await variant(variant_id);
     await admin.from("product_variants").update({ stock: stock + qty }).eq("id", variant_id);
   }
+  // Returns first: they hold their order (on delete restrict).
+  if (createdOrders.length) await admin.from("return_requests").delete().in("order_id", createdOrders);
   // Codes first: a delivered order's code still points at it (redeemed_order_id).
   await admin.from("gacha_codes").delete().like("code", "GACHA-SMK%");
   if (createdOrders.length) await admin.from("orders").delete().in("id", createdOrders);
-  await admin.from("customers").delete().in("phone", [...PHONES, QUOTE_PHONE, FEE_PHONE, LOST_PHONE, DELIVERY_PHONE, V2_PHONE]);
+  await admin.from("customers").delete().in("phone", [...PHONES, QUOTE_PHONE, FEE_PHONE, LOST_PHONE, DELIVERY_PHONE, V2_PHONE, RETURN_PHONE]);
   if (giftVariant) await admin.from("product_variants").update({ is_order_gift: false }).eq("id", giftVariant);
   await restoreFlashWindow();
   if (welcomeUsedBefore !== null) await admin.from("vouchers").update({ used_count: welcomeUsedBefore }).eq("code", "PDZWELCOME");

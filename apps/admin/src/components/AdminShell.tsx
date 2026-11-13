@@ -12,7 +12,7 @@ const linkClass =
 
 // DASHBOARD_DESIGN.md §4: fixed dark sidebar ≥768px; below that the same sidebar
 // slides in from the left behind a hamburger in the topbar.
-export function AdminShell({ email, pendingCount, children }: { email: string; pendingCount: number; children: React.ReactNode }) {
+export function AdminShell({ email, pendingCount, returnCount, children }: { email: string; pendingCount: number; returnCount: number; children: React.ReactNode }) {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -74,6 +74,14 @@ export function AdminShell({ email, pendingCount, children }: { email: string; p
                     className="min-w-6 rounded-sm bg-accent px-1.5 py-1 text-center text-badge text-text-on-dark"
                   >
                     {pendingCount}
+                  </span>
+                )}
+                {href === "/returns" && returnCount > 0 && (
+                  <span
+                    aria-label={`${returnCount} yêu cầu trả hàng chờ duyệt`}
+                    className="min-w-6 rounded-sm bg-accent px-1.5 py-1 text-center text-badge text-text-on-dark"
+                  >
+                    {returnCount}
                   </span>
                 )}
               </Link>

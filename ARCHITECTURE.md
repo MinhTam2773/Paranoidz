@@ -145,6 +145,14 @@ Valid transitions: pending→confirmed→shipped→delivered; pending/confirmed�
 
 Order numbers: `PZ-YYYY-NNNN` from a Postgres sequence (concurrency-safe, 4+ digits).
 
+### Returns (trả hàng) — decided 2026-11-13 (owner)
+Spec: `docs/superpowers/specs/2026-11-13-customer-returns-design.md`. A delivered order stays `delivered`; a return lives in `return_requests` (+ `return_items`, `return_images`, `return_status_history`), server-only like guest orders.
+- The customer asks online within **7 days** of the `delivered` history row: picks non-gift lines and quantities, a reason, ticks **not washed** and **tags still attached**, attaches 1–5 photos (bucket `return-images`). `request_return()` (service role) re-checks all of it; one open request per order.
+- Statuses: `requested` → `approved` → `pickup_booked` (the shop's SPX pickup, the shop pays) → `received` → `refunded`; `rejected` (note shown to the customer) from any open step or on a failed inspection; `cancelled` by the admin. Only `transition_return()` changes them.
+- **`received` puts the returned units back in stock** inside `transition_return()`, once. `rejected` never touches stock.
+- Refund by hand (COD and transfer alike), recorded with the amount; the site never asks for bank details. Exchanges stay by hotline.
+- Not adjusted (debt): `delivered_count` / loyalty, ad conversions, dashboard revenue and exports.
+
 ---
 
 ## 5. Voucher & Loyalty Rules
@@ -273,12 +281,13 @@ aT, 2026-10-27: the "Khách mua lần đầu" code is **`PDZWELCOME`**; free shi
 | rate_limits | bucket ('order:ip:…' / 'lookup:phone:…'), window_start, hits | Order attempt counters; rows older than the previous window are pruned on each call |
 
 ### Required Postgres objects
-- Enum: `order_status` (6 values above).
+- Enum: `order_status` (6 values above); `return_status` (§4 "Returns").
 - Sequence + helper for `order_number`.
 - `place_order(...)` — SECURITY DEFINER, full transaction per section 3.
 - `shipping_fee(city, units)` — service role only; raises `SHIPPING_UNAVAILABLE` (§5).
 - `order_discount(...)` — internal (no grants), the discount rules shared by `place_order()` and `quote_order(...)` (service role only) (§5).
 - `transition_order_status(order_id, new_status)` — SECURITY DEFINER: validates transition, restores stock, bumps counters, creates loyalty awards.
+- `request_return(...)` (service role only) / `transition_return(return_id, new_status, note, spx_tracking_no, refund_amount)` (admin) — customer returns (§4 "Returns"); `→ received` restores stock.
 - `set_variant_stocks(changes)` / `adjust_variant_stock(variant, delta, reason)` — admin stock writes (§3). `rename_product_color(product, from, to)` — renames a colour on its variants and photos together.
 - `bigseller_unsent()` / `mark_bigseller_sent(out, back, adjustments)` — service role only, the BigSeller sync bookkeeping (§3.1).
 - Extension: `unaccent` (`immutable_unaccent()` wrapper); `search_products()` for storefront search (§2.2).

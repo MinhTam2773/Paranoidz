@@ -37,6 +37,12 @@ export const OrdersIcon = (p: P) => (
     <path d="M12 17.5v-11" />
   </Icon>
 );
+export const ReturnsIcon = (p: P) => (
+  <Icon {...p}>
+    <path d="M9 14 4 9l5-5" />
+    <path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11" />
+  </Icon>
+);
 export const ProductsIcon = (p: P) => (
   <Icon {...p}>
     <path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z" />

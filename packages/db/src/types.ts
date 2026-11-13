@@ -955,6 +955,159 @@ export type Database = {
         }
         Relationships: []
       }
+      return_images: {
+        Row: {
+          id: string
+          return_id: string
+          sort_order: number
+          storage_path: string
+        }
+        Insert: {
+          id?: string
+          return_id: string
+          sort_order?: number
+          storage_path: string
+        }
+        Update: {
+          id?: string
+          return_id?: string
+          sort_order?: number
+          storage_path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "return_images_return_id_fkey"
+            columns: ["return_id"]
+            isOneToOne: false
+            referencedRelation: "return_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      return_items: {
+        Row: {
+          order_item_id: string
+          qty: number
+          return_id: string
+        }
+        Insert: {
+          order_item_id: string
+          qty: number
+          return_id: string
+        }
+        Update: {
+          order_item_id?: string
+          qty?: number
+          return_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "return_items_order_item_id_fkey"
+            columns: ["order_item_id"]
+            isOneToOne: false
+            referencedRelation: "order_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "return_items_return_id_fkey"
+            columns: ["return_id"]
+            isOneToOne: false
+            referencedRelation: "return_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      return_requests: {
+        Row: {
+          admin_note: string | null
+          created_at: string
+          id: string
+          not_washed: boolean
+          note: string | null
+          order_id: string
+          reason: string
+          received_at: string | null
+          refund_amount: number | null
+          refund_note: string | null
+          refunded_at: string | null
+          spx_tracking_no: string | null
+          status: Database["public"]["Enums"]["return_status"]
+          tags_attached: boolean
+        }
+        Insert: {
+          admin_note?: string | null
+          created_at?: string
+          id?: string
+          not_washed: boolean
+          note?: string | null
+          order_id: string
+          reason: string
+          received_at?: string | null
+          refund_amount?: number | null
+          refund_note?: string | null
+          refunded_at?: string | null
+          spx_tracking_no?: string | null
+          status?: Database["public"]["Enums"]["return_status"]
+          tags_attached: boolean
+        }
+        Update: {
+          admin_note?: string | null
+          created_at?: string
+          id?: string
+          not_washed?: boolean
+          note?: string | null
+          order_id?: string
+          reason?: string
+          received_at?: string | null
+          refund_amount?: number | null
+          refund_note?: string | null
+          refunded_at?: string | null
+          spx_tracking_no?: string | null
+          status?: Database["public"]["Enums"]["return_status"]
+          tags_attached?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "return_requests_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      return_status_history: {
+        Row: {
+          created_at: string
+          id: string
+          note: string | null
+          return_id: string
+          status: Database["public"]["Enums"]["return_status"]
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          note?: string | null
+          return_id: string
+          status: Database["public"]["Enums"]["return_status"]
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          note?: string | null
+          return_id?: string
+          status?: Database["public"]["Enums"]["return_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "return_status_history_return_id_fkey"
+            columns: ["return_id"]
+            isOneToOne: false
+            referencedRelation: "return_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       review_images: {
         Row: {
           created_at: string
@@ -1430,6 +1583,19 @@ export type Database = {
         Args: { p_from: string; p_product_id: string; p_to: string }
         Returns: undefined
       }
+      request_return: {
+        Args: {
+          p_image_paths: string[]
+          p_items: Json
+          p_not_washed: boolean
+          p_note: string
+          p_order_number: string
+          p_phone: string
+          p_reason: string
+          p_tags_attached: boolean
+        }
+        Returns: string
+      }
       search_products: {
         Args: { p_query: string }
         Returns: {
@@ -1452,6 +1618,16 @@ export type Database = {
         }
         Returns: undefined
       }
+      transition_return: {
+        Args: {
+          p_new_status: Database["public"]["Enums"]["return_status"]
+          p_note?: string
+          p_refund_amount?: number
+          p_return_id: string
+          p_spx_tracking_no?: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       award_status: "pending" | "fulfilled"
@@ -1462,6 +1638,14 @@ export type Database = {
         | "delivered"
         | "cancelled"
         | "delivery_failed"
+      return_status:
+        | "requested"
+        | "approved"
+        | "rejected"
+        | "pickup_booked"
+        | "received"
+        | "refunded"
+        | "cancelled"
       voucher_type: "auto_first5" | "promo" | "standing"
     }
     CompositeTypes: {
@@ -1598,6 +1782,15 @@ export const Constants = {
         "delivered",
         "cancelled",
         "delivery_failed",
+      ],
+      return_status: [
+        "requested",
+        "approved",
+        "rejected",
+        "pickup_booked",
+        "received",
+        "refunded",
+        "cancelled",
       ],
       voucher_type: ["auto_first5", "promo", "standing"],
     },

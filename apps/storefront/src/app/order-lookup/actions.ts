@@ -6,6 +6,7 @@ import type { Database } from "@paranoidz/db/types";
 import { normalizePhone } from "@/lib/checkout-validation";
 import { parseOrderNumber } from "@/lib/order-number";
 import { hitRateLimit } from "@/lib/rate-limit";
+import { canRequestReturn, returnDeadline, returnableQty, type ReturnStatus } from "@/lib/return-status";
 import { HOTLINE } from "@/lib/site";
 
 export type LookedUpOrder = {
@@ -21,7 +22,11 @@ export type LookedUpOrder = {
   spxTrackingNo: string | null;
   paymentMethod: string;
   paymentConfirmed: boolean;
-  items: { name: string; color: string | null; size: string | null; qty: number; price: number; imageUrl: string | null }[];
+  items: { id: string; name: string; color: string | null; size: string | null; qty: number; price: number; imageUrl: string | null; isGift: boolean; returnable: number }[];
+  // Returns (ARCHITECTURE.md §4 "Returns"): the latest request, and whether a new one may be sent.
+  canReturn: boolean;
+  returnDaysLeft: number; // whole days left to ask, rounded up (0 when closed)
+  latestReturn: { status: ReturnStatus; adminNote: string | null; createdAt: string } | null;
 };
 
 export type LookupResult =
@@ -55,7 +60,7 @@ export async function lookupOrder(input: { orderNumber: string; phone: string })
   const admin = createAdminClient();
   const { data, error } = await admin
     .from("orders")
-    .select("order_number, status, created_at, ward, city, subtotal, discount, shipping_fee, shipping_discount, total, spx_tracking_no, payment_method, payment_confirmed_at, order_items(name_snapshot, color_snapshot, size_snapshot, qty, price_snapshot, image_snapshot)")
+    .select("order_number, status, created_at, ward, city, subtotal, discount, shipping_fee, shipping_discount, total, spx_tracking_no, payment_method, payment_confirmed_at, order_items(id, name_snapshot, color_snapshot, size_snapshot, qty, price_snapshot, image_snapshot, is_gift), order_status_history(status, created_at), return_requests(status, admin_note, created_at, return_items(order_item_id, qty))")
     .eq("order_number", orderNumber)
     .eq("phone", phone)
     .maybeSingle();
@@ -64,6 +69,14 @@ export async function lookupOrder(input: { orderNumber: string; phone: string })
     return FAILED;
   }
   if (!data) return { ok: false, message: `Không tìm thấy đơn hàng khớp với mã đơn và số điện thoại này. Hãy kiểm tra lại, hoặc gọi ${HOTLINE}.` };
+
+  const deliveredAt = data.order_status_history.filter((h) => h.status === "delivered").map((h) => h.created_at).sort().at(-1) ?? null;
+  const lines = data.order_items.map((i) => ({ id: i.id, qty: i.qty, isGift: i.is_gift }));
+  const requests = [...data.return_requests]
+    .sort((a, b) => b.created_at.localeCompare(a.created_at))
+    .map((r) => ({ ...r, items: r.return_items.map((i) => ({ orderItemId: i.order_item_id, qty: i.qty })) }));
+  const returnable = returnableQty(lines, requests);
+  const latest = requests[0];
 
   return {
     ok: true,
@@ -81,13 +94,19 @@ export async function lookupOrder(input: { orderNumber: string; phone: string })
       paymentMethod: data.payment_method ?? "cod",
       paymentConfirmed: data.payment_confirmed_at !== null,
       items: data.order_items.map((i) => ({
+        id: i.id,
         name: i.name_snapshot,
         color: i.color_snapshot,
         size: i.size_snapshot,
         qty: i.qty,
         price: i.price_snapshot,
         imageUrl: i.image_snapshot ? mediaUrl("product-images", i.image_snapshot) : null,
+        isGift: i.is_gift,
+        returnable: returnable[i.id] ?? 0,
       })),
+      canReturn: canRequestReturn({ status: data.status, deliveredAt, lines, requests }),
+      returnDaysLeft: Math.max(0, Math.ceil(((returnDeadline(deliveredAt)?.getTime() ?? 0) - Date.now()) / 86_400_000)),
+      latestReturn: latest ? { status: latest.status, adminNote: latest.admin_note, createdAt: latest.created_at } : null,
     },
   };
 }

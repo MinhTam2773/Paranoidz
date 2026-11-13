@@ -7,7 +7,7 @@ import { mediaUrl } from "@paranoidz/db/media";
 import { OrderActions } from "@/components/orders/OrderActions";
 import { PaymentConfirmButton } from "@/components/orders/PaymentConfirmButton";
 import { SpxCard } from "@/components/orders/SpxCard";
-import { StatusBadge } from "@/components/StatusBadge";
+import { ReturnStatusBadge, StatusBadge } from "@/components/StatusBadge";
 import { requireAdmin } from "@/lib/auth";
 import { formatDateTime, formatPhone, formatVnd } from "@/lib/format";
 
@@ -25,7 +25,7 @@ export default async function OrderDetailPage({ params }: PageProps<"/orders/[nu
     .from("orders")
     // One literal: supabase-js infers the row type from it.
     .select(
-      "id, order_number, status, created_at, recipient_name, phone, secondary_phone, email, address, ward, district, city, note, subtotal, discount, shipping_fee, shipping_discount, total, gift_missing, applied_bundles, delivery_method, payment_method, payment_confirmed_at, gacha_discount, gacha_code, gacha_gift, spx_tracking_no, spx_ward, spx_fee, spx_created_at, order_items(id, name_snapshot, color_snapshot, size_snapshot, price_snapshot, list_price_snapshot, image_snapshot, qty, is_gift), order_status_history(id, status, note, created_at), voucher_uses(vouchers(code))",
+      "id, order_number, status, created_at, recipient_name, phone, secondary_phone, email, address, ward, district, city, note, subtotal, discount, shipping_fee, shipping_discount, total, gift_missing, applied_bundles, delivery_method, payment_method, payment_confirmed_at, gacha_discount, gacha_code, gacha_gift, spx_tracking_no, spx_ward, spx_fee, spx_created_at, order_items(id, name_snapshot, color_snapshot, size_snapshot, price_snapshot, list_price_snapshot, image_snapshot, qty, is_gift), order_status_history(id, status, note, created_at), voucher_uses(vouchers(code)), return_requests(id, status, created_at)",
     )
     .eq("order_number", number)
     .order("created_at", { referencedTable: "order_status_history" })
@@ -201,6 +201,22 @@ export default async function OrderDetailPage({ params }: PageProps<"/orders/[nu
                 </Suspense>
               </section>
             )
+          )}
+
+          {order.return_requests.length > 0 && (
+            <section className={card}>
+              <h3 className={cardTitle}>Trả hàng</h3>
+              <ul className="flex flex-col gap-3">
+                {order.return_requests.map((r) => (
+                  <li key={r.id}>
+                    <Link href={`/returns/${r.id}`} className="flex items-center justify-between gap-3 hover:underline">
+                      <span className="text-text-secondary">Gửi {formatDateTime(r.created_at)}</span>
+                      <ReturnStatusBadge status={r.status} />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </section>
           )}
 
           <section className={card}>
