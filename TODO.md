@@ -62,7 +62,15 @@ Read this first (CLAUDE.md §7), update it last. It stays short on purpose; the 
      - Clean up: revoke the three cloud-session tokens (Cloudflare `9af35692…`, expires 2026-11-17; a Vercel token; a Supabase access token), delete `Downloads\txt.txt` (live tokens), cancel test order **PZ-2026-0069** on `paranoidz-test`, delete `docs/CLOUDFLARE_HANDOFF.md`, swap the legacy service-role JWT in the `.env.prod.local` files for the `sb_secret_` key.
      - After ~2026-11-26: remove the domains from both Vercel projects and pause them; DNSSEC back on (Now #11).
 
-14. [ ] **Customer returns (trả hàng)** (owner, 2026-11-13): customers request a return online (not washed, tags on: 2 ticks + 1–5 photos), the shop books an SPX pickup and pays it, the admin refunds COD and transfer orders alike by hand. Return + refund only, no exchange. Design: `docs/superpowers/specs/2026-11-13-customer-returns-design.md`, **approved 2026-11-13**. 4 PRs: (1) schema + functions — built on `claude/lucid-meitner-m4bzh1`, migration `20261113000001_customer_returns.sql` **not on test or prod yet** (test → prod before merge, as usual); (2) storefront form + status — built on `feat/returns-storefront` (PR against #99's branch); (3) admin — built on `feat/returns-admin` (list, detail, steps, sidebar count; pickup tracking number typed by hand for now); (4) SPX pickup (check a reversed Create Order on SPX's test host first).
+14. [ ] **Customer returns (trả hàng) — START HERE in the next session** (owner, 2026-11-13). Customers request a return online (not washed + tags on: 2 ticks + 1–5 photos, 7 days from delivery), the shop books an SPX pickup and pays it, the admin refunds COD and transfer orders alike by hand. Return + refund only (exchanges by hotline). Design (approved): `docs/superpowers/specs/2026-11-13-customer-returns-design.md`; details of each PR in `docs/DONE.md` 2026-11-13.
+   - **3 stacked PRs, all into `master`** (CI only runs on PRs into `master`, so each later PR also contains the earlier ones; review its last commit):
+     - PR 1 #99 `claude/lucid-meitner-m4bzh1`: migration `20261113000001_customer_returns.sql` (tables, `request_return()`, `transition_return()` = 3rd stock-mutating function), types, smoke case 24. **CI green.**
+     - PR 2 #100 `feat/returns-storefront` (draft): form + status on `/order-lookup`, account link, policy text, Zalo alert, e2e S15. **CI green.**
+     - PR 3 #101 `feat/returns-admin` (draft): `/returns` list + detail + steps, sidebar count, order-page card, e2e A16. First CI run: A16 failed at the refund step — real bug (toast dropped once a return is final), fixed in `3bdf9ee`; **CI re-run on that commit not checked yet: check it first.**
+   - **Merge order:** push the migration to test (`supabase db push --db-url …`, smoke) then prod, then merge #99, #100, #101 (mark #100 / #101 ready first). Then regenerate `packages/db/src/types.ts` (the returns types were added by hand).
+   - **Tell the owner:** `/policy#returns` no longer says "no unboxing video, no complaint" (ticks + photos replace it; re-add if wanted). Product JSON-LD now says free returns: update the return settings in Merchant Center to match.
+   - **Next: PR 4 — SPX pickup.** SPX's Open API has no return endpoint; plan a normal Create Order (1.2) with sender = customer, receiver = shop, COD 0 (`returnBody()` next to `packages/db/src/spx/order-body.ts`), then `transition_return(… 'pickup_booked', tracking)`. First try it on SPX's test host (needs the test keys from `.env.local`); make `/api/spx/webhook` ignore return tracking numbers (or move the return on 4001). Until then the admin types the tracking number by hand.
+   - Carried debt (in the spec): returned orders still count in `delivered_count` / loyalty, ad conversions, dashboard revenue and exports.
 ## Waiting on the client / owner
 
 - [ ] **Delete the 3 dev seed accounts on prod** (owner or client, Authentication → Users): `customer1..3@paranoidz.test` still exist and their password is in `supabase/seeds/dev.sql` in this public repo. No admin rights, no orders, last sign-in 2026-10-12 (checked 2026-11-02). Details in `docs/BACKLOG.md`.
@@ -84,6 +92,7 @@ ARCHITECTURE.md §8.4 / §8.5 (loyalty): waits on the proposal in Now #5. §8.3 
 
 ## Last session
 
+- 2026-11-13 (end): returns PRs #99 / #100 / #101 open (Now #14 has the state, merge order and PR 4); the session ended to start fresh.
 - 2026-11-13 (evening): returns PR 3 (admin) on `feat/returns-admin`, e2e A16 (`docs/DONE.md`).
 - 2026-11-13 (later): returns PR 2 (storefront) on `feat/returns-storefront`: form on the order lookup, status, account link, policy text, Zalo alert, e2e S15 (`docs/DONE.md`).
 - 2026-11-13: customer returns designed with the owner and approved (Now #14); PR 1 (tables, `request_return()`, `transition_return()`, smoke case 24) built and checked on a throwaway local Postgres (`docs/DONE.md`); migration not applied anywhere yet.
