@@ -35,7 +35,15 @@ export function ReturnActions({ returnId, status, suggestedRefund }: { returnId:
   const [pending, startTransition] = useTransition();
   const steps = RETURN_STEPS[status];
 
-  if (!steps.length) return <p className="text-text-secondary">Yêu cầu đã kết thúc, không còn thao tác nào.</p>;
+  // Finished requests still render the toast: the last step (refund, reject, cancel) lands here.
+  if (!steps.length) {
+    return (
+      <>
+        <p className="text-text-secondary">Yêu cầu đã kết thúc, không còn thao tác nào.</p>
+        <Toast toast={toast} setToast={setToast} />
+      </>
+    );
+  }
 
   function open(s: ReturnStep) {
     setStep(s);
