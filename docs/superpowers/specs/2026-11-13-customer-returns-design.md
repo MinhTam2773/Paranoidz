@@ -1,6 +1,6 @@
 # Customer returns (trả hàng) — design
 
-Status: **draft, waiting for the owner's approval** (2026-11-13). Nothing is built yet.
+Status: **approved by the owner 2026-11-13.** PR 1 (schema + functions) built on `claude/lucid-meitner-m4bzh1`.
 
 ## Decisions (owner, 2026-11-13)
 
@@ -43,7 +43,7 @@ The customer sees the current step on the order lookup page (and in the account'
 - **One open request per order** (`requested`, `approved`, `pickup_booked`). After one closes, another may be sent while the 7 days last, for items not yet returned.
 - **Items:** any non-gift line, qty ≤ ordered qty minus qty already in non-rejected, non-cancelled requests. Gift lines (`is_gift`, the free sock) are not selectable; the customer is asked to send the gift back with the items (text only, not enforced).
 - **Reasons:** `defect` (Lỗi sản phẩm), `wrong_item` (Giao sai mẫu / size), `not_as_described` (Không giống mô tả), `other` (Khác, note required). Note ≤ 500 chars.
-- **Photos:** 1–5, jpg / png / webp, compressed in the browser like review photos, stored in media bucket `return-images` (R2 in production, Supabase Storage locally), private to the customer and the admin.
+- **Photos:** 1–5, jpg / png / webp, compressed in the browser like review photos, stored in media bucket `return-images` (R2 in production, Supabase Storage locally) under `<order_id>/<uuid>.<ext>`. Public like review photos: the URL is an unguessable uuid, not a secret (R2's public domain has no private reads).
 - **Refund amount (suggested, admin can change):** Σ(`price_snapshot` × returned qty) minus the order's code discount split pro rata over the paid lines. Shipping isn't refunded. The admin types the final amount and a note (e.g. bank reference) when marking `refunded`.
 - **Order status doesn't change.** `delivered` stays terminal (ARCHITECTURE.md §4); returns live in their own tables.
 - **Not changed (carried debt):** the per-phone delivered counter / loyalty milestone, Meta / Google conversions, revenue in the admin dashboard and the Excel export still count a returned order as sold.
