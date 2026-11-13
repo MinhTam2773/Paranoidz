@@ -1,6 +1,6 @@
 # Customer returns (trả hàng) — design
 
-Status: **approved by the owner 2026-11-13.** PR 1 (schema + functions): #99 on `claude/lucid-meitner-m4bzh1`. PR 2 (storefront): `feat/returns-storefront`.
+Status: **approved by the owner 2026-11-13.** PR 1 (schema + functions): #99 on `claude/lucid-meitner-m4bzh1`. PR 2 (storefront): #100 on `feat/returns-storefront`. PR 3 (admin): `feat/returns-admin`; the SPX pickup is entered by hand (tracking number) until PR 4.
 
 ## Decisions (owner, 2026-11-13)
 

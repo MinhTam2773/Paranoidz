@@ -8,6 +8,7 @@ import {
   OrdersIcon,
   ProductsIcon,
   PromoIcon,
+  ReturnsIcon,
   ReviewsIcon,
 } from "@/components/icons";
 
@@ -15,6 +16,7 @@ import {
 export const NAV_ITEMS = [
   { label: "Tổng quan", href: "/", icon: DashboardIcon },
   { label: "Đơn hàng", href: "/orders", icon: OrdersIcon },
+  { label: "Trả hàng", href: "/returns", icon: ReturnsIcon },
   { label: "Sản phẩm", href: "/products", icon: ProductsIcon },
   { label: "Tồn kho", href: "/inventory", icon: InventoryIcon },
   { label: "Khách hàng", href: "/customers", icon: CustomersIcon },

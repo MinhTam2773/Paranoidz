@@ -77,14 +77,15 @@ Prices always Vietnamese Dong: `₫` prefix, dot separators (`₫1.240.000`).
 ### Sidebar navigation (order matters)
 1. DASHBOARD
 2. ORDERS (red count badge for pending orders)
-3. PRODUCTS
-4. INVENTORY (Tồn kho)
-5. CUSTOMERS
-6. BUNDLES
-7. COLLECTIONS
-8. PROMO CODES
-9. GIFT POOL
-10. REVIEWS
+3. RETURNS — "Trả hàng" (red count badge for requests waiting for approval; added 2026-11-13)
+4. PRODUCTS
+5. INVENTORY (Tồn kho)
+6. CUSTOMERS
+7. BUNDLES
+8. COLLECTIONS
+9. PROMO CODES
+10. GIFT POOL
+11. REVIEWS
 
 - Default link: white at 70% opacity, icon left (20px, lucide).
 - Hover: 100% opacity, `rgba(255,255,255,0.06)` background.
@@ -151,6 +152,13 @@ Bottom-right, dark `#111111` background, white text, 3s auto-dismiss. Success pr
   - `pending` (or `confirmed` from before 2026-10-16), no shipment: form (labels above inputs) — **Phường / xã giao hàng** (native select of SPX's wards for the order's province, pre-selected when the typed ward matches ignoring accents and the "Phường / Xã" prefix; the typed ward is shown under it as a hint), **Thời gian lấy hàng** (select of SPX pickup slots for the next 3 days: "<date> · <time range>", loaded with the card; if SPX can't be reached, an `--accent` line and no button). Primary **TẠO ĐƠN SPX** (full width, "Đang tạo…" disabled while pending). No modal — a shipment can be cancelled. SPX refusals show as an error toast: Vietnamese sentence + SPX's own message in brackets.
   - With a shipment: rows **Mã vận đơn** (tracking number, links to SPX tracking in a new tab), **Phường / xã**, **Phí SPX** (SPX's estimate at creation) next to **Phí đã thu** (`shipping_fee`), **Tạo lúc**. Secondary **IN PHIẾU** (outline) while `pending` / `confirmed` / `shipped`: asks SPX for a fresh label link on each click and opens it in a new tab (the link lasts 30 minutes / 10 opens, never stored).
   - Cancelling an order that has a shipment cancels the SPX shipment first (the cancel modal says so); if SPX refuses (already picked up), the order stays as is and the error toast says why.
+
+### 6.2b Returns (Trả hàng) — added 2026-11-13 (ARCHITECTURE.md §4 "Returns")
+- **List** `/returns`: tabs Chờ duyệt (default, the work queue) / Đã duyệt / Chờ lấy hàng / Đã nhận hàng / Đã hoàn tiền / Từ chối / Đã hủy / Tất cả. Columns: order number, customer, phone, units, reason, status badge, sent at. Same table → stacked cards below 768px, 20 per page.
+- **Badges** reuse the order colours by meaning: Chờ duyệt = pending, Đã duyệt = confirmed, Chờ lấy hàng = shipped, Đã nhận hàng / Đã hoàn tiền = delivered, Từ chối = delivery_failed, Đã hủy = cancelled.
+- **Detail** `/returns/<id>`: Khách hàng card (name, phone, pickup address, payment method, reason, customer's note, "Khách xác nhận: chưa giặt, còn nguyên tem mác", link to the order), returned items, the customer's photos (grid, each opens full size in a new tab); right column: Hoàn tiền card (suggested amount, amount refunded, note, pickup tracking number) and Trạng thái card (history + actions).
+- **Actions** (no modal: each opens a small inline panel in the card with its explanation, the field it needs, Quay lại / Xác nhận): Chờ duyệt → Duyệt yêu cầu / Từ chối (reason, shown to the customer) / Hủy yêu cầu; Đã duyệt → Đã tạo đơn lấy hàng (SPX tracking number) / Đã nhận hàng (đạt) / Từ chối / Hủy; Chờ lấy hàng → Đã nhận hàng (đạt) / Từ chối / Hủy; Đã nhận hàng → Đã hoàn tiền (amount, pre-filled with the suggestion, + note). Toast on success.
+- **Order detail**: a "Trả hàng" card above Trạng thái when the order has requests (sent at + badge, links to the request).
 
 ### 6.3 Products
 - **List**: thumbnail, name, category, price range, total stock, active toggle, updated at. Search + category filter. "ADD PRODUCT" primary top-right, "DANH MỤC" secondary next to it, and "ẢNH THU NHỎ" secondary (2026-10-31): makes the missing storefront thumbnails (600 / 120 px, `@paranoidz/db/thumbs`) in the browser, with progress on the button and a toast at the end. New photos get theirs on upload.
