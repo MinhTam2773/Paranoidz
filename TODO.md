@@ -92,6 +92,7 @@ ARCHITECTURE.md §8.4 / §8.5 (loyalty): waits on the proposal in Now #5. §8.3 
 
 ## Last session
 
+- 2026-11-14: Meta InitiateCheckout now fires on the first shipping-form input (fallback before Purchase), not on checkout load: "Mua ngay" opens checkout directly, so every price-check counted (41 InitiateCheckout vs 2 Purchase in 8 days). Branch `fix/pixel-initiate-checkout`; typecheck + checkout lint pass; live Pixel check after deploy. Test order PZ-2026-0701 placed from mobile, owner to cancel.
 - 2026-11-13 (end): returns PRs #99 / #100 / #101 open (Now #14 has the state, merge order and PR 4); the session ended to start fresh.
 - 2026-11-13 (evening): returns PR 3 (admin) on `feat/returns-admin`, e2e A16 (`docs/DONE.md`).
 - 2026-11-13 (later): returns PR 2 (storefront) on `feat/returns-storefront`: form on the order lookup, status, account link, policy text, Zalo alert, e2e S15 (`docs/DONE.md`).
