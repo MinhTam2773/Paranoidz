@@ -112,6 +112,7 @@ export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; acc
   // The ordered lines for the Purchase event: a cart checkout empties the cart on success.
   const [placedContents, setPlacedContents] = useState<MetaContent[]>([]);
   const checkoutTracked = useRef(false);
+  const [checkoutStarted, setCheckoutStarted] = useState(false);
   const [pending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
   const idsKey = lines.map((l) => l.variantId).toSorted().join(",");
@@ -163,15 +164,15 @@ export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; acc
     };
   }, [idsKey]);
 
-  // Meta Pixel: checkout opened, once per visit, as soon as the prices have loaded.
+  // Meta Pixel: first shipping-form input, once per visit, once prices have loaded.
   useEffect(() => {
-    if (checkoutTracked.current || !items || !linesKey) return;
+    if (!checkoutStarted || checkoutTracked.current || !items || !linesKey) return;
     const keyed = linesKey.split(",").map((s) => ({ variantId: s.split(":")[0], qty: Number(s.split(":")[1]) }));
     const contents = metaContents(keyed, items);
     if (!contents.length) return;
     checkoutTracked.current = true;
     trackMeta("InitiateCheckout", contents);
-  }, [items, linesKey]);
+  }, [checkoutStarted, items, linesKey]);
 
   useEffect(() => {
     if (!city || !ward || !linesKey) return;
@@ -240,10 +241,16 @@ export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; acc
     return (el.tagName === "INPUT" || el.tagName === "TEXTAREA") && CHECKOUT_FIELDS.includes(field) ? { el, field } : null;
   }
 
+  function startCheckout(e: FormEvent<HTMLDivElement>) {
+    const el = e.target as HTMLInputElement;
+    if ((ADDRESS_FIELDS as readonly string[]).includes(el.name) || el.getAttribute("role") === "combobox") setCheckoutStarted(true);
+  }
+
   // Live validation. Typing: strip characters the field can't hold, and once a field shows an
   // error re-check on every keystroke so it clears the moment it's fixed. Leaving a field: check
   // it if something was typed (empty required fields are reported on submit, not while tabbing).
   function onInput(e: FormEvent<HTMLDivElement>) {
+    startCheckout(e);
     const f = fieldOf(e.target);
     if (!f) return;
     if ((ADDRESS_FIELDS as readonly string[]).includes(f.field)) setAddressId(null);
@@ -304,6 +311,11 @@ export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; acc
         ...v,
       });
       if (res.ok) {
+        // Autofill / saved addresses may reach success without any input events.
+        if (!checkoutTracked.current && contents.length) {
+          checkoutTracked.current = true;
+          trackMeta("InitiateCheckout", contents);
+        }
         setPlacedContents(contents);
         setPlaced(res.order);
         if (!buyNow) clearCart();
@@ -435,7 +447,7 @@ export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; acc
   const voucherLabel = (v: { code: string; type: string; pct: number }) =>
     v.type === "standing" ? `Khách mua lần đầu · ${v.code} (−${v.pct}%)` : `Mã ${v.code} (−${v.pct}%)`;
   return (
-    <div onInput={onInput} onBlur={onBlur} className="grid gap-8 lg:grid-cols-12 lg:gap-12">
+    <div onInput={onInput} onChange={startCheckout} onBlur={onBlur} className="grid gap-8 lg:grid-cols-12 lg:gap-12">
       <form ref={formRef} id="checkout-form" onSubmit={submit} noValidate className="flex flex-col gap-6 lg:col-span-7">
         <h2 className="text-h3 uppercase"><span className="mr-2 text-accent">01</span>Thông tin giao hàng</h2>
         {!!account?.addresses.length && (
@@ -484,6 +496,7 @@ export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; acc
                 name={p.name}
                 value={city}
                 onChange={(v) => {
+                  setCheckoutStarted(true);
                   if (v !== city) setWard("");
                   setCity(v);
                   setAddressId(null);
@@ -502,6 +515,7 @@ export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; acc
                 city={city}
                 value={ward}
                 onChange={(v) => {
+                  setCheckoutStarted(true);
                   setWard(v);
                   setAddressId(null);
                   check("ward", v);
