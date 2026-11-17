@@ -8,6 +8,8 @@ export const HOTLINE = "0345 267 709";
 // otherwise every preview would compete with paranoidz.vn in search results.
 export const SITE_URL = "https://paranoidz.vn";
 export const SITE_NAME = "Paranoidz";
+// The shop's people, as the owner wants them named in public (2026-11-17): byline, /contact.
+export const TEAM_NAME = "Team Paranoidz";
 
 // Share preview for pages without their own photo (home, listing, collections; SEO audit 2026-11-06).
 // Product pages set their own og:image.
@@ -41,7 +43,8 @@ export function breadcrumbJsonLd(items: { label: string; href?: string }[], curr
 export const NAV_LINKS = [
   { label: "Trang chủ", href: "/" },
   // Collections managed in the admin; these slugs must exist there (admin → Bộ sưu tập).
-  // Their labels stay English: collection names (owner's decision, 2026-10-08).
+  // Labels were English collection names (owner's decision, 2026-10-08); renamed to Vietnamese
+  // with the slugs kept (owner, 2026-11-17, SEO kit content/collections.md).
   // Collection links (owner's decision 2026-10-27, order confirmed 2026-10-28):
   // header shows T-Shirtz, Backpackz, Bagz in this order; Accessoriez is
   // intentionally NOT shown in the header. "Outlet 2026" replaced by
@@ -50,9 +53,9 @@ export const NAV_LINKS = [
   // linked every visitor (and Googlebot) to a not-found page. Re-add a link
   // only when its collection is created in the admin.
   // Bagz added 2026-10-28, after its collection was created in the admin.
-  { label: "T-Shirtz", href: "/collections/t-shirtz" },
-  { label: "Backpackz", href: "/collections/backpackz" },
-  { label: "Bagz", href: "/collections/bagz" },
+  { label: "Áo thun", href: "/collections/t-shirtz" },
+  { label: "Balo", href: "/collections/backpackz" },
+  { label: "Túi", href: "/collections/bagz" },
   { label: "Sản phẩm", href: "/products" },
   { label: "Đánh giá khách hàng", href: "/feedback" },
   { label: "Thương hiệu", href: "/branding" },

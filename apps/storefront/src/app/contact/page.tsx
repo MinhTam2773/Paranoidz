@@ -1,12 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Breadcrumb } from "@/components/layout/Breadcrumb";
-import { BUSINESS, FACEBOOK_URL, HOTLINE, SHOPEE_URL, TIKTOK_URL, ZALO_URL, websiteOpenGraph } from "@/lib/site";
+import { BUSINESS, FACEBOOK_URL, HOTLINE, SHOPEE_URL, TEAM_NAME, TIKTOK_URL, ZALO_URL, websiteOpenGraph } from "@/lib/site";
 
 // SEO kit 2026-11-17 (content/contact.md, eeat/contact-nap.md): one page with the shop's NAP and
 // official channels, matching the footer and /policy. No opening hours or walk-in store and no
 // LocalBusiness schema: the address is the business registration, not a shop to visit.
-// The responsible person's name waits on the owner (TODO.md).
 const TITLE = "Liên hệ Paranoidz — hotline, Zalo, địa chỉ";
 const DESCRIPTION = `Liên hệ Paranoidz (${BUSINESS.legalName}): email ${BUSINESS.email}, hotline và Zalo ${HOTLINE}, địa chỉ ${BUSINESS.streetAddress}, TP.HCM.`;
 
@@ -35,6 +34,7 @@ export default function ContactPage() {
           <h2 id="nap-title" className={sectionTitle}>Thông tin cửa hàng</h2>
           <ul className="flex flex-col gap-2">
             <li>Pháp nhân: {BUSINESS.legalName}</li>
+            <li>Phụ trách: {TEAM_NAME}</li>
             <li>Mã số doanh nghiệp / mã số thuế: {BUSINESS.taxId}</li>
             <li>Địa chỉ đăng ký: {BUSINESS.streetAddress}, {BUSINESS.locality}, Việt Nam</li>
             <li>

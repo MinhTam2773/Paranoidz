@@ -3,8 +3,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { cache } from "react";
 import { createPublicClient } from "@paranoidz/db/public";
+import { Prose } from "@/components/content/Prose";
 import { Breadcrumb } from "@/components/layout/Breadcrumb";
 import { ProductGrid } from "@/components/product/ProductGrid";
+import { COLLECTION_COPY } from "@/content/collections";
 import { productCardQuery, toProductCard } from "@/lib/catalog";
 import { SITE_URL, breadcrumbJsonLd, websiteOpenGraph } from "@/lib/site";
 
@@ -30,16 +32,19 @@ const getCollection = cache(async (slug: string) => {
     .maybeSingle();
   if (error) throw error;
   if (!collection) return null;
+  // Vietnamese name + SEO copy from content/collections.ts win over the admin's (owner, 2026-11-17).
+  const copy = COLLECTION_COPY[slug] ?? null;
+  const name = copy?.name ?? collection.name;
 
   const order = new Map(collection.collection_items.map((i) => [i.product_id, i.sort_order]));
   const ids = [...order.keys()];
-  if (!ids.length) return { name: collection.name, description: collection.description, cards: [] };
+  if (!ids.length) return { name, copy, description: collection.description, cards: [] };
   const { data: products, error: productsError } = await productCardQuery(supabase).in("id", ids);
   if (productsError) throw productsError;
   const cards = products
     .toSorted((a, b) => order.get(a.id)! - order.get(b.id)!)
     .map((p) => toProductCard(supabase, p));
-  return { name: collection.name, description: collection.description, cards };
+  return { name, copy, description: collection.description, cards };
 });
 
 export async function generateMetadata({ params }: PageProps<"/collections/[slug]">): Promise<Metadata> {
@@ -48,8 +53,8 @@ export async function generateMetadata({ params }: PageProps<"/collections/[slug
   if (!collection) return { title: "Không tìm thấy | Paranoidz" };
   // SEO (audit 2026-10-30): collections inherited the layout's generic description (shared by
   // 13 pages) and had no canonical. The admin's collection description wins when filled in.
-  const title = `${collection.name} | Paranoidz`;
-  const description = collection.description ||
+  const title = collection.copy?.title ?? `${collection.name} | Paranoidz`;
+  const description = collection.copy?.description || collection.description ||
     `Bộ sưu tập ${collection.name} của Paranoidz — streetwear Việt Nam, đổi trả 7 ngày, thanh toán khi nhận hàng (COD).`;
   return {
     title,
@@ -94,8 +99,10 @@ export default async function CollectionPage({ params }: PageProps<"/collections
 
   const heading = (
     <>
-      <h1 className="text-h2 uppercase">{collection.name}</h1>
-      {collection.description && <p className="mt-2 max-w-xl text-body text-text-secondary">{collection.description}</p>}
+      <h1 className="text-h2 uppercase">{collection.copy?.h1 ?? collection.name}</h1>
+      {!collection.copy && collection.description && (
+        <p className="mt-2 max-w-xl text-body text-text-secondary">{collection.description}</p>
+      )}
       {/* /policy#terms: listed prices exclude VAT (SEO kit eeat/trust-signals.md). */}
       <p className="mt-2 text-caption text-text-muted">Giá chưa gồm VAT.</p>
     </>
@@ -118,6 +125,11 @@ export default async function CollectionPage({ params }: PageProps<"/collections
             <Link href="/products" className="text-text-primary underline underline-offset-4 hover:text-accent">Xem tất cả sản phẩm</Link>
           </p>
         </>
+      )}
+      {collection.copy && (
+        <section aria-label={`Về bộ sưu tập ${collection.name}`} className="mt-12 max-w-3xl">
+          <Prose source={collection.copy.intro} />
+        </section>
       )}
       {slug === "t-shirtz" && (
         // SEO kit aeo/internal-links.md: the t-shirt collection is the hub for the guides.
