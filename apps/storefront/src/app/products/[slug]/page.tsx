@@ -180,6 +180,8 @@ function plainDescription(html: string | null, fallback: string): string {
   return `${cut}…`;
 }
 
+const guideLink = "w-fit text-text-primary underline underline-offset-4 hover:text-accent";
+
 export default async function ProductPage({ params }: PageProps<"/products/[slug]">) {
   const product = await getProduct((await params).slug);
   if (!product) notFound();
@@ -328,9 +330,15 @@ export default async function ProductPage({ params }: PageProps<"/products/[slug
             <>
               <SizeGuide guide={sizeGuide} />
               {collection?.slug === "t-shirtz" && (
-                <Link href="/huong-dan-chon-size" className="mt-4 inline-block text-text-primary underline underline-offset-4 hover:text-accent">
-                  Hướng dẫn chọn size
-                </Link>
+                // SEO kit aeo/internal-links.md: every t-shirt links the size guide and the form article.
+                <div className="mt-4 flex flex-col gap-2">
+                  <Link href="/huong-dan-chon-size" className={guideLink}>
+                    Hướng dẫn chọn size
+                  </Link>
+                  <Link href="/blog/ao-thun-boxy-va-oversize-khac-nhau" className={guideLink}>
+                    Form boxy và oversize khác nhau thế nào?
+                  </Link>
+                </div>
               )}
             </>
           )

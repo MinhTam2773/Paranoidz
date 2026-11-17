@@ -228,7 +228,7 @@ export default async function HomePage() {
                 {c.imageUrl && (
                   <Image
                     src={c.imageUrl}
-                    alt=""
+                    alt={`Ảnh bộ sưu tập ${c.name}`}
                     fill
                     sizes="(min-width: 1024px) 50vw, 100vw"
                     className="object-cover opacity-80 transition-all duration-300 group-hover:scale-[1.03] group-hover:opacity-100"

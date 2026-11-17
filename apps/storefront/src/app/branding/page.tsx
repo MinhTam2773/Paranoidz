@@ -4,7 +4,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { Breadcrumb } from "@/components/layout/Breadcrumb";
 import { BadgeCheckIcon, GemIcon, SparklesIcon } from "@/components/layout/icons";
-import { BUSINESS, HOTLINE, SHOPEE_URL, SITE_URL, websiteOpenGraph } from "@/lib/site";
+import { BUSINESS, HOTLINE, SHOPEE_URL, SITE_URL, breadcrumbJsonLd, websiteOpenGraph } from "@/lib/site";
 import beach from "../../../public/branding/beach.jpg";
 import bedroom from "../../../public/branding/bedroom.jpg";
 import cafe from "../../../public/branding/cafe.jpg";
@@ -30,16 +30,23 @@ export const metadata: Metadata = {
   },
 };
 
+const CRUMBS = [{ label: "Trang chủ", href: "/" }, { label: "Thương hiệu" }];
+
 const ABOUT_JSON_LD = {
   "@context": "https://schema.org",
-  "@type": "AboutPage",
-  "@id": `${SITE_URL}/branding#webpage`,
-  url: `${SITE_URL}/branding`,
-  name: TITLE,
-  inLanguage: "vi",
-  isPartOf: { "@id": `${SITE_URL}/#website` },
-  about: { "@id": `${SITE_URL}/#organization` },
-  mainEntity: { "@id": `${SITE_URL}/#organization` },
+  "@graph": [
+    {
+      "@type": "AboutPage",
+      "@id": `${SITE_URL}/branding#webpage`,
+      url: `${SITE_URL}/branding`,
+      name: TITLE,
+      inLanguage: "vi",
+      isPartOf: { "@id": `${SITE_URL}/#website` },
+      about: { "@id": `${SITE_URL}/#organization` },
+      mainEntity: { "@id": `${SITE_URL}/#organization` },
+    },
+    breadcrumbJsonLd(CRUMBS, "/branding"),
+  ],
 };
 
 const linkClass = "text-text-primary underline underline-offset-4 hover:text-accent";
@@ -82,7 +89,7 @@ export default function BrandingPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(ABOUT_JSON_LD).replace(/</g, "\\u003c") }}
       />
       <div className="mx-auto w-full max-w-7xl px-4 lg:px-6">
-        <Breadcrumb items={[{ label: "Trang chủ", href: "/" }, { label: "Thương hiệu" }]} />
+        <Breadcrumb items={CRUMBS} />
       </div>
 
       <section className="bg-bg-dark px-4 py-24 text-center text-text-on-dark">
