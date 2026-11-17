@@ -1,6 +1,8 @@
 // Customer-chosen delivery method, picked on the product page and confirmed at checkout.
 // Persisted in localStorage so the product-page choice carries into checkout.
 
+import { HOTLINE } from "@/lib/site";
+
 export type DeliveryMethod = "standard" | "express";
 
 const KEY = "pdz_delivery_method";
@@ -14,7 +16,8 @@ export const DELIVERY_METHODS: { value: DeliveryMethod; label: string; sub: stri
   {
     value: "express",
     label: "⚡ Hoả tốc nội thành HCM",
-    sub: "Giao hàng gấp — gọi 0903715249",
+    // Express is arranged by phone on the shop hotline (owner, 2026-11-17; was 0903715249).
+    sub: `Giao hàng gấp — gọi ${HOTLINE}`,
   },
 ];
 

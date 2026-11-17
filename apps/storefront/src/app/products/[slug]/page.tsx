@@ -16,6 +16,7 @@ import { ReviewSection, type ReviewData } from "@/components/product/ReviewSecti
 import { ShopeeReviews } from "@/components/product/ShopeeReviews";
 import { SHOPEE_REVIEWS_DATA } from "@/components/product/shopee-reviews-data";
 import { SizeGuide, isSizeGuide } from "@/components/product/SizeGuide";
+import { collectionName } from "@/content/collections";
 import { productCardQuery, toProductCard } from "@/lib/catalog";
 import { renderDescription } from "@/lib/sanitize-description";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
@@ -122,7 +123,7 @@ const getCollectionContext = cache(async (productId: string) => {
       .slice(0, 4)
       .map((p) => toProductCard(supabase, p));
   }
-  return { slug: collection.slug, name: collection.name, related };
+  return { slug: collection.slug, name: collectionName(collection.slug, collection.name), related };
 });
 
 export async function generateMetadata({ params }: PageProps<"/products/[slug]">): Promise<Metadata> {

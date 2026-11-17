@@ -14,6 +14,7 @@ import { getFlashSaleState, flashPrice, type FlashSaleWindow } from "@/lib/flash
 import { ProductRow } from "@/components/home/ProductRow";
 import { RunwayLookbook } from "@/components/home/RunwayLookbook";
 import { ProductCard, type ProductCardData } from "@/components/product/ProductCard";
+import { collectionName } from "@/content/collections";
 import { productCardQuery, toProductCard } from "@/lib/catalog";
 import { runwayLooks } from "@/lib/runway-lookbook";
 import { BUSINESS, HOTLINE, SAME_AS, SITE_NAME, SITE_URL, websiteOpenGraph } from "@/lib/site";
@@ -177,7 +178,7 @@ export default async function HomePage() {
   const collectionCards = collections.data!.map((c) => {
     const path = c.collection_items.flatMap((i) => i.products?.product_images ?? [])[0]?.storage_path;
     return {
-      name: c.name,
+      name: collectionName(c.slug, c.name),
       slug: c.slug,
       year: c.created_at.slice(0, 4),
       imageUrl: path ? mediaUrl("product-images", path) : null,
@@ -265,9 +266,10 @@ export default async function HomePage() {
 
         <section className="grid grid-cols-1 gap-px border border-border bg-border sm:grid-cols-3">
           {[
-            ["Thanh toán COD", "Nhận hàng rồi mới trả tiền"],
-            ["SPX Express", "Giao hàng nhanh toàn quốc"],
-            ["Đổi trả 7 ngày", "Nếu sản phẩm lỗi do shop"],
+            // Wording follows /policy (2026-11-17): returns aren't limited to faulty items.
+            ["Thanh toán COD", "Kiểm tra hàng rồi mới trả tiền"],
+            ["SPX Express", "Giao hàng toàn quốc"],
+            ["Trả hàng 7 ngày", "Shop gửi SPX lấy hàng, chịu phí"],
           ].map(([t, d]) => (
             <div key={t} className="bg-bg-primary p-6">
               <p className="text-nav font-bold uppercase">{t}</p>
