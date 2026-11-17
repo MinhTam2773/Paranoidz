@@ -18,6 +18,10 @@ const nextConfig: NextConfig = {
       ],
     }];
   },
+  // SEO kit 2026-11-17: /about is the usual guess for the brand page.
+  async redirects() {
+    return [{ source: "/about", destination: "/branding", permanent: true }];
+  },
   images: {
     // Vercel free team exhausted its 5,000 image transformations (optimised
     // images answer 402 OPTIMIZED_IMAGE_REQUEST_PAYMENT_REQUIRED) — serve the

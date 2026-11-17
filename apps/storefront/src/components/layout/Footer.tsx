@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { HOTLINE, POLICY_LINKS } from "@/lib/site";
+import { FACEBOOK_URL, HOTLINE, POLICY_LINKS, TIKTOK_URL, ZALO_URL } from "@/lib/site";
 import { Logo } from "./Logo";
 
 const heading = "text-caption font-semibold uppercase tracking-[0.06em] text-text-on-dark";
@@ -7,9 +7,9 @@ const muted = "text-caption text-text-on-dark/70";
 
 // Social links (2026-10-16, Tủn supplied).
 const SOCIALS = [
-  { label: "TIKTOK", href: "https://www.tiktok.com/@paranoidz.vn" },
-  { label: "FANPAGE", href: "https://www.facebook.com/paranoidz.vn/" },
-  { label: "ZALO", href: "https://zalo.me/0345267709" },
+  { label: "TIKTOK", href: TIKTOK_URL },
+  { label: "FANPAGE", href: FACEBOOK_URL },
+  { label: "ZALO", href: ZALO_URL },
 ] as const;
 
 // Footer (2026-10-16): logo image, business info (Hộ kinh doanh COOLSHIRTZ),
@@ -54,6 +54,9 @@ export function Footer() {
           </p>
           <p className={muted}>57/41/17 Tô Hiệu, P. Phú Thạnh, TP.HCM</p>
           <p className="text-button">Hotline: {HOTLINE}</p>
+          <Link href="/contact" className={`${muted} hover:text-text-on-dark`}>
+            Trang liên hệ
+          </Link>
         </div>
 
         <nav aria-label="Chính sách" className="flex flex-col gap-4">
