@@ -7,10 +7,21 @@ export const HOTLINE = "0345 267 709";
 // Deliberately NOT env-driven: Vercel preview deployments must canonicalise to production,
 // otherwise every preview would compete with paranoidz.vn in search results.
 export const SITE_URL = "https://paranoidz.vn";
+export const SITE_NAME = "Paranoidz";
 
 // Share preview for pages without their own photo (home, listing, collections; SEO audit 2026-11-06).
 // Product pages set their own og:image.
 export const DEFAULT_OG_IMAGE = { url: "/og-default.jpg", width: 1200, height: 630, alt: "Paranoidz — streetwear Việt Nam" };
+
+export function websiteOpenGraph(url: string) {
+  return {
+    url,
+    siteName: SITE_NAME,
+    locale: "vi_VN",
+    type: "website" as const,
+    images: [DEFAULT_OG_IMAGE],
+  };
+}
 
 // DESIGN.md §4, Row 2 — order matters.
 export const NAV_LINKS = [

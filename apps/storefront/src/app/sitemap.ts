@@ -20,8 +20,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Audit 2026-10-30: lastModified is what Google actually reads (it ignores changeFrequency /
   // priority); the brand / policy / feedback pages are linked from every page but were missing.
   return [
-    { url: SITE_URL, changeFrequency: "daily", priority: 1 },
-    { url: `${SITE_URL}/products`, changeFrequency: "daily", priority: 0.8 },
+    { url: SITE_URL, lastModified: new Date(), changeFrequency: "daily", priority: 1 },
+    { url: `${SITE_URL}/products`, lastModified: new Date(), changeFrequency: "daily", priority: 0.8 },
     ...products.data.map((p) => ({
       url: `${SITE_URL}/products/${p.slug}`,
       lastModified: p.updated_at,
@@ -36,6 +36,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     })),
     ...["/branding", "/feedback", "/policy"].map((path) => ({
       url: `${SITE_URL}${path}`,
+      lastModified: new Date(),
       changeFrequency: "monthly" as const,
       priority: 0.4,
     })),

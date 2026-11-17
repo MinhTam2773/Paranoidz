@@ -27,7 +27,7 @@ export function Footer() {
         </div>
 
         <nav aria-label="Kết nối với Paranoidz" className="flex flex-col gap-4">
-          <h2 className={heading}>Kết nối với Paranoidz</h2>
+          <p className={heading}>Kết nối với Paranoidz</p>
           <ul className="flex flex-col">
             {SOCIALS.map(({ label, href }) => (
               <li key={label} className="border-b border-text-on-dark/10">
@@ -46,7 +46,7 @@ export function Footer() {
         </nav>
 
         <div className="flex flex-col gap-4">
-          <h2 className={heading}>Liên hệ</h2>
+          <p className={heading}>Liên hệ</p>
           <p className={muted}>
             <a href="mailto:support@paranoidz.vn" className="hover:text-text-on-dark">
               support@paranoidz.vn
@@ -57,7 +57,7 @@ export function Footer() {
         </div>
 
         <nav aria-label="Chính sách" className="flex flex-col gap-4">
-          <h2 className={heading}>Chính sách</h2>
+          <p className={heading}>Chính sách</p>
           {POLICY_LINKS.map(({ label, href }) => (
             <Link key={href} href={href} className={`${muted} hover:text-text-on-dark`}>
               {label}

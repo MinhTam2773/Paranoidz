@@ -6,6 +6,7 @@ import { createPublicClient } from "@paranoidz/db/public";
 import { Breadcrumb } from "@/components/layout/Breadcrumb";
 import { ProductGrid } from "@/components/product/ProductGrid";
 import { productCardQuery, toProductCard } from "@/lib/catalog";
+import { websiteOpenGraph } from "@/lib/site";
 
 // A collection set up in the admin (/collections there). ISR like product pages:
 // prebuilt at deploy, rebuilt on demand or at most once a day; new slugs render on first visit.
@@ -47,12 +48,18 @@ export async function generateMetadata({ params }: PageProps<"/collections/[slug
   if (!collection) return { title: "Không tìm thấy | Paranoidz" };
   // SEO (audit 2026-10-30): collections inherited the layout's generic description (shared by
   // 13 pages) and had no canonical. The admin's collection description wins when filled in.
+  const title = `${collection.name} | Paranoidz`;
+  const description = collection.description ||
+    `Bộ sưu tập ${collection.name} của Paranoidz — streetwear Việt Nam, đổi trả 7 ngày, thanh toán khi nhận hàng (COD).`;
   return {
-    title: `${collection.name} | Paranoidz`,
-    description:
-      collection.description ||
-      `Bộ sưu tập ${collection.name} của Paranoidz — streetwear Việt Nam, đổi trả 7 ngày, thanh toán khi nhận hàng (COD).`,
+    title,
+    description,
     alternates: { canonical: `/collections/${slug}` },
+    openGraph: {
+      ...websiteOpenGraph(`/collections/${slug}`),
+      title,
+      description,
+    },
   };
 }
 

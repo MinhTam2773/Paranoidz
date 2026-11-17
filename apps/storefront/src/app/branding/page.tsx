@@ -3,6 +3,7 @@ import Image, { type StaticImageData } from "next/image";
 import type { ReactNode } from "react";
 import { Breadcrumb } from "@/components/layout/Breadcrumb";
 import { BadgeCheckIcon, GemIcon, SparklesIcon } from "@/components/layout/icons";
+import { websiteOpenGraph } from "@/lib/site";
 import beach from "../../../public/branding/beach.jpg";
 import bedroom from "../../../public/branding/bedroom.jpg";
 import cafe from "../../../public/branding/cafe.jpg";
@@ -16,6 +17,12 @@ export const metadata: Metadata = {
   description:
     "Câu chuyện Paranoidz — local brand streetwear Việt Nam: thiết kế táo bạo, hình thêu và dập nổi, chất liệu nghiêm túc, sản xuất tại Việt Nam.",
   alternates: { canonical: "/branding" },
+  openGraph: {
+    ...websiteOpenGraph("/branding"),
+    title: "Thương hiệu | Paranoidz",
+    description:
+      "Câu chuyện Paranoidz — local brand streetwear Việt Nam: thiết kế táo bạo, hình thêu và dập nổi, chất liệu nghiêm túc, sản xuất tại Việt Nam.",
+  },
 };
 
 // Brand story (Stitch "PARANOIDZ - Branding Page", spec 2026-10-11 §2). The hero is a dark block,

@@ -15,7 +15,7 @@ import { ShopeeReviews } from "@/components/product/ShopeeReviews";
 import { SHOPEE_REVIEWS_DATA } from "@/components/product/shopee-reviews-data";
 import { SizeGuide, isSizeGuide } from "@/components/product/SizeGuide";
 import { renderDescription } from "@/lib/sanitize-description";
-import { SITE_URL } from "@/lib/site";
+import { SITE_NAME, SITE_URL } from "@/lib/site";
 
 // ISR (ARCHITECTURE.md §2.2): every active product is prebuilt at deploy, then rebuilt on demand
 // after orders and admin changes (api/revalidate), else at most once a day; slugs added later render
@@ -109,7 +109,10 @@ export async function generateMetadata({ params }: PageProps<"/products/[slug]">
       title,
       description,
       url: `/products/${slug}`,
-      images: firstImage ? [{ url: firstImage }] : undefined,
+      type: "website",
+      siteName: SITE_NAME,
+      locale: "vi_VN",
+      images: firstImage ? [{ url: firstImage, alt: product.name }] : undefined,
     },
   };
 }
@@ -174,6 +177,8 @@ export default async function ProductPage({ params }: PageProps<"/products/[slug
     merchantReturnDays: 7,
     returnMethod: "https://schema.org/ReturnByMail",
     returnFees: "https://schema.org/FreeReturn",
+    merchantReturnLink: `${SITE_URL}/policy#returns`,
+    description: `Trả hàng trong 7 ngày kể từ khi nhận, hàng chưa dùng, còn nguyên tem mác. Cửa hàng gửi SPX lấy hàng và chịu phí vận chuyển trả hàng. Số tiền hoàn không gồm phí vận chuyển lúc gửi đi. Đổi size hoặc đổi mẫu: khách chịu phí vận chuyển phát sinh. Chi tiết: ${SITE_URL}/policy#returns`,
   };
   const jsonLd = {
     "@context": "https://schema.org",

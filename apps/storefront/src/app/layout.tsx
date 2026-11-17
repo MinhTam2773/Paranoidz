@@ -40,7 +40,6 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Paranoidz",
     description: "Paranoidz — thời trang streetwear. Thanh toán COD hoặc chuyển khoản VietQR.",
-    url: SITE_URL,
     siteName: "Paranoidz",
     locale: "vi_VN",
     type: "website",

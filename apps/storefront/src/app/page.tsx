@@ -15,7 +15,7 @@ import { RunwayLookbook } from "@/components/home/RunwayLookbook";
 import { ProductCard, type ProductCardData } from "@/components/product/ProductCard";
 import { productCardQuery, toProductCard } from "@/lib/catalog";
 import { runwayLooks } from "@/lib/runway-lookbook";
-import { DEFAULT_OG_IMAGE, HOTLINE, SITE_URL } from "@/lib/site";
+import { HOTLINE, SITE_URL, websiteOpenGraph } from "@/lib/site";
 
 // Homepage (DESIGN.md §5 page structure, items 5–10). ISR: rebuilt at most once an hour, at once
 // after admin changes (api/revalidate) and at each flash sale boundary (api/flash-sale/refresh). Homepage v2 2026-10-16: video hero (shop's own TikTok clip) + marquee band +
@@ -25,19 +25,19 @@ export const revalidate = 3600;
 
 // SEO (audit 2026-10-21 #2): the homepage previously had no H1 and a 9-character title.
 // Title targets "áo thun local brand" + "streetwear Việt Nam"; the manifesto tagline below
-// doubles as the page's single H1.
+// sits below the page's single H1.
 export const metadata: Metadata = {
   title: "Paranoidz — Áo thun local brand, streetwear Việt Nam",
   description:
     "Streetwear Việt Nam — thiết kế táo bạo, chất liệu nghiêm túc, giá không trên trời. Thanh toán khi nhận hàng (COD).",
   alternates: { canonical: "/" },
   openGraph: {
+    ...websiteOpenGraph("/"),
     title: "Paranoidz — Áo thun local brand, streetwear Việt Nam",
     description:
       "Streetwear Việt Nam — thiết kế táo bạo, chất liệu nghiêm túc, giá không trên trời. Thanh toán khi nhận hàng (COD).",
-    url: "/",
-    images: [DEFAULT_OG_IMAGE],
   },
+  twitter: { card: "summary_large_image" },
 };
 
 // SEO (audit 2026-10-30): the homepage had no structured data. Organization ties the brand to
@@ -230,8 +230,11 @@ export default async function HomePage() {
             Mặc kệ thiên hạ.<br />Mặc đẹp cho chính mình.
           </p>
           <h1 className="mt-4 max-w-xl text-body text-text-on-dark/70">
-            Streetwear Việt Nam — thiết kế táo bạo, chất liệu nghiêm túc, giá không trên trời.
+            Paranoidz — áo thun local brand Việt Nam
           </h1>
+          <p className="mt-4 max-w-xl text-body text-text-on-dark/70">
+            Streetwear Việt Nam — thiết kế táo bạo, chất liệu nghiêm túc, giá không trên trời.
+          </p>
         </section>
 
         <section className="grid grid-cols-1 gap-px border border-border bg-border sm:grid-cols-3">

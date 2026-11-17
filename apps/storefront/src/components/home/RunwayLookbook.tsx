@@ -193,7 +193,7 @@ export function RunwayLookbook({ looks }: { looks: RunwayLook[] }) {
               >
                 <Image
                   src={l.image}
-                  alt=""
+                  alt={l.title}
                   width={l.width}
                   height={l.height}
                   sizes="(max-width: 900px) 70vw, 40vw"
@@ -262,7 +262,7 @@ export function RunwayLookbook({ looks }: { looks: RunwayLook[] }) {
             return (
               <article key={keyOf(item)} className={`${css.item} ${missing.has(keyOf(item)) ? css.missing : ""}`}>
                 <Link className={css.itemImg} href={href} tabIndex={-1} aria-hidden>
-                  {imageUrl && <ThumbImage src={imageUrl} thumb={600} alt="" width={600} height={600} sizes="(max-width: 900px) 64vw, 128px" />}
+                  {imageUrl && <ThumbImage src={imageUrl} thumb={600} alt={item.name} width={600} height={600} sizes="(max-width: 900px) 64vw, 128px" />}
                   {off > 0 && <span className={css.off}>-{off}%</span>}
                 </Link>
                 <WishlistButton productId={item.productId} className={css.heart} />
