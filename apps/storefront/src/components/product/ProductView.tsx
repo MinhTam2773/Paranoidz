@@ -383,9 +383,10 @@ export function ProductView({
             {/* Trust row (Hydra-style): the four reassurances, right where the buy decision happens. */}
             <div className="grid grid-cols-2 gap-px border border-border bg-border">
               {[
-                [TruckIcon, "SPX Express", "Giao nhanh toàn quốc"],
-                [CashIcon, "Thanh toán COD", "Nhận hàng rồi trả tiền"],
-                [ReturnIcon, "Đổi trả 7 ngày", "Nếu sản phẩm lỗi do shop"],
+                // Wording follows /policy (2026-11-17): returns aren't limited to faulty items.
+                [TruckIcon, "SPX Express", "Giao toàn quốc"],
+                [CashIcon, "Thanh toán COD", "Kiểm hàng rồi trả tiền"],
+                [ReturnIcon, "Trả hàng 7 ngày", "Shop chịu phí lấy hàng"],
                 [PhoneIcon, "Hotline", "0345 267 709"],
               ].map(([Icon, title, sub]) => {
                 const I = Icon as (p: { width?: number; height?: number }) => ReactNode;

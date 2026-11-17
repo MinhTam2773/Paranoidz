@@ -4,7 +4,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { Breadcrumb } from "@/components/layout/Breadcrumb";
 import { BadgeCheckIcon, GemIcon, SparklesIcon } from "@/components/layout/icons";
-import { BUSINESS, HOTLINE, SHOPEE_URL, SITE_URL, breadcrumbJsonLd, websiteOpenGraph } from "@/lib/site";
+import { BUSINESS, HOTLINE, SHOPEE_URL, SITE_URL, TEAM_NAME, breadcrumbJsonLd, websiteOpenGraph } from "@/lib/site";
 import beach from "../../../public/branding/beach.jpg";
 import bedroom from "../../../public/branding/bedroom.jpg";
 import cafe from "../../../public/branding/cafe.jpg";
@@ -14,7 +14,7 @@ import studio from "../../../public/branding/studio.jpg";
 
 // SEO (audit 2026-10-30, SEO kit 2026-11-17 content/branding-about.md): the About page answers
 // "Paranoidz là gì?" with the legal entity, a name disambiguation (AI search confused the brand
-// with Paradox / Paranoid) and where to buy. Founder name waits on the owner (TODO.md).
+// with Paradox / Paranoid) and where to buy.
 const TITLE = "Paranoidz là gì? Local brand streetwear Việt Nam";
 const DESCRIPTION =
   "Paranoidz (paranoidz.vn) là local brand streetwear của Hộ kinh doanh COOLSHIRTZ, TP.HCM. Áo thun, polo form boxy và oversize, sản xuất tại Việt Nam, đổi trả 7 ngày.";
@@ -101,7 +101,8 @@ export default function BrandingPage() {
         <p>
           Paranoidz là local brand streetwear Việt Nam, website chính thức paranoidz.vn. Shop bán áo thun và polo
           unisex (form boxy, oversize, polo cổ bẻ), kèm balo, túi và phụ kiện. Pháp nhân: {BUSINESS.legalName}, mã số
-          doanh nghiệp / mã số thuế {BUSINESS.taxId}, địa chỉ {BUSINESS.streetAddress}, {BUSINESS.locality}.
+          doanh nghiệp / mã số thuế {BUSINESS.taxId}, địa chỉ {BUSINESS.streetAddress}, {BUSINESS.locality}. Người
+          phụ trách: {TEAM_NAME}.
         </p>
         <p>
           Sinh ra từ văn hoá đường phố Sài Gòn, Paranoidz làm áo với hình thêu và dập nổi, chú trọng form và chất vải

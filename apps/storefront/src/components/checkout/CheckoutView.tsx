@@ -28,6 +28,7 @@ import {
   type DeliveryMethod,
 } from "@/lib/delivery-method";
 import { BANK_TRANSFER, vietqrImageUrl, type PaymentMethod } from "@/lib/payment";
+import { HOTLINE } from "@/lib/site";
 import { ProvinceSelect } from "./ProvinceSelect";
 import { WardSelect } from "./WardSelect";
 import { PurchaseTracker, trackMeta, type MetaContent } from "@/components/tracking/MetaPixel";
@@ -576,7 +577,7 @@ export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; acc
                   </span>
                   <span className="shrink-0 text-right">
                     {isExpress ? (
-                      <span className="text-caption text-text-secondary">Giao hàng gấp:<br />☎ 0903715249</span>
+                      <span className="text-caption text-text-secondary">Giao hàng gấp:<br />☎ {HOTLINE}</span>
                     ) : shippingKnown && freeShipping ? (
                       <>
                         <span className="block text-price text-accent">Miễn phí</span>
