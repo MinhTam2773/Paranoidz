@@ -23,6 +23,20 @@ export function websiteOpenGraph(url: string) {
   };
 }
 
+// BreadcrumbList JSON-LD mirroring the visible <Breadcrumb> (SEO kit aeo/schema-placement.md).
+// The last crumb has no href in the UI; in the schema it points at the current page.
+export function breadcrumbJsonLd(items: { label: string; href?: string }[], currentPath: string) {
+  return {
+    "@type": "BreadcrumbList",
+    itemListElement: items.map((c, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      name: c.label,
+      item: `${SITE_URL}${c.href ?? currentPath}`,
+    })),
+  };
+}
+
 // DESIGN.md §4, Row 2 — order matters.
 export const NAV_LINKS = [
   { label: "Trang chủ", href: "/" },

@@ -281,6 +281,8 @@ export function ProductView({
                   {onSale && <s className="text-price-old text-text-muted">{formatVnd(shown.original_price!)}</s>}
                 </p>
               )}
+              {/* /policy#terms: listed prices exclude VAT (SEO kit eeat/trust-signals.md). */}
+              <p className="text-caption text-text-muted">Giá chưa gồm VAT.</p>
             </div>
 
             <div role="group" aria-labelledby="colour-label" className="flex flex-col gap-3">
