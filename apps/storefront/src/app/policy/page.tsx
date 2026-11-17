@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { Breadcrumb } from "@/components/layout/Breadcrumb";
-import { HOTLINE } from "@/lib/site";
+import { HOTLINE, websiteOpenGraph } from "@/lib/site";
 
 // SEO (audit 2026-10-30): own description + canonical instead of the layout's generic one.
 export const metadata: Metadata = {
@@ -10,6 +10,12 @@ export const metadata: Metadata = {
   description:
     "Chính sách giao hàng SPX, đổi trả trong 7 ngày, thanh toán COD / VietQR, bảo mật và khiếu nại của Paranoidz.",
   alternates: { canonical: "/policy" },
+  openGraph: {
+    ...websiteOpenGraph("/policy"),
+    title: "Chính sách | Paranoidz",
+    description:
+      "Chính sách giao hàng SPX, đổi trả trong 7 ngày, thanh toán COD / VietQR, bảo mật và khiếu nại của Paranoidz.",
+  },
 };
 
 const link = "text-text-primary underline underline-offset-4 hover:text-accent";

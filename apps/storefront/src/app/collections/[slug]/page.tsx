@@ -6,6 +6,7 @@ import { createPublicClient } from "@paranoidz/db/public";
 import { Breadcrumb } from "@/components/layout/Breadcrumb";
 import { ProductGrid } from "@/components/product/ProductGrid";
 import { productCardQuery, toProductCard } from "@/lib/catalog";
+import { SITE_URL, websiteOpenGraph } from "@/lib/site";
 
 // A collection set up in the admin (/collections there). ISR like product pages:
 // prebuilt at deploy, rebuilt on demand or at most once a day; new slugs render on first visit.
@@ -47,18 +48,39 @@ export async function generateMetadata({ params }: PageProps<"/collections/[slug
   if (!collection) return { title: "Không tìm thấy | Paranoidz" };
   // SEO (audit 2026-10-30): collections inherited the layout's generic description (shared by
   // 13 pages) and had no canonical. The admin's collection description wins when filled in.
+  const title = `${collection.name} | Paranoidz`;
+  const description = collection.description ||
+    `Bộ sưu tập ${collection.name} của Paranoidz — streetwear Việt Nam, đổi trả 7 ngày, thanh toán khi nhận hàng (COD).`;
   return {
-    title: `${collection.name} | Paranoidz`,
-    description:
-      collection.description ||
-      `Bộ sưu tập ${collection.name} của Paranoidz — streetwear Việt Nam, đổi trả 7 ngày, thanh toán khi nhận hàng (COD).`,
+    title,
+    description,
     alternates: { canonical: `/collections/${slug}` },
+    openGraph: {
+      ...websiteOpenGraph(`/collections/${slug}`),
+      title,
+      description,
+    },
   };
 }
 
 export default async function CollectionPage({ params }: PageProps<"/collections/[slug]">) {
-  const collection = await getCollection((await params).slug);
+  const { slug } = await params;
+  const collection = await getCollection(slug);
   if (!collection) notFound();
+
+  // SEO kit P2.6: the listed products, in the order shown, as an ItemList.
+  const itemList = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    "@id": `${SITE_URL}/collections/${slug}#itemlist`,
+    name: collection.name,
+    itemListElement: collection.cards.map((c, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      url: `${SITE_URL}/products/${c.slug}`,
+      name: c.name,
+    })),
+  };
 
   const heading = (
     <>
@@ -69,6 +91,12 @@ export default async function CollectionPage({ params }: PageProps<"/collections
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 pb-16 lg:px-6">
+      {collection.cards.length > 0 && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(itemList).replace(/</g, "\\u003c") }}
+        />
+      )}
       <Breadcrumb items={[{ label: "Trang chủ", href: "/" }, { label: collection.name }]} />
       {collection.cards.length ? (
         <ProductGrid cards={collection.cards}>{heading}</ProductGrid>

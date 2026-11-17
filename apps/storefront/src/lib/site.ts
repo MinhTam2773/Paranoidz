@@ -7,10 +7,21 @@ export const HOTLINE = "0345 267 709";
 // Deliberately NOT env-driven: Vercel preview deployments must canonicalise to production,
 // otherwise every preview would compete with paranoidz.vn in search results.
 export const SITE_URL = "https://paranoidz.vn";
+export const SITE_NAME = "Paranoidz";
 
 // Share preview for pages without their own photo (home, listing, collections; SEO audit 2026-11-06).
 // Product pages set their own og:image.
 export const DEFAULT_OG_IMAGE = { url: "/og-default.jpg", width: 1200, height: 630, alt: "Paranoidz — streetwear Việt Nam" };
+
+export function websiteOpenGraph(url: string) {
+  return {
+    url,
+    siteName: SITE_NAME,
+    locale: "vi_VN",
+    type: "website" as const,
+    images: [DEFAULT_OG_IMAGE],
+  };
+}
 
 // DESIGN.md §4, Row 2 — order matters.
 export const NAV_LINKS = [
@@ -47,9 +58,26 @@ export const POLICY_LINKS = [
 // PLACEHOLDER — client to supply real store addresses. Empty = column shows hotline only.
 export const STORE_ADDRESSES: { name: string; address: string }[] = [];
 
-// PLACEHOLDER — client to supply real profile URLs.
+// Official channels (footer links supplied by Tủn 2026-10-16; Shopee shop already in the
+// homepage schema). One source for the footer, mobile menu and Organization sameAs.
+// Instagram dropped: no confirmed account. Other handles (.stu / .store) wait on the owner.
+export const FACEBOOK_URL = "https://www.facebook.com/paranoidz.vn/";
+export const TIKTOK_URL = "https://www.tiktok.com/@paranoidz.vn";
+export const ZALO_URL = "https://zalo.me/0345267709";
+export const SHOPEE_URL = "https://shopee.vn/paranoidz.studio";
+
 export const SOCIAL_LINKS = [
-  { label: "Facebook", href: "#", icon: "facebook" },
-  { label: "Instagram", href: "#", icon: "instagram" },
-  { label: "TikTok", href: "#", icon: "tiktok" },
+  { label: "Facebook", href: FACEBOOK_URL, icon: "facebook" },
+  { label: "TikTok", href: TIKTOK_URL, icon: "tiktok" },
 ] as const;
+
+export const SAME_AS = [SHOPEE_URL, FACEBOOK_URL, TIKTOK_URL, ZALO_URL];
+
+// Business details as printed in the footer and /policy (NAP for /contact and schema).
+export const BUSINESS = {
+  legalName: "Hộ kinh doanh COOLSHIRTZ",
+  taxId: "042097005182",
+  streetAddress: "57/41/17 Tô Hiệu, P. Phú Thạnh",
+  locality: "TP. Hồ Chí Minh",
+  email: "support@paranoidz.vn",
+};

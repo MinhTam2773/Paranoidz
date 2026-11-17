@@ -5,12 +5,18 @@ import { mediaUrl } from "@paranoidz/db/media";
 import { FeedbackList, type FeedbackReview } from "@/components/feedback/FeedbackList";
 import { Breadcrumb } from "@/components/layout/Breadcrumb";
 import { Stars } from "@/components/product/ReviewSection";
+import { websiteOpenGraph } from "@/lib/site";
 
 // SEO (audit 2026-10-30): own description + canonical instead of the layout's generic one.
 export const metadata: Metadata = {
   title: "Đánh giá khách hàng | Paranoidz",
   description: "Đánh giá và hình ảnh thật từ khách hàng đã mua áo thun, polo, balo Paranoidz.",
   alternates: { canonical: "/feedback" },
+  openGraph: {
+    ...websiteOpenGraph("/feedback"),
+    title: "Đánh giá khách hàng | Paranoidz",
+    description: "Đánh giá và hình ảnh thật từ khách hàng đã mua áo thun, polo, balo Paranoidz.",
+  },
 };
 
 // Every visible review in the store (RLS: visible reviews and photos only). ISR like the catalog

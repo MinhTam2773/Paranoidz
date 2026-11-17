@@ -7,6 +7,7 @@ import { mediaUrl } from "@paranoidz/db/media";
 import { HomeTabs } from "@/components/home/HomeTabs";
 import { Lookbook } from "@/components/home/HomepageV2";
 import { Faq } from "@/components/home/Faq";
+import { FAQS } from "@/components/home/faq-data";
 import { FlashSale } from "@/components/home/FlashSale";
 import { Testimonials } from "@/components/home/Testimonials";
 import { getFlashSaleState, flashPrice, type FlashSaleWindow } from "@/lib/flash-sale";
@@ -15,7 +16,7 @@ import { RunwayLookbook } from "@/components/home/RunwayLookbook";
 import { ProductCard, type ProductCardData } from "@/components/product/ProductCard";
 import { productCardQuery, toProductCard } from "@/lib/catalog";
 import { runwayLooks } from "@/lib/runway-lookbook";
-import { DEFAULT_OG_IMAGE, HOTLINE, SITE_URL } from "@/lib/site";
+import { BUSINESS, HOTLINE, SAME_AS, SITE_NAME, SITE_URL, websiteOpenGraph } from "@/lib/site";
 
 // Homepage (DESIGN.md §5 page structure, items 5–10). ISR: rebuilt at most once an hour, at once
 // after admin changes (api/revalidate) and at each flash sale boundary (api/flash-sale/refresh). Homepage v2 2026-10-16: video hero (shop's own TikTok clip) + marquee band +
@@ -25,34 +26,45 @@ export const revalidate = 3600;
 
 // SEO (audit 2026-10-21 #2): the homepage previously had no H1 and a 9-character title.
 // Title targets "áo thun local brand" + "streetwear Việt Nam"; the manifesto tagline below
-// doubles as the page's single H1.
+// sits below the page's single H1.
 export const metadata: Metadata = {
   title: "Paranoidz — Áo thun local brand, streetwear Việt Nam",
   description:
     "Streetwear Việt Nam — thiết kế táo bạo, chất liệu nghiêm túc, giá không trên trời. Thanh toán khi nhận hàng (COD).",
   alternates: { canonical: "/" },
   openGraph: {
+    ...websiteOpenGraph("/"),
     title: "Paranoidz — Áo thun local brand, streetwear Việt Nam",
     description:
       "Streetwear Việt Nam — thiết kế táo bạo, chất liệu nghiêm túc, giá không trên trời. Thanh toán khi nhận hàng (COD).",
-    url: "/",
-    images: [DEFAULT_OG_IMAGE],
   },
+  twitter: { card: "summary_large_image" },
 };
 
-// SEO (audit 2026-10-30): the homepage had no structured data. Organization ties the brand to
-// its Shopee shop and hotline for Google / AI search; WebSite names the site in results.
-// Social profiles are left out until SOCIAL_LINKS has real URLs (lib/site.ts placeholders).
+// SEO (audit 2026-10-30, SEO kit 2026-11-17): Organization (NAP, official channels), WebSite with
+// the site search, and FAQPage built from the same FAQS the accordion renders.
 const ORGANIZATION_JSON_LD = {
   "@context": "https://schema.org",
   "@graph": [
     {
       "@type": "Organization",
       "@id": `${SITE_URL}/#organization`,
-      name: "Paranoidz",
+      name: SITE_NAME,
+      legalName: BUSINESS.legalName,
+      description:
+        "Local brand streetwear Việt Nam. Bán áo thun và polo unisex (form boxy, oversize, polo), kèm balo và túi trên paranoidz.vn. Sản xuất tại Việt Nam.",
       url: SITE_URL,
-      logo: `${SITE_URL}/home/logo-paranoidz-dark.png`,
-      sameAs: ["https://shopee.vn/paranoidz.studio"],
+      logo: { "@type": "ImageObject", url: `${SITE_URL}/home/logo-paranoidz-dark.png` },
+      taxID: BUSINESS.taxId,
+      email: BUSINESS.email,
+      telephone: `+84-${HOTLINE.replace(/^0/, "").replace(/\s/g, "-")}`,
+      address: {
+        "@type": "PostalAddress",
+        streetAddress: BUSINESS.streetAddress,
+        addressLocality: "Thành phố Hồ Chí Minh",
+        addressCountry: "VN",
+      },
+      sameAs: SAME_AS,
       contactPoint: {
         "@type": "ContactPoint",
         telephone: `+84-${HOTLINE.replace(/^0/, "").replace(/\s/g, "-")}`,
@@ -64,10 +76,24 @@ const ORGANIZATION_JSON_LD = {
     {
       "@type": "WebSite",
       "@id": `${SITE_URL}/#website`,
-      name: "Paranoidz",
+      name: SITE_NAME,
       url: SITE_URL,
       inLanguage: "vi",
       publisher: { "@id": `${SITE_URL}/#organization` },
+      potentialAction: {
+        "@type": "SearchAction",
+        target: { "@type": "EntryPoint", urlTemplate: `${SITE_URL}/search?q={search_term_string}` },
+        "query-input": "required name=search_term_string",
+      },
+    },
+    {
+      "@type": "FAQPage",
+      "@id": `${SITE_URL}/#faq`,
+      mainEntity: FAQS.map((f) => ({
+        "@type": "Question",
+        name: f.q,
+        acceptedAnswer: { "@type": "Answer", text: f.a },
+      })),
     },
   ],
 };
@@ -230,8 +256,11 @@ export default async function HomePage() {
             Mặc kệ thiên hạ.<br />Mặc đẹp cho chính mình.
           </p>
           <h1 className="mt-4 max-w-xl text-body text-text-on-dark/70">
-            Streetwear Việt Nam — thiết kế táo bạo, chất liệu nghiêm túc, giá không trên trời.
+            Paranoidz — áo thun local brand Việt Nam
           </h1>
+          <p className="mt-4 max-w-xl text-body text-text-on-dark/70">
+            Streetwear Việt Nam — thiết kế táo bạo, chất liệu nghiêm túc, giá không trên trời.
+          </p>
         </section>
 
         <section className="grid grid-cols-1 gap-px border border-border bg-border sm:grid-cols-3">

@@ -3,6 +3,7 @@ import { createPublicClient } from "@paranoidz/db/public";
 import { Breadcrumb } from "@/components/layout/Breadcrumb";
 import { ProductCard } from "@/components/product/ProductCard";
 import { productCardQuery, toProductCard } from "@/lib/catalog";
+import { websiteOpenGraph } from "@/lib/site";
 
 // SEO (audit 2026-10-30): own description + canonical instead of the layout's generic one.
 export const metadata: Metadata = {
@@ -10,6 +11,12 @@ export const metadata: Metadata = {
   description:
     "Áo thun, polo local brand, balo, túi và phụ kiện streetwear Paranoidz. Sản xuất tại Việt Nam, đổi trả 7 ngày, thanh toán khi nhận hàng (COD).",
   alternates: { canonical: "/products" },
+  openGraph: {
+    ...websiteOpenGraph("/products"),
+    title: "Tất cả sản phẩm | Paranoidz",
+    description:
+      "Áo thun, polo local brand, balo, túi và phụ kiện streetwear Paranoidz. Sản xuất tại Việt Nam, đổi trả 7 ngày, thanh toán khi nhận hàng (COD).",
+  },
 };
 
 // ISR (ARCHITECTURE.md §2.2): rebuilt on demand after orders and admin changes (api/revalidate),

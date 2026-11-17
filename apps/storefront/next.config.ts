@@ -8,6 +8,20 @@ const nextConfig: NextConfig = {
     // VERCEL_ENV itself; on Cloudflare it is the NEXT_PUBLIC_DEPLOY_ENV build variable.
     NEXT_PUBLIC_DEPLOY_ENV: process.env.NEXT_PUBLIC_DEPLOY_ENV ?? process.env.VERCEL_ENV ?? "development",
   },
+  async headers() {
+    return [{
+      source: "/:path*",
+      headers: [
+        { key: "X-Content-Type-Options", value: "nosniff" },
+        { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+        { key: "X-Frame-Options", value: "SAMEORIGIN" },
+      ],
+    }];
+  },
+  // SEO kit 2026-11-17: /about is the usual guess for the brand page.
+  async redirects() {
+    return [{ source: "/about", destination: "/branding", permanent: true }];
+  },
   images: {
     // Vercel free team exhausted its 5,000 image transformations (optimised
     // images answer 402 OPTIMIZED_IMAGE_REQUEST_PAYMENT_REQUIRED) — serve the

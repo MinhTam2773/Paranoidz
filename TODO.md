@@ -73,6 +73,7 @@ Read this first (CLAUDE.md §7), update it last. It stays short on purpose; the 
    - Carried debt (in the spec): returned orders still count in `delivered_count` / loyalty, ad conversions, dashboard revenue and exports.
 ## Waiting on the client / owner
 
+- [ ] **SEO kit (2026-11-17, `paranoidz-dev-kit.v2.zip` TODO-OWNER.md) — owner decisions:** turn on Cloudflare **Always Use HTTPS** (`http://paranoidz.vn` answers 500), then HSTS; founder / responsible person's name + 1–2 line bio for `/branding`, `/contact` and the blog byline (now "Biên tập Paranoidz"); is 0903715249 a real express line (it's in product descriptions in the admin) or remove it; correct pdz07 size table in the admin (`products.size_guide` renders broken); rename menu labels to Áo thun / Balo / Túi (slugs kept); confirm or retire the `.stu` / `.store` handles; approve the 10 AEO answer blocks (`aeo/snippets.md`) before they go on pages; rewrite or noindex the thin bag / backpack descriptions; pdz01 slug says slim-fit (301 only if approved); PageSpeed / Search Console checks on the shop's account.
 - [ ] **Delete the 3 dev seed accounts on prod** (owner or client, Authentication → Users): `customer1..3@paranoidz.test` still exist and their password is in `supabase/seeds/dev.sql` in this public repo. No admin rights, no orders, last sign-in 2026-10-12 (checked 2026-11-02). Details in `docs/BACKLOG.md`.
 - [ ] **Express ("hoả tốc") fee:** the owner asks aT for the price (2026-10-17). Owner's rule: the customer must see the exact express cost at checkout, even if express is rare, and aT won't absorb it. Until aT answers, express orders still pay the standard SPX fee. Then: charge it in `quote_order()` / `place_order()` (RED: pricing).
 - [ ] **Categories:** the client is creating them (Áo thun, Polo, Tất…). Delete the 4 English dev categories on prod afterwards.
@@ -92,6 +93,7 @@ ARCHITECTURE.md §8.4 / §8.5 (loyalty): waits on the proposal in Now #5. §8.3 
 
 ## Last session
 
+- 2026-11-17: SEO kit P0–P2 + E-E-A-T on `feat/seo-dev-kit` (headers, policy-true FAQ, H1, OG, llms.txt, Organization/FAQ/About/Article/HowTo/ItemList/Review schema, /contact, size guide + 2 blog posts, related products, param noindex). Owner items in Waiting. Not checked on a local server (no storefront `.env.local` on this machine); CI + production check after deploy.
 - 2026-11-14: Meta InitiateCheckout now fires on the first shipping-form input (fallback before Purchase), not on checkout load: "Mua ngay" opens checkout directly, so every price-check counted (41 InitiateCheckout vs 2 Purchase in 8 days). Branch `fix/pixel-initiate-checkout`; typecheck + checkout lint pass; live Pixel check after deploy. Test order PZ-2026-0701 placed from mobile, owner to cancel.
 - 2026-11-13 (end): returns PRs #99 / #100 / #101 open (Now #14 has the state, merge order and PR 4); the session ended to start fresh.
 - 2026-11-13 (evening): returns PR 3 (admin) on `feat/returns-admin`, e2e A16 (`docs/DONE.md`).
