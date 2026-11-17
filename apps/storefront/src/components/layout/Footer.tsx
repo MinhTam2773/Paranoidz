@@ -57,6 +57,9 @@ export function Footer() {
           <Link href="/contact" className={`${muted} hover:text-text-on-dark`}>
             Trang liên hệ
           </Link>
+          <Link href="/huong-dan-chon-size" className={`${muted} hover:text-text-on-dark`}>
+            Hướng dẫn chọn size
+          </Link>
         </div>
 
         <nav aria-label="Chính sách" className="flex flex-col gap-4">

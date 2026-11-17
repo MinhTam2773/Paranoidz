@@ -12,6 +12,13 @@ export async function middleware(request: NextRequest) {
   if (country && request.cookies.get("pz-cc")?.value !== country) {
     response.cookies.set("pz-cc", country, { path: "/", maxAge: 60 * 60 * 24, sameSite: "lax", secure: true });
   }
+  // SEO kit P3.4: /products?page=2, ?sort=…, /collections/x?size=L render the same listing as the
+  // clean URL. Keep them out of the index with a header, so the pages stay static (ISR) instead of
+  // reading searchParams; links on them are still followed.
+  const { pathname, search } = request.nextUrl;
+  if (search && (pathname === "/products" || pathname.startsWith("/collections/"))) {
+    response.headers.set("X-Robots-Tag", "noindex, follow");
+  }
   return response;
 }
 
