@@ -41,7 +41,9 @@ export function ProductRow({ label, children }: { label: string; children: React
         // S13 (2026-10-17): `scroll-snap-align` on the cards made mobile Chromium
         // report the page 3px too wide (378px vs 375px viewport), failing the
         // no-sideways-scroll test. Snap dropped; the row still scrolls freely.
-        className="flex gap-3 overflow-x-auto [scrollbar-width:none] sm:gap-4 *:shrink-0 *:basis-[calc((100%-12px)/2)] sm:*:basis-[calc((100%-32px)/3)] lg:*:basis-[calc((100%-48px)/4)]"
+        // min-w-0: a flex item won't shrink below its content, so a card with many colour swatches
+        // grew to twice the width of the others (flash sale, 2026-11-18).
+        className="flex gap-3 overflow-x-auto [scrollbar-width:none] sm:gap-4 *:min-w-0 *:shrink-0 *:basis-[calc((100%-12px)/2)] sm:*:basis-[calc((100%-32px)/3)] lg:*:basis-[calc((100%-48px)/4)]"
       >
         {children}
       </div>

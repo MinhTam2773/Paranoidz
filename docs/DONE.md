@@ -1,5 +1,9 @@
 # DONE.md — finished work
 
+## 2026-11-18 (homepage product rows: equal card widths)
+
+- [x] **Cards with many colours no longer stretch the row** (`ProductRow.tsx`, `*:min-w-0`; flash sale and the category rows share it). Measured on production before the fix: flash sale cards 300 / 292 / 608 / 292 px at 1280 and 300 / 212 / 608 / 166 px at 375. The same rule injected on production gave 292 px each and 166 px each. Tailwind generates `*:min-w-0` (compiled `globals.css`); tsc + eslint clean. Not seen in a deployed build yet: check the flash sale after deploy.
+
 ## 2026-11-18 (Sentry: in-app browser noise)
 
 - [x] **`window.webkit.messageHandlers` TypeError ignored** (`instrumentation-client.ts`, `ignoreErrors`). Reported on the pdz06 page, production. Not our code: the expression is in no repo file, nor in that page's HTML or its 16 scripts on production; the stack is a ~3.6 KB one-line script attributed to the page URL, i.e. injected by the app hosting the WebView. Verified by running the real Sentry filter with the regex from the source: before, both test errors were sent; after, this one is dropped and an ordinary TypeError is still sent. tsc + eslint clean. Which app injects it isn't known (needs the event's browser tags in Sentry).
