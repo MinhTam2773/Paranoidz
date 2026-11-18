@@ -1,5 +1,9 @@
 # DONE.md — finished work
 
+## 2026-11-18 (Sentry: in-app browser noise)
+
+- [x] **`window.webkit.messageHandlers` TypeError ignored** (`instrumentation-client.ts`, `ignoreErrors`). Reported on the pdz06 page, production. Not our code: the expression is in no repo file, nor in that page's HTML or its 16 scripts on production; the stack is a ~3.6 KB one-line script attributed to the page URL, i.e. injected by the app hosting the WebView. Verified by running the real Sentry filter with the regex from the source: before, both test errors were sent; after, this one is dropped and an ordinary TypeError is still sent. tsc + eslint clean. Which app injects it isn't known (needs the event's browser tags in Sentry).
+
 ## 2026-11-17 (SEO kit P0–P2, branch `feat/seo-dev-kit`)
 
 - [x] **P0** (`f217e0f`): `next.config.ts` headers (nosniff, strict-origin-when-cross-origin, SAMEORIGIN); home FAQ split into return / exchange items worded from `/policy` (the old "khách chịu ship 2 chiều" contradicted it; the unconfirmed "bù chênh lệch" answer removed); product `MerchantReturnPolicy` gets `merchantReturnLink` + description; home H1 "Paranoidz — áo thun local brand Việt Nam"; footer titles `<p>`; lookbook alt text; per-page Open Graph (`websiteOpenGraph()` in `lib/site.ts`, og:url = canonical; the layout no longer sets og:url); static sitemap URLs get lastModified.

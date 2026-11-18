@@ -10,6 +10,9 @@ Sentry.init({
   enabled: Boolean(SENTRY_DSN),
   environment: process.env.NEXT_PUBLIC_DEPLOY_ENV,
   tracesSampleRate: 0, // errors only: performance tracing would use up the free quota
+  // Thrown by a script the host app injects into its in-app browser, not by our code or any
+  // script we serve (none of them evaluates this expression; checked on production 2026-11-18).
+  ignoreErrors: [/evaluating 'window\.webkit\.messageHandlers/],
 });
 
 export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
