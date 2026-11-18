@@ -63,6 +63,8 @@ Sections: Workflow · Windows & shell · Supabase · Next.js / React / Tailwind 
 
 ## Next.js / React / Tailwind
 
+- **A flex item won't shrink below its content** (2026-11-18): an `overflow-x-auto` child still counts toward the parent card's minimum width, so a long swatch row stretched the card despite `flex-basis`. Give the flex items `min-w-0`.
+- **Built-in browser pane hidden = `requestAnimationFrame` never fires** (2026-11-18): React's streamed `<div hidden id="S:0">` then stays hidden and everything in it measures 0, while `visibilityState` still says `visible`. A tool artefact, not a site bug.
 - **A Next dev hot reload can leave stale-prop errors in the console** (2026-10-12): after changing a component's props, the open page re-rendered it with the old data shape (`Cannot read properties of undefined`). Reload and re-check before treating a console error as a bug.
 - **`next build` can fail on a corrupted `.next/dev/types/validator.ts`** ("Cannot find name 'TCH'") left by a dev server that ran alongside a build. It's generated: stop the dev server, `rm -rf apps/<app>/.next/dev/types`, rebuild.
 - **Next 16: middleware is `src/proxy.ts`**, exporting `proxy()`, Node runtime only.

@@ -93,6 +93,7 @@ ARCHITECTURE.md §8.4 / §8.5 (loyalty): waits on the proposal in Now #5. §8.3 
 
 ## Last session
 
+- 2026-11-18: homepage product rows keep equal card widths (a many-colour card was 608px beside 292px ones in the flash sale); branch `fix/product-row-card-width`.
 - 2026-11-18: Sentry no longer reports `window.webkit.messageHandlers` (a script injected by an in-app browser, not ours); branch `fix/sentry-ignore-webview-noise`.
 - 2026-11-17: SEO kit P0–P2 + E-E-A-T on `feat/seo-dev-kit` (headers, policy-true FAQ, H1, OG, llms.txt, Organization/FAQ/About/Article/HowTo/ItemList/Review schema, /contact, size guide + 2 blog posts, related products, param noindex). Owner items in Waiting. Not checked on a local server (no storefront `.env.local` on this machine); CI + production check after deploy.
 - 2026-11-14: Meta InitiateCheckout now fires on the first shipping-form input (fallback before Purchase), not on checkout load: "Mua ngay" opens checkout directly, so every price-check counted (41 InitiateCheckout vs 2 Purchase in 8 days). Branch `fix/pixel-initiate-checkout`; typecheck + checkout lint pass; live Pixel check after deploy. Test order PZ-2026-0701 placed from mobile, owner to cancel.
