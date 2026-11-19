@@ -11,7 +11,7 @@ export async function getProductsByIds(ids: string[]) {
   const { data: rows, error } = await productCardQuery(supabase).in("id", clean).eq("is_active", true);
   if (error) throw error;
   const rank = new Map(clean.map((id, i) => [id, i]));
-  return (rows ?? [])
-    .toSorted((a, b) => (rank.get(a.id) ?? 0) - (rank.get(b.id) ?? 0))
+  return [...(rows ?? [])]
+    .sort((a, b) => (rank.get(a.id) ?? 0) - (rank.get(b.id) ?? 0))
     .map((p) => toProductCard(supabase, p));
 }

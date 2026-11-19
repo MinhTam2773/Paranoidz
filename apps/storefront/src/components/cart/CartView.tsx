@@ -22,7 +22,7 @@ export function CartView() {
   const ready = useCartReady();
   const [items, setItems] = useState<Map<string, CartItem> | null>(null);
   const bundleEstimate = useBundleEstimate(lines);
-  const idsKey = lines.map((l) => l.variantId).toSorted().join(",");
+  const idsKey = lines.map((l) => l.variantId).sort().join(",");
 
   useEffect(() => {
     let cancelled = false;

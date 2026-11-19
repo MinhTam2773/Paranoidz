@@ -42,7 +42,7 @@ export function ProductGrid({ cards, children }: { cards: ProductCardData[]; chi
   const top = useRef<HTMLDivElement>(null);
 
   const compare = SORTS[sort].compare;
-  const sorted = compare ? cards.toSorted(compare) : cards;
+  const sorted = compare ? [...cards].sort(compare) : cards;
   const pages = Math.ceil(sorted.length / PER_PAGE);
   const visible = sorted.slice((page - 1) * PER_PAGE, page * PER_PAGE);
 

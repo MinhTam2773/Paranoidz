@@ -41,8 +41,8 @@ const getCollection = cache(async (slug: string) => {
   if (!ids.length) return { name, copy, description: collection.description, cards: [] };
   const { data: products, error: productsError } = await productCardQuery(supabase).in("id", ids);
   if (productsError) throw productsError;
-  const cards = products
-    .toSorted((a, b) => order.get(a.id)! - order.get(b.id)!)
+  const cards = [...products]
+    .sort((a, b) => order.get(a.id)! - order.get(b.id)!)
     .map((p) => toProductCard(supabase, p));
   return { name, copy, description: collection.description, cards };
 });

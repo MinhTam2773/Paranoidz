@@ -33,7 +33,7 @@ export async function getCartItems(variantIds: unknown): Promise<CartItem[]> {
   if (error) throw error;
 
   return data.map((v) => {
-    const images = v.products.product_images.toSorted((a, b) => a.sort_order - b.sort_order);
+    const images = [...v.products.product_images].sort((a, b) => a.sort_order - b.sort_order);
     // The colourway's own photo, else the first general one.
     const image = images.find((i) => i.color === v.color) ?? images[0];
     return {

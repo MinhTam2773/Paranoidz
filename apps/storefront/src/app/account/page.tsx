@@ -51,7 +51,7 @@ export default async function AccountPage() {
     : { data: [], error: null };
   if (savedError) throw savedError;
   const order = new Map(saved.map((w, i) => [w.product_id, i]));
-  const wishlist = savedRows.toSorted((a, b) => order.get(a.id)! - order.get(b.id)!).map((p) => toProductCard(catalog, p));
+  const wishlist = [...savedRows].sort((a, b) => order.get(a.id)! - order.get(b.id)!).map((p) => toProductCard(catalog, p));
   // Slugs for the review deep-links: only delivered orders get a button, and only for
   // products that are still active (inactive ones drop out of the public query, so no dead link).
   const orderedProductIds = [...new Set(orders.flatMap((o) => o.order_items.map((i) => i.product_id).filter((id): id is string => id !== null)))];
