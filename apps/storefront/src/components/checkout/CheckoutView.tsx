@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import posthog from "posthog-js";
 import { useEffect, useRef, useState, useTransition, type FocusEvent, type FormEvent, type ReactNode } from "react";
 import { getCartItems, type CartItem } from "@/app/cart/actions";
 import { placeOrder, previewShipping, quoteGachaCode, quoteOrder, type CheckoutResult, type GachaQuote, type OrderQuote } from "@/app/checkout/actions";
@@ -42,6 +43,13 @@ const metaContents = (lines: CartLine[], items: Map<string, CartItem>): MetaCont
     const item = items.get(l.variantId);
     return item ? [{ id: l.variantId, quantity: l.qty, item_price: item.price }] : [];
   });
+
+// Checkout friction in PostHog (TODO.md Now #8): every error the customer sees, and where they
+// were when they left without ordering. Field names and the shop's own messages only, never what
+// was typed. "checkout_left" goes as a beacon so it survives the tab closing or the app switching.
+function trackCheckout(event: "checkout_error" | "checkout_left", props: Record<string, unknown>) {
+  if (posthog.__loaded) posthog.capture(event, props, event === "checkout_left" ? { transport: "sendBeacon" } : undefined);
+}
 
 // Signed-in customer: pre-fill source. Addresses come default-first, then newest.
 export type CheckoutAccount = { name: string; phone: string; email: string; addresses: SavedAddress[] } | null;
@@ -155,6 +163,41 @@ export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; acc
   const quoteKey = `${linesKey}|${quotePhone}|${quoteVoucher}|${deliveryMethod}|${pickedKey}|${requote}`;
   const gachaKey = `${linesKey}|${quotePhone}|${quoteVoucher}|${deliveryMethod}|${pickedKey}`;
 
+  // "checkout_left": once per visit, the first time the page is hidden (tab closed, app switched,
+  // external link) or the checkout unmounts (link inside the site), unless the order was placed.
+  // A customer who switches apps and comes back to order still sends it; their Purchase follows.
+  const lastField = useRef<CheckoutField | null>(null);
+  const filledFields = useRef<CheckoutField[]>([]); // as of the last blur; the form is gone at unmount
+  const leave = useRef<() => void>(() => {});
+  const left = useRef(false);
+  useEffect(() => {
+    leave.current = () => {
+      if (left.current || placed || !linesKey) return;
+      left.current = true;
+      if (formRef.current) filledFields.current = CHECKOUT_FIELDS.filter((f) => values()[f].trim());
+      trackCheckout("checkout_left", {
+        last_field: lastField.current,
+        filled_fields: filledFields.current,
+        error_fields: CHECKOUT_FIELDS.filter((f) => errors[f]),
+        shipping_fee_shown: typeof shippingFee === "number" || !!quote?.value?.freeShipping,
+        payment_method: paymentMethod,
+        signed_in: !!account,
+      });
+    };
+  });
+  const mounted = useRef(false);
+  useEffect(() => {
+    mounted.current = true;
+    const onHide = () => document.visibilityState === "hidden" && leave.current();
+    document.addEventListener("visibilitychange", onHide);
+    return () => {
+      mounted.current = false;
+      document.removeEventListener("visibilitychange", onHide);
+      // Dev StrictMode remounts at once: only a real unmount is still unmounted a tick later.
+      setTimeout(() => !mounted.current && leave.current());
+    };
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
     (idsKey ? getCartItems(idsKey.split(",")) : Promise.resolve([])).then((res) => {
@@ -228,7 +271,10 @@ export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; acc
   }
 
   function check(field: CheckoutField, value: string) {
-    setErrors((e) => ({ ...e, [field]: validateField(field, value, values()) }));
+    const error = validateField(field, value, values());
+    // Re-checks run on every keystroke while an error shows: report each message once.
+    if (error && error !== errors[field]) trackCheckout("checkout_error", { field, message: error, source: "field" });
+    setErrors((e) => ({ ...e, [field]: error }));
   }
 
   function focusFirst(errs: FieldErrors) {
@@ -265,7 +311,14 @@ export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; acc
     if (errors[f.field]) check(f.field, f.el.value);
   }
 
+  // Last field the customer was in ("checkout_left"); the pickers' triggers carry the field's id.
+  function onFocus(e: FocusEvent<HTMLDivElement>) {
+    const field = (e.target as HTMLElement).id.replace(/^checkout-/, "") as CheckoutField;
+    if (CHECKOUT_FIELDS.includes(field)) lastField.current = field;
+  }
+
   function onBlur(e: FocusEvent<HTMLDivElement>) {
+    if (formRef.current) filledFields.current = CHECKOUT_FIELDS.filter((k) => values()[k].trim());
     const f = fieldOf(e.target);
     if (!f) return;
     if (f.field === "phone" || f.field === "secondaryPhone") f.el.value = formatPhone(f.el.value);
@@ -292,10 +345,13 @@ export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; acc
     const errs = validateAll(v);
     setErrors(errs);
     setMessage(undefined);
+    for (const [field, message] of Object.entries(errs)) trackCheckout("checkout_error", { field, message, source: "submit" });
     if (Object.keys(errs).length) return focusFirst(errs);
     // Express is HCMC-only: don't let the order through with a mismatched address.
     if (deliveryMethod === "express" && v.city !== "TP. Hồ Chí Minh") {
-      setMessage("⚡ Hoả tốc chỉ áp dụng nội thành TP.HCM. Vui lòng chọn giao thường hoặc đổi địa chỉ.");
+      const message = "⚡ Hoả tốc chỉ áp dụng nội thành TP.HCM. Vui lòng chọn giao thường hoặc đổi địa chỉ.";
+      trackCheckout("checkout_error", { field: null, message, source: "submit" });
+      setMessage(message);
       return;
     }
     const contents = items ? metaContents(lines, items) : [];
@@ -323,6 +379,8 @@ export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; acc
         window.scrollTo({ top: 0 });
         return;
       }
+      for (const [field, message] of Object.entries(res.fieldErrors ?? {})) trackCheckout("checkout_error", { field, message, source: "server" });
+      if (res.message) trackCheckout("checkout_error", { field: null, message: res.message, source: "server" });
       setErrors(res.fieldErrors ?? {});
       setMessage(res.priceChanged ? `${res.message} Tổng mới: ${formatVnd(res.priceChanged.newTotal)}.` : res.message);
       if (res.priceChanged) setRequote((n) => n + 1);
@@ -448,7 +506,7 @@ export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; acc
   const voucherLabel = (v: { code: string; type: string; pct: number }) =>
     v.type === "standing" ? `Khách mua lần đầu · ${v.code} (−${v.pct}%)` : `Mã ${v.code} (−${v.pct}%)`;
   return (
-    <div onInput={onInput} onChange={startCheckout} onBlur={onBlur} className="grid gap-8 lg:grid-cols-12 lg:gap-12">
+    <div onInput={onInput} onChange={startCheckout} onFocus={onFocus} onBlur={onBlur} className="grid gap-8 lg:grid-cols-12 lg:gap-12">
       <form ref={formRef} id="checkout-form" onSubmit={submit} noValidate className="flex flex-col gap-6 lg:col-span-7">
         <h2 className="text-h3 uppercase"><span className="mr-2 text-accent">01</span>Thông tin giao hàng</h2>
         {!!account?.addresses.length && (
