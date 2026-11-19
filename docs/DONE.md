@@ -1,5 +1,9 @@
 # DONE.md — finished work
 
+## 2026-11-19 (docs: hosting is Cloudflare Workers)
+
+- [x] **Docs no longer say Vercel hosts the apps.** TODO.md state of the world and merge rule (CI `test` + the 2 Workers Builds checks; `master` protection only requires `test`, read from the GitHub API), ARCHITECTURE.md hosting row, CLAUDE.md (admin on Workers with `proxy.ts`), `.env.example` notes on where production secrets live, e2e S14 title and comment. Kept on purpose until the rollback window ends (~2026-11-26): both `vercel.json` (`regions: sin1`, rollback builds would otherwise run in the US), `lib/rate-limit.ts`'s `process.env.VERCEL` branch (the client IP on Vercel), the `VERCEL_ENV` fallbacks; the list is in TODO Now #13. Docs and comments only: no build change.
+
 ## 2026-11-18 (old browsers: no `Array.toSorted`)
 
 - [x] **Product, cart and checkout pages work on Chrome < 110 / Safari < 16.** Sentry PARANOIDZ-4 (`d.filter(...).toSorted is not a function`, 5 events, 3 users, 2026-11-07 → 11-12): Chrome Mobile 99 and Android WebView 101 on Android 8–12, on two product pages and `/feedback`. Next doesn't polyfill ES2023 array methods. All 21 `toSorted` calls in the storefront became `.sort()` on a new array (`[...x].sort()` where the source is shared, plain `.sort()` after `map` / `filter`); `eslint.config.mjs` now rejects `toSorted` / `toReversed` / `toSpliced` / `findLast` / `findLastIndex`. Checked: production's product page and `/checkout` each load a chunk calling `.toSorted(`; after `next build` on the branch, 0 of the client chunks do. The lint rule fires on a throwaway file; tsc clean; eslint shows no new problems. Not run on an old device.
