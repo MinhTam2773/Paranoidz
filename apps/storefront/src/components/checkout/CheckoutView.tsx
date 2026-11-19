@@ -116,8 +116,8 @@ export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; acc
   const [checkoutStarted, setCheckoutStarted] = useState(false);
   const [pending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
-  const idsKey = lines.map((l) => l.variantId).toSorted().join(",");
-  const linesKey = lines.map((l) => `${l.variantId}:${l.qty}`).toSorted().join(",");
+  const idsKey = lines.map((l) => l.variantId).sort().join(",");
+  const linesKey = lines.map((l) => `${l.variantId}:${l.qty}`).sort().join(",");
   // Shipping quote (SPX live, else the table) for the chosen province + ward and the lines:
   // undefined while loading, null if it can't be quoted.
   const [shipping, setShipping] = useState<{ key: string; quote: { fee: number; source: "spx" | "table" } | null } | null>(null);

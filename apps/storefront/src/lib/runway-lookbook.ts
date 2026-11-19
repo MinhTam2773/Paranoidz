@@ -88,7 +88,7 @@ export function runwayLooks(bySlug: Map<string, ProductCardData>): RunwayLook[] 
       const card = bySlug.get(slug);
       if (!card) return [];
       const inStock = (color: string) =>
-        card.variants.filter((v) => v.color === color && v.stock > 0).toSorted((a, b) => sizeRank(a.size) - sizeRank(b.size));
+        card.variants.filter((v) => v.color === color && v.stock > 0).sort((a, b) => sizeRank(a.size) - sizeRank(b.size));
       const all = [...new Set(card.variants.filter((v) => v.stock > 0).map((v) => v.color))];
       const wanted = colors.filter((c) => inStock(c).length);
       const options = (wanted.length ? wanted : all).map((color) => ({
@@ -97,7 +97,7 @@ export function runwayLooks(bySlug: Map<string, ProductCardData>): RunwayLook[] 
         variants: inStock(color).map((v) => ({ id: v.id, size: v.size, price: v.price, originalPrice: v.original_price, stock: v.stock })),
       }));
       if (!options.length) return [];
-      const [cheapest] = options.flatMap((o) => o.variants).toSorted((a, b) => a.price - b.price);
+      const [cheapest] = options.flatMap((o) => o.variants).sort((a, b) => a.price - b.price);
       return [{
         productId: card.id,
         slug: card.slug,

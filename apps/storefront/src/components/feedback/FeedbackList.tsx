@@ -27,7 +27,7 @@ type Tab = (typeof TABS)[number]["id"];
 
 // Reviews arrive newest first; the sort is stable, so "top" stays newest first within a rating.
 function pick(reviews: FeedbackReview[], tab: Tab) {
-  if (tab === "top") return reviews.toSorted((a, b) => b.rating - a.rating);
+  if (tab === "top") return [...reviews].sort((a, b) => b.rating - a.rating);
   if (tab === "photos") return reviews.filter((r) => r.photoUrl);
   return reviews;
 }

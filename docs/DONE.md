@@ -1,5 +1,10 @@
 # DONE.md — finished work
 
+## 2026-11-18 (old browsers: no `Array.toSorted`)
+
+- [x] **Product, cart and checkout pages work on Chrome < 110 / Safari < 16.** Sentry PARANOIDZ-4 (`d.filter(...).toSorted is not a function`, 5 events, 3 users, 2026-11-07 → 11-12): Chrome Mobile 99 and Android WebView 101 on Android 8–12, on two product pages and `/feedback`. Next doesn't polyfill ES2023 array methods. All 21 `toSorted` calls in the storefront became `.sort()` on a new array (`[...x].sort()` where the source is shared, plain `.sort()` after `map` / `filter`); `eslint.config.mjs` now rejects `toSorted` / `toReversed` / `toSpliced` / `findLast` / `findLastIndex`. Checked: production's product page and `/checkout` each load a chunk calling `.toSorted(`; after `next build` on the branch, 0 of the client chunks do. The lint rule fires on a throwaway file; tsc clean; eslint shows no new problems. Not run on an old device.
+- Sentry PARANOIDZ-8 (`reading 'M_ID'`, 104 events, 1 user, 05:32–05:45 UTC, Windows Chrome 157) is from `app:///executors/200.js`, not one of our files, during the #107 production measuring: a browser automation tool, not a customer. Left unresolved in Sentry for the owner to ignore.
+
 ## 2026-11-18 (homepage product rows: equal card widths)
 
 - [x] **Cards with many colours no longer stretch the row** (`ProductRow.tsx`, `*:min-w-0`; flash sale and the category rows share it). Measured on production before the fix: flash sale cards 300 / 292 / 608 / 292 px at 1280 and 300 / 212 / 608 / 166 px at 375. The same rule injected on production gave 292 px each and 166 px each. Tailwind generates `*:min-w-0` (compiled `globals.css`); tsc + eslint clean. Not seen in a deployed build yet: check the flash sale after deploy.

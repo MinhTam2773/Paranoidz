@@ -137,14 +137,14 @@ export function ProductView({
   const sizeGroupRef = useRef<HTMLDivElement>(null);
   const mainImageRef = useRef<HTMLImageElement>(null);
 
-  const sizes = variants.filter((v) => v.color === color).toSorted((a, b) => sizeRank(a.size) - sizeRank(b.size));
+  const sizes = variants.filter((v) => v.color === color).sort((a, b) => sizeRank(a.size) - sizeRank(b.size));
   const selected = sizes.find((v) => v.size === size) ?? null;
   // This colour picked but nothing buyable in it (e.g. an out-of-stock colourway):
   // the buy buttons must say so instead of asking for a size that can't be picked.
   const colorOutOfStock = color !== null && sizes.length > 0 && sizes.every((v) => v.stock === 0);
   // Before a size is picked, show the cheapest variant the customer can buy.
   const inStock = variants.filter((v) => v.stock > 0);
-  const [cheapest] = (inStock.length ? inStock : variants).toSorted((a, b) => a.price - b.price);
+  const [cheapest] = [...(inStock.length ? inStock : variants)].sort((a, b) => a.price - b.price);
   const shown = selected ?? cheapest;
   const onSale = shown?.original_price != null && shown.original_price > shown.price;
 

@@ -110,7 +110,7 @@ const getCollectionContext = cache(async (productId: string) => {
   if (!collection) return null;
   const candidates = collection.collection_items
     .filter((i) => i.product_id !== productId)
-    .toSorted((a, b) => a.sort_order - b.sort_order)
+    .sort((a, b) => a.sort_order - b.sort_order)
     .slice(0, 8)
     .map((i) => i.product_id);
   let related: ProductCardData[] = [];
@@ -118,8 +118,8 @@ const getCollectionContext = cache(async (productId: string) => {
     const { data: products, error: productsError } = await productCardQuery(supabase).in("id", candidates);
     if (productsError) throw productsError;
     const order = new Map(candidates.map((id, i) => [id, i]));
-    related = products
-      .toSorted((a, b) => order.get(a.id)! - order.get(b.id)!)
+    related = [...products]
+      .sort((a, b) => order.get(a.id)! - order.get(b.id)!)
       .slice(0, 4)
       .map((p) => toProductCard(supabase, p));
   }

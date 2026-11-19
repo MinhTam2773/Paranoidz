@@ -32,7 +32,7 @@ export async function getBundleOffers(productId: string): Promise<Offer[]> {
       const p = i.products;
       const inStock = p?.product_variants.filter((v) => v.stock > 0) ?? [];
       if (!p || !inStock.length) return null;
-      const image = p.product_images.toSorted((a, c) => a.sort_order - c.sort_order)[0];
+      const image = [...p.product_images].sort((a, c) => a.sort_order - c.sort_order)[0];
       return {
         id: p.id,
         name: p.name,
@@ -43,7 +43,7 @@ export async function getBundleOffers(productId: string): Promise<Offer[]> {
     });
     if (products.some((p) => p === null)) return [];
     // This product first, the rest in a stable order.
-    const sorted = (products as Offer["products"]).toSorted((a, c) => Number(c.id === productId) - Number(a.id === productId) || a.name.localeCompare(c.name));
+    const sorted = [...(products as Offer["products"])].sort((a, c) => Number(c.id === productId) - Number(a.id === productId) || a.name.localeCompare(c.name));
     return [{ id: b.id, name: b.name, discount: b.discount_amount, products: sorted }];
   });
 }

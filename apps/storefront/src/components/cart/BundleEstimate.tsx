@@ -8,7 +8,7 @@ import { formatVnd } from "@/lib/format";
 // Re-asked whenever a line or a quantity changes (sets depend on quantities, unlike prices).
 export function useBundleEstimate(lines: CartLine[]) {
   const [estimate, setEstimate] = useState<Estimate | null>(null);
-  const key = lines.map((l) => `${l.variantId}:${l.qty}`).toSorted().join(",");
+  const key = lines.map((l) => `${l.variantId}:${l.qty}`).sort().join(",");
 
   useEffect(() => {
     let cancelled = false;

@@ -24,7 +24,7 @@ export async function searchProductCards(supabase: PublicClient, query: string, 
   const { data: rows, error: rowsError } = await productCardQuery(supabase).in("id", ids);
   if (rowsError) throw rowsError;
   const rank = new Map(ids.map((id, i) => [id, i]));
-  return rows.toSorted((a, b) => rank.get(a.id)! - rank.get(b.id)!).map((p) => toProductCard(supabase, p));
+  return [...rows].sort((a, b) => rank.get(a.id)! - rank.get(b.id)!).map((p) => toProductCard(supabase, p));
 }
 
 type CardRow = NonNullable<Awaited<ReturnType<typeof productCardQuery>>["data"]>[number];
@@ -32,13 +32,13 @@ type CardRow = NonNullable<Awaited<ReturnType<typeof productCardQuery>>["data"]>
 export function toProductCard(supabase: PublicClient, p: CardRow): ProductCardData {
   const inStock = p.product_variants.filter((v) => v.stock > 0);
   // Cheapest variant the customer can actually buy; any variant once sold out.
-  const [cheapest] = (inStock.length ? inStock : p.product_variants).toSorted((a, b) => a.price - b.price);
+  const [cheapest] = [...(inStock.length ? inStock : p.product_variants)].sort((a, b) => a.price - b.price);
   const imageUrl = (path: string) => mediaUrl("product-images", path);
   const image = p.product_images[0];
   const reviewCount = p.reviews.length;
   // One dot per colour: the first non-null hex (a size added later has none yet) and the colour's
   // first photo, sorted by name like the admin's colour list.
-  const colors = [...new Set(p.product_variants.map((v) => v.color))].toSorted((a, b) => a.localeCompare(b, "vi")).map((name) => {
+  const colors = [...new Set(p.product_variants.map((v) => v.color))].sort((a, b) => a.localeCompare(b, "vi")).map((name) => {
     const photo = p.product_images.find((i) => i.color === name);
     return {
       name,
