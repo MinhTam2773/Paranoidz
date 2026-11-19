@@ -25,7 +25,7 @@ Read this first (CLAUDE.md §7), update it last. It stays short on purpose; the 
 - **Who does what** (owner + client, 2026-10-17):
   - **Storefront UI is the client's.** Tủn (`tuanthanh971`) builds it with his own GPT agent and sends PRs (commit messages in Vietnamese without diacritics).
   - **The developer** (`MinhTam2773`, with Claude) does the database, server logic, admin, setup and reviews.
-  - **Merge rule:** CI `test` and the 2 Workers Builds checks green (the Vercel checks still show until Vercel is disconnected; ignore them), then the client may merge his own PR. His agent updates TODO.md for anything it changes.
+  - **Merge rule:** CI `test` and the 2 Workers Builds checks green, then the client may merge his own PR. His agent updates TODO.md for anything it changes.
   - **Migrations:** the client's agent may apply them to the databases itself (owner's call, 2026-10-17). Check `supabase migration list --linked` after each of his merges.
 
 ## Now (in order)
@@ -60,7 +60,7 @@ Read this first (CLAUDE.md §7), update it last. It stays short on purpose; the 
      - PZ-2026-0700: the order alert email at `ORDER_ALERT_EMAIL`, and the server Purchase in Events Manager (Conversions API from the Worker).
      - CI: rewrite `e2e spx:prod` for wrangler. (Merge rule, ARCHITECTURE.md hosting and CLAUDE.md updated 2026-11-19; `master` protection only requires `test`.)
      - Clean up: revoke the three cloud-session tokens (Cloudflare `9af35692…`, expires 2026-11-17; a Vercel token; a Supabase access token), delete `Downloads\txt.txt` (live tokens), cancel test order **PZ-2026-0069** on `paranoidz-test`, delete `docs/CLOUDFLARE_HANDOFF.md`, swap the legacy service-role JWT in the `.env.prod.local` files for the `sb_secret_` key.
-     - Owner, any time: Vercel → each project → Settings → Git → Disconnect (stops PR builds and bot comments; the last `master` builds stay for rollback).
+     - [x] Vercel Git disconnected in both projects (owner, 2026-11-19; checked on each project's Git settings page): no more Vercel builds or PR comments. The last `master` builds and both domains stay on Vercel for rollback.
      - After ~2026-11-26: remove the domains from both Vercel projects and pause them; DNSSEC back on (Now #11). Then in the repo (kept until then for rollback): delete both `vercel.json` (`regions: sin1`), the `process.env.VERCEL` branch in `lib/rate-limit.ts`, the `VERCEL_ENV` fallbacks (storefront `next.config.ts`, admin `instrumentation*.ts`), `docs/SPX_VERCEL_SETUP.md`, the "Deploy on Vercel" README sections; revoke the Vercel token.
 
 14. [ ] **Customer returns (trả hàng) — START HERE in the next session** (owner, 2026-11-13). Customers request a return online (not washed + tags on: 2 ticks + 1–5 photos, 7 days from delivery), the shop books an SPX pickup and pays it, the admin refunds COD and transfer orders alike by hand. Return + refund only (exchanges by hotline). Design (approved): `docs/superpowers/specs/2026-11-13-customer-returns-design.md`; details of each PR in `docs/DONE.md` 2026-11-13.
@@ -94,7 +94,7 @@ ARCHITECTURE.md §8.4 / §8.5 (loyalty): waits on the proposal in Now #5. §8.3 
 
 ## Last session
 
-- 2026-11-19: docs say Workers, not Vercel (TODO state + merge rule, ARCHITECTURE.md hosting, CLAUDE.md, `.env.example` notes, e2e S14 title). `vercel.json` and the `VERCEL` code fallbacks stay until the rollback window ends (~2026-11-26, list in Now #13); branch `chore/retire-vercel`.
+- 2026-11-19: docs say Workers, not Vercel (TODO state + merge rule, ARCHITECTURE.md hosting, CLAUDE.md, `.env.example` notes, e2e S14 title); the owner disconnected Vercel's Git in both projects. `vercel.json` and the `VERCEL` code fallbacks stay until the rollback window ends (~2026-11-26, list in Now #13); branch `chore/retire-vercel`.
 - 2026-11-18: product, cart and checkout pages no longer crash on Chrome < 110 / Safari < 16 (`Array.toSorted`, Sentry PARANOIDZ-4: old Android phones and WebViews); lint rule blocks it; branch `fix/old-browser-tosorted`.
 - 2026-11-18: homepage product rows keep equal card widths (a many-colour card was 608px beside 292px ones in the flash sale); branch `fix/product-row-card-width`.
 - 2026-11-18: Sentry no longer reports `window.webkit.messageHandlers` (a script injected by an in-app browser, not ours); branch `fix/sentry-ignore-webview-noise`.
