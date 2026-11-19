@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { createAdminClient } from "@paranoidz/db/admin";
 import { createClient } from "@paranoidz/db/server";
 import { CheckoutView, type CheckoutAccount } from "@/components/checkout/CheckoutView";
 import { Breadcrumb } from "@/components/layout/Breadcrumb";
@@ -41,11 +42,23 @@ export default async function CheckoutPage({ searchParams }: PageProps<"/checkou
     };
   }
 
+  // Free shipping campaign running now (admin, Mã giảm giá): shown under the totals.
+  // The charge itself comes from quote_order() / place_order() (ships_free()).
+  const now = new Date().toISOString();
+  const { data: campaign } = await createAdminClient()
+    .from("free_ship_campaign").select("ends_at").lte("starts_at", now).gt("ends_at", now).maybeSingle();
+  // "30/11, 23:59" (en-GB, fixed shape) → "23:59 ngày 30/11"
+  const [endDay, endTime] = campaign
+    ? new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23", timeZone: "Asia/Ho_Chi_Minh" })
+        .format(new Date(campaign.ends_at)).split(", ")
+    : [];
+  const freeShipUntil = campaign ? `${endTime} ngày ${endDay}` : null;
+
   return (
     <div className="mx-auto w-full max-w-7xl px-4 pb-16 lg:px-6">
       <Breadcrumb items={[{ label: "Trang chủ", href: "/" }, { label: "Giỏ hàng", href: "/cart" }, { label: "Thanh toán" }]} />
       <h1 className="mb-6 text-h2 uppercase">Thanh toán</h1>
-      <CheckoutView buyNow={buyNow} account={account} />
+      <CheckoutView buyNow={buyNow} account={account} freeShipUntil={freeShipUntil} />
     </div>
   );
 }

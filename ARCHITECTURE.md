@@ -219,6 +219,7 @@ Applied in this order, each step on what the previous one left:
    - **"Khách mua lần đầu"**: one fixed code, 10 %, usable on **every** order with **no** per-phone limit ("lần đầu" is only a name). Replaces the first-5 rule (5 orders per phone, auto-applied) and its label "Ưu đãi 5 đơn đầu".
    - **Other promo codes** the client creates in the admin (campaigns). They stack with "lần đầu" and with combos.
 4. **Free shipping:** orders of **₫199.000 or more after combo and vouchers** (gacha prizes not counted), any products, on **standard** delivery pay no shipping (aT, 2026-10-31; replaces "≥ 2 clothing items"). **Express ("hoả tốc") never gets free shipping.** The shop pays SPX as usual. This reverses §8.1 for those orders.
+   - **Free shipping campaign (owner, 2026-11-19):** between a start and an end time set in the admin (Mã giảm giá → "Freeship mọi đơn"), **every** standard-delivery order ships free, whatever its amount; express still pays. One campaign at a time (`free_ship_campaign`, a single row); outside its window the ₫199.000 rule applies. `ships_free()` reads it, so `quote_order()` and `place_order()` agree; checkout's note names the end time.
 5. **Gift:** one pair of socks per order with ≥ 1 clothing item (see below). Independent of free shipping.
 6. **No cap** on the total discount. If a product sells at a loss, the client raises its price.
 
@@ -278,6 +279,7 @@ aT, 2026-10-27: the "Khách mua lần đầu" code is **`PDZWELCOME`**; free shi
 | loyalty_awards | phone (FK customers), gift_id (nullable), milestone, status (pending / fulfilled) | Survives empty pool |
 | shipping_provinces | city PK (the 34 names in `lib/provinces.ts`), zone (hcm / south / other) | §5. RLS on, no policies — read via `shipping_fee()` |
 | shipping_rates | zone, max_grams, fee | Tier covers weights ≤ max_grams; 500 g steps to 6 kg (20 units). RLS on, no policies |
+| free_ship_campaign | id (always true: one row), starts_at, ends_at, updated_at | §5 free shipping campaign. RLS on, no policies (admin + checkout read it with the service role) |
 | rate_limits | bucket ('order:ip:…' / 'lookup:phone:…'), window_start, hits | Order attempt counters; rows older than the previous window are pruned on each call |
 
 ### Required Postgres objects

@@ -94,6 +94,7 @@ ARCHITECTURE.md §8.4 / §8.5 (loyalty): waits on the proposal in Now #5. §8.3 
 
 ## Last session
 
+- 2026-11-19: free shipping campaign (owner): admin Mã giảm giá → "Freeship mọi đơn" sets a start / end; inside it every standard-delivery order ships free (express pays), checkout shows "Miễn phí" and the end time. Migration `20261119000001_free_ship_campaign.sql`, smoke case added, checked on a local stack (admin → checkout at 1280 / 375). **Migration not applied to test / prod yet** (the session's Supabase API token was rejected); it must be on prod before the PR merges. Branch `claude/busy-ritchie-z8ujx5`.
 - 2026-11-19: docs say Workers, not Vercel (TODO state + merge rule, ARCHITECTURE.md hosting, CLAUDE.md, `.env.example` notes, e2e S14 title); the owner disconnected Vercel's Git in both projects. `vercel.json` and the `VERCEL` code fallbacks stay until the rollback window ends (~2026-11-26, list in Now #13); branch `chore/retire-vercel`.
 - 2026-11-18: product, cart and checkout pages no longer crash on Chrome < 110 / Safari < 16 (`Array.toSorted`, Sentry PARANOIDZ-4: old Android phones and WebViews); lint rule blocks it; branch `fix/old-browser-tosorted`.
 - 2026-11-18: homepage product rows keep equal card widths (a many-colour card was 608px beside 292px ones in the flash sale); branch `fix/product-row-card-width`.

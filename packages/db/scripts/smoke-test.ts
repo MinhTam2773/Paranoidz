@@ -795,7 +795,22 @@ async function main() {
       .data as { free_shipping: boolean } | null)?.free_shipping;
   const [fsNoCode, fsWelcome, fsExpress] = [await fsQuote([]), await fsQuote(["PDZWELCOME"]), await fsQuote([], "express")];
   const fsBelow = await v2Place([{ variant_id: fsVariant, qty: 1 }], { voucher: "PDZWELCOME" });
+  // Free shipping campaign (2026-11-19): while its window is open the ₫189.000 order ships free too
+  // (express still pays); a window that has ended changes nothing.
+  const hour = 3600_000;
+  const campaign = (from: number, to: number) => admin.from("free_ship_campaign")
+    .upsert({ id: true, starts_at: new Date(Date.now() + from).toISOString(), ends_at: new Date(Date.now() + to).toISOString() });
+  await campaign(-hour, hour);
+  const [fcWelcome, fcExpress] = [await fsQuote(["PDZWELCOME"]), await fsQuote(["PDZWELCOME"], "express")];
+  const fcPlaced = await v2Place([{ variant_id: fsVariant, qty: 1 }], { voucher: "PDZWELCOME" });
+  await campaign(-2 * hour, -hour);
+  const fcEnded = await fsQuote(["PDZWELCOME"]);
+  await admin.from("free_ship_campaign").delete().eq("id", true);
   await admin.from("product_variants").update({ price: fsPrice }).eq("id", fsVariant);
+  check("free shipping campaign: open window → ₫189.000 ships free, place_order waives the fee; express pays; ended window → pays",
+    fcWelcome === true && fcExpress === false && fcEnded === false
+      && !fcPlaced.error && fcPlaced.data!.shipping_fee > 0 && fcPlaced.data!.shipping_discount === fcPlaced.data!.shipping_fee,
+    `open=${fcWelcome} express=${fcExpress} ended=${fcEnded} placed=${JSON.stringify(fcPlaced.data ?? fcPlaced.error)}`);
   check("pricing v2: free shipping from ₫199.000 after vouchers (₫210.000 ships free, −10 % → ₫189.000 pays); express pays; place_order agrees",
     fsNoCode === true && fsWelcome === false && fsExpress === false
       && !fsBelow.error && fsBelow.data!.subtotal === 210000 && fsBelow.data!.shipping_fee > 0 && fsBelow.data!.shipping_discount === 0,

@@ -2,25 +2,41 @@ import Link from "next/link";
 import { createAdminClient } from "@paranoidz/db/admin";
 import { ActiveToggle } from "@/components/ActiveToggle";
 import { PromoIcon } from "@/components/icons";
+import { FreeShipCampaignCard } from "@/components/promo-codes/FreeShipCampaignCard";
 import { Pagination } from "@/components/Pagination";
 import { requireAdmin } from "@/lib/auth";
-import { formatDate, formatVnd, vnDate } from "@/lib/format";
+import { formatDate, formatDateTime, formatVnd, vnDate } from "@/lib/format";
 import { setPromoActive } from "./actions";
 
 const PAGE_SIZE = 20;
+
+// datetime-local value in Vietnam time (UTC+7, no DST).
+const vnInput = (iso: string) => new Date(Date.parse(iso) + 7 * 3600_000).toISOString().slice(0, 16);
+
+function campaignStatus({ starts_at, ends_at }: { starts_at: string; ends_at: string }) {
+  const now = Date.now();
+  if (Date.parse(ends_at) <= now) return `Đã kết thúc lúc ${formatDateTime(ends_at)}.`;
+  if (Date.parse(starts_at) > now) return `Sắp chạy: từ ${formatDateTime(starts_at)} đến ${formatDateTime(ends_at)}.`;
+  return `Đang chạy đến ${formatDateTime(ends_at)}.`;
+}
 
 // DASHBOARD_DESIGN.md §6.7 list. promo + standing only: AUTO-FIRST5 is system-managed.
 export default async function PromoCodesPage({ searchParams }: PageProps<"/promo-codes">) {
   await requireAdmin();
   const sp = await searchParams;
   const page = Math.max(1, Math.floor(Number(sp.page)) || 1);
-  const { data, count, error } = await createAdminClient()
-    .from("vouchers")
-    .select("id, type, code, discount_pct, cap_amount, max_uses, used_count, is_active, is_listed, expires_at", { count: "exact" })
-    .in("type", ["promo", "standing"])
-    .order("created_at", { ascending: false })
-    .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
+  const admin = createAdminClient();
+  const [{ data, count, error }, { data: campaign, error: campaignError }] = await Promise.all([
+    admin
+      .from("vouchers")
+      .select("id, type, code, discount_pct, cap_amount, max_uses, used_count, is_active, is_listed, expires_at", { count: "exact" })
+      .in("type", ["promo", "standing"])
+      .order("created_at", { ascending: false })
+      .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1),
+    admin.from("free_ship_campaign").select("starts_at, ends_at").maybeSingle(),
+  ]);
   if (error) throw error;
+  if (campaignError) throw campaignError;
 
   const today = vnDate();
   const codes = data.map((v) => ({
@@ -46,6 +62,12 @@ export default async function PromoCodesPage({ searchParams }: PageProps<"/promo
         <p className="text-text-secondary">Mã &quot;Mỗi SĐT 1 lần&quot;: mỗi số điện thoại dùng một lần; mã &quot;Dùng mọi đơn&quot; không giới hạn. Mã giảm 10% cho 5 đơn đầu được áp dụng tự động, không nằm ở đây.</p>
         {newButton}
       </div>
+
+      <FreeShipCampaignCard
+        startsAt={campaign ? vnInput(campaign.starts_at) : ""}
+        endsAt={campaign ? vnInput(campaign.ends_at) : ""}
+        status={campaign && campaignStatus(campaign)}
+      />
 
       {codes.length === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-sm border border-border bg-surface px-6 py-16 text-center text-text-secondary">
