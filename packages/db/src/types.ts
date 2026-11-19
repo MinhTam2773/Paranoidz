@@ -307,6 +307,27 @@ export type Database = {
         }
         Relationships: []
       }
+      free_ship_campaign: {
+        Row: {
+          ends_at: string
+          id: boolean
+          starts_at: string
+          updated_at: string
+        }
+        Insert: {
+          ends_at: string
+          id?: boolean
+          starts_at: string
+          updated_at?: string
+        }
+        Update: {
+          ends_at?: string
+          id?: boolean
+          starts_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       gacha_codes: {
         Row: {
           code: string

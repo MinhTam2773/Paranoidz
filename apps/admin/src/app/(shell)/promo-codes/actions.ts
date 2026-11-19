@@ -103,3 +103,34 @@ export async function setPromoActive(id: string, isActive: boolean): Promise<{ e
   done();
   return {};
 }
+
+// Free shipping campaign (migration 20261119000001): one row; between starts_at and ends_at
+// ships_free() waives shipping on every standard-delivery order. Inputs are
+// <input type="datetime-local"> values ("yyyy-mm-ddThh:mm"), read as Vietnam time.
+export async function saveFreeShipCampaign(startsAt: string, endsAt: string): Promise<{ errors?: Record<string, string> }> {
+  await requireAdmin();
+  const errors: Record<string, string> = {};
+  const toIso = (v: string) => (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(v) && !Number.isNaN(Date.parse(`${v}:00+07:00`)) ? `${v}:00+07:00` : null);
+  const start = toIso(startsAt.trim());
+  const end = toIso(endsAt.trim());
+  if (!start) errors.startsAt = "Chọn ngày giờ bắt đầu.";
+  if (!end) errors.endsAt = "Chọn ngày giờ kết thúc.";
+  else if (Date.parse(end) <= Date.now()) errors.endsAt = "Thời gian kết thúc đã qua.";
+  else if (start && Date.parse(end) <= Date.parse(start)) errors.endsAt = "Kết thúc phải sau bắt đầu.";
+  if (Object.keys(errors).length) return { errors };
+
+  const { error } = await createAdminClient()
+    .from("free_ship_campaign")
+    .upsert({ id: true, starts_at: start!, ends_at: end!, updated_at: new Date().toISOString() });
+  if (error) return { errors: { form: "Không thể lưu. Vui lòng thử lại." } };
+  done();
+  return {};
+}
+
+export async function endFreeShipCampaign(): Promise<{ error?: string }> {
+  await requireAdmin();
+  const { error } = await createAdminClient().from("free_ship_campaign").delete().eq("id", true);
+  if (error) return { error: "Không thể tắt. Vui lòng thử lại." };
+  done();
+  return {};
+}

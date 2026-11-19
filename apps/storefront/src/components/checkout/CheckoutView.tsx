@@ -98,7 +98,8 @@ function Field({
 
 // Checkout (ARCHITECTURE.md §4): delivery form + summary. Lines come from Buy It Now or the cart;
 // the order itself is priced and validated server-side by placeOrder → place_order().
-export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; account: CheckoutAccount }) {
+// freeShipUntil: end of the running free shipping campaign (Vietnam time, formatted), else null.
+export function CheckoutView({ buyNow, account, freeShipUntil }: { buyNow: CartLine | null; account: CheckoutAccount; freeShipUntil: string | null }) {
   const cart = useCart();
   const cartReady = useCartReady();
   const lines = buyNow ? [buyNow] : cart;
@@ -808,8 +809,11 @@ export function CheckoutView({ buyNow, account }: { buyNow: CartLine | null; acc
             )}
           </dl>
           <p className="text-caption text-text-secondary">
-            Combo và các mã giảm giá được cộng dồn, mỗi mã tính trên phần còn lại. Miễn phí vận chuyển cho đơn giao thường từ ₫199.000
-            (sau giảm giá). Mỗi đơn có áo được tặng 1 đôi tất.
+            Combo và các mã giảm giá được cộng dồn, mỗi mã tính trên phần còn lại.{" "}
+            {freeShipUntil
+              ? `Freeship mọi đơn giao thường đến ${freeShipUntil}.`
+              : "Miễn phí vận chuyển cho đơn giao thường từ ₫199.000 (sau giảm giá)."}{" "}
+            Mỗi đơn có áo được tặng 1 đôi tất.
           </p>
 
           {paymentMethod === "bank_transfer" ? (
