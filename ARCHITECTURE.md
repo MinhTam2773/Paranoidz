@@ -18,7 +18,7 @@ Self-contained headless e-commerce for a Vietnamese streetwear brand. COD only โ
 | Search              | Postgres FTS + `unaccent` (diacritic-insensitive Vietnamese) |
 | Transactional email | Resend (customer confirmations + client alerts) |
 | Notifications       | Zalo Bot Platform (client new-order alerts) |
-| Hosting             | Storefront: Cloudflare Workers through OpenNext (`apps/storefront/wrangler.jsonc`; ISR pages in R2, revalidation through Durable Objects). Built 2026-11-10, still served by Vercel until the DNS cutover in `docs/CLOUDFLARE_SETUP.md`. Admin: Vercel (sin1) |
+| Hosting             | Both apps on Cloudflare Workers through OpenNext (`apps/*/wrangler.jsonc`), since 2026-11-11 (storefront) / 2026-11-12 (admin). Workers Builds deploys `master`; other branches build Previews on the test database (`docs/CLOUDFLARE_SETUP.md`). Storefront: ISR pages in R2, revalidation through Durable Objects. Vercel kept as rollback to ~2026-11-26 |
 
 UI language: **Vietnamese only**, storefront and admin (decided 2026-10-01; see CLAUDE.md ยง5).
 
